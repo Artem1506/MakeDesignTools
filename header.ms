@@ -2,6 +2,7 @@
 -- Расположение локальной базы MD
 global MD_LIB_DIR = ""
 global MAX_UI_BG_COLOR = ""
+global PY_BUILTINS = Python.Import "builtins"
 
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
@@ -15,7 +16,7 @@ HTTP_CLIENT = pathConfig.appendPath HTTP_CLIENT_DIR "md_requests.exe"
 HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath HTTP_CLIENT_DIR "md_requests.config"
 
 -- Файл конфигурации MDT
-MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "StanzzaTools.ini"
+MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 
 -- файлы для хранения импортрованных данных
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
@@ -63,6 +64,7 @@ DN_CLR_TEMP = (dotNetClass "System.Drawing.Color").FromArgb 255 119 136 153
 DN_CLR_X = (dotNetClass "system.Drawing.color").FromArgb 255 200 50 50
 DN_CLR_OK = (dotNetClass "system.Drawing.color").FromArgb 255 10 130 10
 dn_max_ui_bg_color = undefined
+progress_dlg_title = ""
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018

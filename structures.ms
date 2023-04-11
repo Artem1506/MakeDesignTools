@@ -79,22 +79,22 @@ struct GlobalData
 
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
-		free Categories
-		free SubCategories
-		free ValidTasks
-		free InvalidTasks
-		free CompletedTasks
-		free DeletedTasks
-		free Tasks
+		Categories = #()
+		SubCategories = #()
+		ValidTasks = #()
+		InvalidTasks = #()
+		CompletedTasks = #()
+		DeletedTasks = #()
+		CurrentTasks = PY_BUILTINS.dict()
 
 		ReadDataFile MD_CATALOG_DATA_FILE
 
-		free exist_preview
-		free users
-		free main_categs
-		free main_categ_ids
-		free sub_categs
-		free sub_categ_ids
+		exist_preview = #()
+		users = #()
+		main_categs = #()
+		main_categ_ids = #()
+		sub_categs = #()
+		sub_categ_ids = #()
 
 		free proj_exist_preview
 		free proj_main_categs
@@ -102,40 +102,47 @@ struct GlobalData
 		free proj_sub_categs
 		free proj_sub_categ_ids
 
-		local arr_names = arr_ids = #()
+		try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
+		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
 
-		for i in data as array do 
+		if MD_LIB_DIR != "" then
 		(
-			for k in i["children"] as array do 
+			local arr_names = #()
+			local arr_ids = #()
+
+			for i in data as array do 
 			(
-				append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
-				append main_categ_ids k["article"]
-				arr_names = #()
-				arr_ids = #()
-				for j in k["children"] as array do 
+				for k in i["children"] as array do 
 				(
-					append arr_names j["name"]
-					append arr_ids j["article"]
+					append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
+					append main_categ_ids k["article"]
+					arr_names = #()
+					arr_ids = #()
+					for j in k["children"] as array do 
+					(
+						append arr_names j["name"]
+						append arr_ids j["article"]
+					)
+					append sub_categs arr_names
+					append sub_categ_ids arr_ids
 				)
-				append sub_categs arr_names
-				append sub_categ_ids arr_ids
 			)
-		)
-		
-		free arr_names
-		free arr_ids
+			
+			free arr_names
+			free arr_ids
 
-		local titles = #()
-		local us_ids = #()
+			local titles = #()
+			local us_ids = #()
 
-		ReadDataFile MD_USERS_DATA_FILE
-		for i in data as array do 
-		(
-			append titles i["title"]
-			append us_ids i["user_id"]
+			ReadDataFile MD_USERS_DATA_FILE
+			for i in data as array do 
+			(
+				append titles i["title"]
+				append us_ids i["user_id"]
+			)
+			append users titles
+			append users us_ids
 		)
-		append users titles
-		append users us_ids
 	),
 	on create do Init()
 )
@@ -221,7 +228,8 @@ struct UI
 				MD_Data.ActiveSubCategory = SubCategories.Selection
 
 				Categories.Items = MD_Data.main_categs
-				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] catch()
+				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
+				catch(SubCategories.Items = #())
 			)
 			2:(
 				Categories.Items = MD_Data.proj_main_categs
@@ -254,12 +262,7 @@ struct UI
 
 		if MD_Data.ActiveTask == undefined then
 		(
-			if SubCategories.Items.Count != 0 then
-			(
-				Tasks.lst_basic_catalog.enabled = true
-				Tasks.lst_sub_catalog.enabled = true
-				Tasks.btn_check.enabled = true
-			)else for ctrl in Tasks.Controls do ctrl.enabled = false
+			for ctrl in Tasks.Controls do ctrl.enabled = false
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = false
 			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
@@ -335,6 +338,13 @@ struct UI
 
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
+		)
+		
+		if SubCategories.Items.Count != 0 then
+		(
+			Tasks.lst_basic_catalog.enabled = true
+			Tasks.lst_sub_catalog.enabled = true
+			Tasks.btn_check.enabled = true
 		)
 
 		if Settings.ckbx_tooltips.Checked == false then
@@ -421,8 +431,10 @@ struct UI
 		AddSubRollout Main.sub_rlt ToolsCatalog rolledUp:false
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
+		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
+		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса.")
+
 		Sections.Selection = MD_Data.ActiveSection
-		
 		SwitchRollouts()
 		FillData()
 		Update()

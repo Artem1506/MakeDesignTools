@@ -1,3 +1,65 @@
+fn GetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#() exclude_list:#() =
+(
+	if onlyRollState == false then
+	(
+		controls = #()
+
+		if include_list.count != 0 then (controls = include_list)
+		else if exclude_list.count != 0 then (controls = for ctrl in roll.controls where (findItem include_list ctrl == 0) collect ctrl)
+		else controls = roll.controls
+
+		for ctrl in controls where ((classof ctrl) != GroupStartControl and (classof ctrl) != GroupEndControl and ctrl.name != "author") do
+		(
+			case (classof ctrl) of
+			(
+				CheckBoxControl:(ctrl.checked = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_checked")))
+				CheckButtonControl:(ctrl.checked = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_checked")))
+				SpinnerControl:(ctrl.value = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_value")))
+				ComboBoxControl:(ctrl.selection = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_selection")))
+				listboxControl:(ctrl.selection = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_selection")))
+				RadioControl:(ctrl.state = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_state")))
+				EdittextControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
+				LabelControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
+				SubRollout:(ctrl.pos = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
+			)
+			ctrl.enabled = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_enabled"))
+		)
+	)
+	roll.open = execute (getINISetting ini_file_path roll.name "opened")
+)
+
+-- Save the states of the user interface controls in an ini file
+fn SetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#() exclude_list:#() =
+(
+    setIniForceUTF16Default False
+
+	if onlyRollState == false then
+	(
+		controls = #()
+
+		if include_list.count != 0 then (controls = include_list)
+		else if exclude_list.count != 0 then (controls = for ctrl in roll.controls where (findItem include_list ctrl == 0) collect ctrl)
+		else controls = roll.controls
+		-- for ctrl in controls where ((classof ctrl) != GroupStartControl and (classof ctrl) != GroupEndControl and ctrl.name != "author") do
+		for ctrl in controls do
+		(
+			case (classof ctrl) of
+			(
+				CheckBoxControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_checked") (ctrl.checked as string))
+				CheckButtonControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_checked") (ctrl.checked as string))
+				SpinnerControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_value") (ctrl.value as string))
+				ComboBoxControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_selection") (ctrl.selection as string))
+				listboxControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_selection") (ctrl.selection as string))
+				RadioControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_state") (ctrl.state as string))
+				EdittextControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") ctrl.text)
+				LabelControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") ctrl.text)
+				SubRollout:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") (ctrl.pos as string))
+			)
+			setINISetting ini_file_path ini_tag (ctrl.name + "_enabled") (ctrl.enabled as string)
+		)
+	)
+	setINISetting ini_file_path roll.name "opened" (roll.open as string)
+)
 
 fn ReadDataFile file =
 (
@@ -41,4 +103,46 @@ fn get_max_ui_bg_color =
 	python.Execute py_code
 
 	MAX_UI_BG_COLOR = hex_to_rgb MAX_UI_BG_COLOR
+)
+
+-- fn SetSysEnvVar var val =
+-- (
+-- 	HiddenDOSCommand ("setx \"" + var + "\" \"" + val + "\" /m") prompt:"" donotwait:true ExitCode:&result
+
+--     if result == 0 then (DisplayTempPrompt (var + " = " + val) 3000; return val)
+--     else (DisplayTempPrompt "Error" 3000; return "")
+-- )
+
+fn SetUserEnvVar var val =
+(
+    ::var = var
+    ::val = val
+    ::result = ""
+
+    py_code = "import winreg" + "\n"
+	py_code += "key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, \"Environment\")" + "\n"
+	py_code += "winreg.SetValueEx(key, rt.var, 1, winreg.REG_SZ, rt.val)" + "\n"
+	py_code += "if key:" + "\n"
+	py_code += "\t" + "winreg.CloseKey(key)" + "\n"
+	py_code += "\t" + "rt.result = rt.val" + "\n"
+	py_code += "else:" + "\n"
+	py_code += "\t" + "rt.result = \"\"" + "\n"
+
+	python.Execute py_code
+
+    return result
+)
+
+fn GetUserEnvVar var =
+(
+    ::var = var
+    ::result = ""
+
+    py_code = "import winreg" + "\n"
+	py_code += "md_var_path = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER, \"Environment\")" + "\n"
+	py_code += "rt.result = (winreg.QueryValueEx(md_var_path, rt.var))[0]" + "\n"
+
+	python.Execute py_code
+
+    return result
 )

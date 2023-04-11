@@ -18,5 +18,8 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try(destroyDialog dlg_pivot_params)catch()
         try(destroyDialog dlg_load_work)catch()
         try(destroyDialog dlg_validation)catch()
+
+        MD_UI.Update()
+        for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name 
     )
 )

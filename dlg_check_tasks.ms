@@ -20,7 +20,9 @@ rollout dlg_check_tasks "Parameters" width:200 height:150
         -- Закрыть текущее диалоговое окно
         DestroyDialog dlg_check_tasks
         -- Вызвать окно ожидания
-        try(DestroyDialog ::dlg_progress)catch()
-        CreateDialog dlg_progress modal:true style:#(#style_toolwindow) escapeEnable:True
+        try(DestroyDialog MD_UI.Dialogs.Progress)catch()
+
+        progress_dlg_title = "Checking available tasks"
+        CreateDialog MD_UI.Dialogs.Progress modal:true style:#(#style_toolwindow) escapeEnable:True 
     )
 )
