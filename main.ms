@@ -24,7 +24,9 @@
 
     MD_Data = GlobalData()
     MD_UI = UI()
-    MD_UI.Update()
 
+    -- MD_Data.ActiveTask = Task()
+    MD_UI.Update()
+   
 	ok
 )

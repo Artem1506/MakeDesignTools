@@ -56,11 +56,26 @@ struct GlobalData
 	InvalidTasks = #(),
 	CompletedTasks = #(),
 	DeletedTasks = #(),
-	Tasks = #(), -- Задания для выбранной в данный момент подкатегории
-	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
-	ActiveSection = undefined, --> [int] Активная категория
+	CurrentTasks = PY_BUILTINS.dict(), -- Задания для выбранной в данный момент подкатегории
+	-- Catalog
+	main_categs = #(),
+	main_categ_ids = #(),
+	sub_categs = #(),
+	sub_categ_ids = #(),
+	ActiveSection = 1, --> [int] Активная категория
 	ActiveCategory = undefined, --> [int] Активная подкатегория
+	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.ListMain
+	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
+	exist_preview = Dictionary(),
+	-- Projects
+	proj_main_categs = #(),
+	proj_main_categ_ids = #(),
+	proj_sub_categs = #(),
+	proj_sub_categ_ids = #(),
+	proj_exist_preview = Dictionary(),
+
+	Users = #(),
 
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
@@ -72,9 +87,57 @@ struct GlobalData
 		free DeletedTasks
 		free Tasks
 
-		try(ActiveSection = MD_UI.Sections.Selection)catch()
-	)
-	--on create do Init()
+		ReadDataFile MD_CATALOG_DATA_FILE
+
+		free exist_preview
+		free users
+		free main_categs
+		free main_categ_ids
+		free sub_categs
+		free sub_categ_ids
+
+		free proj_exist_preview
+		free proj_main_categs
+		free proj_main_categ_ids
+		free proj_sub_categs
+		free proj_sub_categ_ids
+
+		local arr_names = arr_ids = #()
+
+		for i in data as array do 
+		(
+			for k in i["children"] as array do 
+			(
+				append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
+				append main_categ_ids k["article"]
+				arr_names = #()
+				arr_ids = #()
+				for j in k["children"] as array do 
+				(
+					append arr_names j["name"]
+					append arr_ids j["article"]
+				)
+				append sub_categs arr_names
+				append sub_categ_ids arr_ids
+			)
+		)
+		
+		free arr_names
+		free arr_ids
+
+		local titles = #()
+		local us_ids = #()
+
+		ReadDataFile MD_USERS_DATA_FILE
+		for i in data as array do 
+		(
+			append titles i["title"]
+			append us_ids i["user_id"]
+		)
+		append users titles
+		append users us_ids
+	),
+	on create do Init()
 )
 
 -- Структура хранит диалоговые окна
@@ -101,12 +164,14 @@ struct UI
 	Help = rlt_about,
 	Dialogs = UI_Dialogs(),
 	Sections = Tasks.lst_sections,
+	Categories = Tasks.lst_basic_catalog,
+	SubCategories = Tasks.lst_sub_catalog,
 	ListMain = Tasks.lv_main,
 	ListAdd = Tasks.lv_add,
 	ActiveMainItem = undefined,
 	ActiveAddItem = undefined,
 	CheckedItems = undefined,
-
+	
 	fn InitLists = (
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
 
@@ -147,8 +212,28 @@ struct UI
 		setFocus ListMain
 	),
 
+	fn FillData =
+	(
+		case MD_Data.ActiveSection of
+		(
+			1:(
+				MD_Data.ActiveCategory = Categories.Selection
+				MD_Data.ActiveSubCategory = SubCategories.Selection
+
+				Categories.Items = MD_Data.main_categs
+				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] catch()
+			)
+			2:(
+				Categories.Items = MD_Data.proj_main_categs
+				SubCategories.Items = MD_Data.proj_sub_categs
+				try SubCategories.Items = MD_Data.proj_sub_categs[Categories.Selection] catch()
+			)
+		)
+	),
+
 	fn Update = (
 		-- Обновляет интерфейс исходя из текущих данных
+		FillData()
 
 		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
 		(
@@ -169,7 +254,7 @@ struct UI
 
 		if MD_Data.ActiveTask == undefined then
 		(
-			if MD_Data.SubCategories.Count != 0 then
+			if SubCategories.Items.Count != 0 then
 			(
 				Tasks.lst_basic_catalog.enabled = true
 				Tasks.lst_sub_catalog.enabled = true
@@ -247,6 +332,7 @@ struct UI
 				(
 					ToolsCatalog.btn_export.enabled = false
 				)
+
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
 		)
@@ -335,7 +421,10 @@ struct UI
 		AddSubRollout Main.sub_rlt ToolsCatalog rolledUp:false
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
+		Sections.Selection = MD_Data.ActiveSection
+		
 		SwitchRollouts()
+		FillData()
 		Update()
 	),
 	

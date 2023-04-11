@@ -26,16 +26,17 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveSection = arg
         MD_UI.SwitchRollouts()
+        MD_UI.Update()
     )
     
     on lst_basic_catalog selected arg do
     (
- 
+        MD_UI.Update()
     )
 
     on lst_sub_catalog selected arg do
     (
-
+        MD_UI.Update()
     )
 
     on lst_sub_catalog rightClick do
