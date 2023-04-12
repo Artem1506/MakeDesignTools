@@ -25,13 +25,14 @@ rollout rlt_tools_catalog "Tools"
     on btn_add_mesh pressed do
     (
         MD_Data.ActiveTask.AddMesh = True
-        MD_Data.ActiveTask.ActiveMesh = 2
         MD_UI.Update()
+        MD_BBox.SwitchMeshes()
     )
 
     on btn_mesh_switch pressed do
     (
         MD_UI.Update()
+        MD_BBox.SwitchMeshes()
     )
 
     on btn_set_pivot pressed do

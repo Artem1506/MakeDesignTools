@@ -120,7 +120,7 @@ struct GlobalData
 					arr_ids = #()
 					for j in k["children"] as array do 
 					(
-						append arr_names j["name"]
+						append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
 						append arr_ids j["article"]
 					)
 					append sub_categs arr_names
@@ -293,7 +293,7 @@ struct UI
 
 				-- ToolsCatalog:
 				--Доп. меш
-				if MD_Data.ActiveTask.TransSize == undefined then
+				if MD_Data.ActiveTask.SizeTrans == undefined then
 				(
 					ToolsCatalog.btn_add_mesh.enabled = false
 					ToolsCatalog.btn_mesh_switch.enabled = false
@@ -309,11 +309,11 @@ struct UI
 						case MD_Data.ActiveTask.ActiveMesh of
 						(
 							1:(
-								ToolsCatalog.btn_mesh_switch.text = ">> Add"
+								ToolsCatalog.btn_mesh_switch.text = "<< Main"
 								MD_Data.ActiveTask.ActiveMesh = 2								
 							)
 							2:(
-								ToolsCatalog.btn_mesh_switch.text = "<< Main"
+								ToolsCatalog.btn_mesh_switch.text = ">> Add"
 								MD_Data.ActiveTask.ActiveMesh = 1
 							)							
 						)
@@ -321,7 +321,7 @@ struct UI
 					else 
 					(
 						ToolsCatalog.btn_mesh_switch.enabled = false
-						ToolsCatalog.btn_mesh_switch.text = "<< Main"
+						ToolsCatalog.btn_mesh_switch.text = ">> Add"
 						MD_Data.ActiveTask.ActiveMesh = 1
 					)
 				)
@@ -339,7 +339,7 @@ struct UI
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
 		)
-		
+
 		if SubCategories.Items.Count != 0 then
 		(
 			Tasks.lst_basic_catalog.enabled = true
@@ -443,6 +443,190 @@ struct UI
 	on create do Init()
 )
 
+-- Габаритный контейнер
+struct BoundingBox
+(
+	Layer = undefined,
+	bbox_size = [0, 0, 0],
+	bb_trans_size = [0, 0, 0],
+	pivot_pos = [0, 0, 0],
+	bb = undefined,
+	bb_trans = undefined,
+	arrow = undefined,
+	arrow_trans = undefined,
+	pp = undefined,
+
+	fn Remove =
+	(
+		try(delete $bbox* )catch()
+		try(delete $bb_trans* )catch()
+		try(delete $barrow* )catch()
+		try(delete $ppoin* )catch()
+		try(LayerManager.deleteLayerByName mdt_temp_layer)catch()
+
+		gc()
+	),
+
+	fn CreateBBox =
+	(
+		-- Bounding box
+		bb = Box name:(uniqueName "bbox_") length:bbox_size[1] width:bbox_size[2] height:bbox_size[3] isSelected:off
+		bb_trans = Box name:(uniqueName "bb_trans_") length:bb_trans_size[1] width:bb_trans_size[2] height:bb_trans_size[3] isSelected:off
+		arrow_rad = bb.length/8.0
+		arrow_offset = ConvertValueToSystemUnits #cm 10.0
+		arrow = Ngon name:(uniqueName "barrow_") radius:arrow_rad cornerRadius:0 nsides:3 circular:off scribe:1 pos:[(bb.width/2.0 + arrow_rad/2.0 + arrow_offset),0,0] isSelected:off
+		arrow_trans = Ngon name:(uniqueName "barrow_") radius:arrow_rad cornerRadius:0 nsides:3 circular:off scribe:1 pos:[(bb.width/2.0 + arrow_rad/2.0 + arrow_offset),0,0] isSelected:off
+		pp = Point name:(uniqueName "ppoint_") isSelected:off
+		cur_sel = selection
+
+		bb.boxmode = bb_trans.boxmode = on
+		bb.showFrozenInGray = bb_trans.showFrozenInGray = arrow.showFrozenInGray = arrow_trans.showFrozenInGray = off
+		bb.isFrozen = bb_trans.isFrozen = arrow.isFrozen = arrow_trans.isFrozen = on
+		bb.isSelected = bb_trans.isSelected = arrow.isSelected = arrow_trans.isSelected = off
+		bb.renderable = bb_trans.renderable = arrow.renderable = arrow_trans.renderable = off
+		bb.wireColor = arrow.wireColor = (color 90 150 255)
+		bb_trans.wireColor = arrow_trans.wireColor = (color 255 100 50)
+		bb_trans.isHidden = arrow_trans.isHidden = true
+
+		pp.centermarker = on
+		pp.Box = off
+		pp.cross = off
+		pp.axistripod = off
+		pp.drawontop = on
+		pp.showFrozenInGray = off
+		pp.isFrozen = on
+		pp.wireColor = (color 14 255 2)
+		pp.ishidden = on
+
+		Layer.addnode bb
+		Layer.addnode bb_trans
+		Layer.addnode arrow
+		Layer.addnode arrow_trans
+		Layer.addnode pp
+
+		select cur_sel
+		snapMode.toFrozen = true
+		completeRedraw()
+	),
+
+	fn CreateLayer =
+	(
+		LayerManager.newLayerFromName mdt_temp_layer
+		Layer = LayerManager.getLayerFromName mdt_temp_layer
+		Layer.lock = on
+		if MD_UI.Settings.ckbx_show_bb.checked == true then Layer.ishidden  = off
+		else Layer.ishidden  = on
+	),
+
+	fn write_pivot_data =
+	(
+		-- task_dir = get_active_categ_lib_path() + "\\" + active_task_id + "\\Task"
+		-- data_file = task_dir + "\\data.json"
+		-- ReadDataFile data_file
+		-- data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
+		-- WriteDataFile data_file
+	),
+	
+	fn read_pivot_data =
+	(
+		data_file = MD_Data.ActiveTask.File
+		ReadDataFile data_file
+		try(pivot_pos = data["pivot"])catch()
+	),
+
+	fn ResizeBBox =
+	(
+		-- local bb = $bbox*[1]
+		-- local bb_trans = $bb_trans*[1]
+		-- local arrow = $barrow*[1]
+		-- local pp = $ppoint*[1]
+		local arrow_offset = ConvertValueToSystemUnits #cm 10.0
+
+		try
+		(
+			read_pivot_data()
+			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+		)
+		catch()
+
+		if MD_Data.ActiveTask.State == STATES[1] then 
+		(
+			bbox_size = [0, 0, 0]
+			bb_trans_size =  [0, 0, 0]
+			pp.isHidden = true
+		)
+		else
+		(
+			bb_w = MD_Data.ActiveTask.Size[1]
+			bb_d = MD_Data.ActiveTask.Size[2]
+			bb_h = MD_Data.ActiveTask.Size[3]
+
+			bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
+			ConvertValueToSystemUnits #cm bb_d,\
+			ConvertValueToSystemUnits #cm bb_h]
+
+			if MD_Data.ActiveTask.SizeTrans != undefined then
+			(
+				bt_w = MD_Data.ActiveTask.SizeTrans[1]
+				bt_d = MD_Data.ActiveTask.SizeTrans[2]
+				bt_h = MD_Data.ActiveTask.SizeTrans[3]
+
+				bb_trans_size = [ConvertValueToSystemUnits #cm bt_w,\
+				ConvertValueToSystemUnits #cm bt_d,\
+				ConvertValueToSystemUnits #cm bt_h]
+			)
+
+			if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
+			else pp.isHidden = true
+		)
+
+		bb.length = bbox_size[1]
+		bb.width = bbox_size[2]
+		bb.height = bbox_size[3]
+		bb_trans.length = bb_trans_size[1]
+		bb_trans.width = bb_trans_size[2]
+		bb_trans.height = bb_trans_size[3]
+
+		local arrow_rad = bb.length/8.0
+
+		arrow.radius = arrow_rad
+		arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+		arrow_trans.radius = arrow_rad
+		arrow_trans.pos.x = (bb_trans.width/2.0 + arrow_rad/2.0 + arrow_offset)
+
+		completeRedraw()
+	),
+
+	fn SwitchMeshes =
+	(
+		case MD_Data.ActiveTask.ActiveMesh of
+		(
+			1:(
+				this.bb.isHidden = false
+				this.arrow.isHidden = false
+				this.bb_trans.isHidden = true
+				this.arrow_trans.isHidden = true
+			)
+			2:(
+				this.bb.isHidden = true
+				this.arrow.isHidden = true
+				this.bb_trans.isHidden = false
+				this.arrow_trans.isHidden = false
+			)
+		)
+	),
+
+	fn Init =
+	(
+		Remove()
+		CreateLayer()
+		CreateBBox()
+		try ResizeBBox() catch()
+		try SwitchMeshes() catch()
+	),
+	on create do Init()
+)
+
 
 -- Структура материала активного задания
 struct TaskMaterial
@@ -466,7 +650,7 @@ struct Task
 	Website = undefined,
 	Size = undefined,
 	Group = undefined,
-	TransSize = undefined,
+	SizeTrans = undefined,
 	UserName = undefined,
 	Materials = #(),
 	BBoxSize = [0, 0, 0],
@@ -490,7 +674,7 @@ struct Task
                 Website = data["web_site"]
                 Size = #(data["size"][1] as float, data["size"][2]  as float, data["size"][3]  as float)
                 Group = undefined
-                Trans = undefined
+                try SizeTrans = #(data["size_trans"][1] as float, data["size_trans"][2]  as float, data["size_trans"][3]  as float) catch()
                 UserName = undefined
                 Materials = #()
                 BBoxSize = [0, 0, 0]

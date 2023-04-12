@@ -21,12 +21,13 @@
 	include "rlt_tools_projects.ms"
 	include "rlt_about.ms"
     include "rlt_make_design.ms"
-
+    
     MD_Data = GlobalData()
     MD_UI = UI()
+    MD_BBox = BoundingBox()
+    MD_Data.ActiveTask = Task File:@"d:\MakeDesignLib\Catalog\06-02-009\06-02-009-014\Task\data.json"
 
-    -- MD_Data.ActiveTask = Task()
     MD_UI.Update()
-   
+
 	ok
 )

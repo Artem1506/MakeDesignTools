@@ -61,12 +61,12 @@ fn SetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 	setINISetting ini_file_path roll.name "opened" (roll.open as string)
 )
 
-fn ReadDataFile file =
+fn ReadDataFile data_file =
 (
     -- Читает данных из json файла и записывает в глобальную переменную "data"
     --> PyWrapperBase
 
-    ::data_file = file
+    ::data_file = data_file
     ::data = undefined
 
     local py_code = ""
@@ -91,6 +91,7 @@ fn hex_to_rgb hex_value =
 fn get_max_ui_bg_color =
 (
     -- Возвращает цвет интерфейса 3ds max
+
 	py_code = "from pymxs import runtime as rt" + "\n"
 	py_code += "import xml.etree.ElementTree as ET" + "\n"
 	py_code += "tree = ET.parse(rt.MAX_CLRX_CONFIG_FILE)" + "\n"
@@ -105,16 +106,10 @@ fn get_max_ui_bg_color =
 	MAX_UI_BG_COLOR = hex_to_rgb MAX_UI_BG_COLOR
 )
 
--- fn SetSysEnvVar var val =
--- (
--- 	HiddenDOSCommand ("setx \"" + var + "\" \"" + val + "\" /m") prompt:"" donotwait:true ExitCode:&result
-
---     if result == 0 then (DisplayTempPrompt (var + " = " + val) 3000; return val)
---     else (DisplayTempPrompt "Error" 3000; return "")
--- )
-
 fn SetUserEnvVar var val =
 (
+    -- Прописывает в сис. реестр (HKEY_CURRENT_USER) пользовательскую переменную
+
     ::var = var
     ::val = val
     ::result = ""
@@ -135,6 +130,8 @@ fn SetUserEnvVar var val =
 
 fn GetUserEnvVar var =
 (
+    -- Читает из сис. реестра (HKEY_CURRENT_USER) пользовательскую переменную
+
     ::var = var
     ::result = ""
 
@@ -145,4 +142,28 @@ fn GetUserEnvVar var =
 	python.Execute py_code
 
     return result
+)
+
+fn ConvertValueToSystemUnits input_units val = 
+(
+    -- Конвертирует input_units в системные единицы
+
+	local new_val = undefined
+	local factor = case units.systemType of
+	(
+		#Millimeters: 1.0
+		#Centimeters: 0.1
+		#Meters: 0.001
+		#Kilometers: 0.000001
+	)
+	local shift = case input_units of
+	(
+		#mm: 1.0
+		#cm: 10.0
+		#m: 100.0
+		#km: 100000.0
+	)
+	new_val = val*factor*shift
+
+	new_val
 )

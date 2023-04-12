@@ -65,6 +65,7 @@ DN_CLR_X = (dotNetClass "system.Drawing.color").FromArgb 255 200 50 50
 DN_CLR_OK = (dotNetClass "system.Drawing.color").FromArgb 255 10 130 10
 dn_max_ui_bg_color = undefined
 progress_dlg_title = ""
+mdt_temp_layer = "_mdt_temp_"
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018
@@ -95,3 +96,4 @@ MD_Log
 MD_Tooltips
 MD_Data
 MD_UI
+MD_BBox

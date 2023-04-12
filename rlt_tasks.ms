@@ -31,6 +31,7 @@ rollout rlt_tasks "Tasks"
     
     on lst_basic_catalog selected arg do
     (
+        try lst_sub_catalog.selection = 1 catch()
         MD_UI.Update()
     )
 
@@ -103,6 +104,7 @@ rollout rlt_tasks "Tasks"
     on btn_work_state pressed do
     (
         MD_Data.ActiveTask.State = STATES[2]
+        MD_BBox.ResizeBBox()
         MD_Data.ActiveTask.ActiveMesh = 1
         MD_UI.Update()
     )
@@ -112,6 +114,7 @@ rollout rlt_tasks "Tasks"
         MD_Data.ActiveTask.State = STATES[1]
         MD_Data.ActiveTask.ActiveMesh = 1
         MD_UI.Update()
+        MD_BBox.ResizeBBox()
     )
 
     on lv_add ColumnClick s e do
