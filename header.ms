@@ -6,7 +6,7 @@ global PY_BUILTINS = Python.Import "builtins"
 
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
-MD_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
+MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
 ICONS_DIR = pathConfig.appendPath MAIN_DIR "icons"
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "http_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
@@ -18,12 +18,13 @@ HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath HTTP_CLIENT_DIR "md_requests.con
 -- Файл конфигурации MDT
 MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 
--- файлы для хранения импортрованных данных
+-- Файлы для хранения данных
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
 MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
+MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR "common_data.json"
 
--- Иконки
+-- Файлы иконок
 ICON_NO_PRVIEW_FILE = pathConfig.appendPath ICONS_DIR "mdt_no_preview.png"
 ICON_MDT_FILE = pathConfig.appendPath ICONS_DIR "mdt_48.png"
 

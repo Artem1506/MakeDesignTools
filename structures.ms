@@ -607,59 +607,121 @@ struct BoundingBox
 -- Структура материала активного задания
 struct TaskMaterial
 (
-	parts,
-	material,
-	texture_d,
-	texture_m,
-	texture_n,
-	texture_ard
+	Article = undefined,
+	PartName = undefined,
+	Material = undefined,
+    RefFile = undefined,
+	texture_d = undefined,
+	texture_m = undefined,
+	texture_n = undefined,
+	texture_ard = undefined
 )
 
 -- Структура активного задания
 struct Task
 (
 	File = undefined,
-	Layer = undefined,
 	Article = undefined,
-	State = STATES[1],
-	RefPhoto = undefined,
-    RefPhotoFile = undefined,
+	DateCreate = undefined,
+	Object = undefined,
 	Website = undefined,
-	Size = undefined,
-	Group = undefined,
-	SizeTrans = undefined,
-	UserName = undefined,
 	Materials = #(),
-	BBoxSize = [0, 0, 0],
+	State = STATES[1],
+	Pivot = undefined,
+	Group = undefined,
+	UserId = undefined,
+	UserName = undefined,
+    RefFile = undefined,
+	Size = undefined,
+	SizeTrans = undefined,
+
+	Layer = undefined,
 	Mesh = undefined,
 	AddMesh = undefined,
 	ActiveMesh = 1,
 	SavedWorks = #(),
+	MatLibFile = undefined,
 	Valid = False,
 
-	fn Init = (
-		-- Читает данные задания из json файла
+	fn CreateMaterial =
+	(
 
-        if File != undefined then
+	),
+
+	fn Init = (
+		-- Инициализация данных задания
+
+        if (File != undefined and DoesFileExist File) then
         (
+			-- Читать данные из json файла
             ReadDataFile File
             if data != undefined then
             (
-                Article = data["article"]
-                RefPhoto = undefined
-                RefPhotoFile = undefined
-                Website = data["web_site"]
-                Size = #(
-					data["size"][1],
-					data["size"][2],
-					data["size"][3]
+				local task_file_dir = getFilenamePath File
+				local ref_file_name = data["ref_photo_name"]
+				local ref_file_type = getFilenameType ref_file_name
+				local task_dir_files = GetFiles (task_file_dir + "/*.*")
+				local mat_ref_files = #()
+
+				-- Найти и отсортировать файлы референсов
+				for f in task_dir_files do
+				(
+					if (FindString f data["article"]) then
+					(
+						if getFilenameFile f == data["article"] and getFilenameType f == ref_file_type 
+						then RefFile = f
+						else append mat_ref_files f
+					)
 				)
-                Group = undefined
-                try SizeTrans = #(data["size_trans"][1] as float, data["size_trans"][2]  as float, data["size_trans"][3]  as float) catch()
-                UserName = undefined
-                Materials = #()
-                BBoxSize = [0, 0, 0]
-				AddMesh = undefined
+				sort mat_ref_files
+
+                Article = data["article"]
+				DateCreate = data["date_create"]
+				Object = data["object"]
+                Website = data["web_site"]
+				for i = 1 to data["finishing_materials"].count do
+				(
+					local mat = TaskMaterial()
+
+					mat.Article = data["finishing_materials"][i]["article"]
+					mat.PartName = data["finishing_materials"][i]["name_part_object"]
+					mat.Material = data["finishing_materials"][i]["finishing_components"]
+					mat.RefFile = mat_ref_files[i]
+
+					append Materials mat
+				)
+				State = data["state"]
+				Pivot = data["pivot"]
+				Group = data["tags"][1]
+				UserId = data["userId"]
+                UserName = data["userName"]
+                Size = #(
+					ConvertValueToSystemUnits #cm data["size"][1],
+					ConvertValueToSystemUnits #cm data["size"][2],
+					ConvertValueToSystemUnits #cm data["size"][3]
+				)
+                try SizeTrans = #(
+					ConvertValueToSystemUnits #cm data["size_trans"][1], 
+					ConvertValueToSystemUnits #cm data["size_trans"][2], 
+					ConvertValueToSystemUnits #cm data["size_trans"][3]
+				) 
+				catch()
+				
+				-- print "##############"
+				-- print File
+				-- print Article
+				-- print DateCreate
+				-- print Object
+				-- print Website
+				-- print Materials
+				-- print State
+				-- print Pivot
+				-- print Group
+				-- print UserId
+				-- print UserName
+				-- print RefFile
+				-- print Size
+				-- print SizeTrans	
             )
         )
 	),
