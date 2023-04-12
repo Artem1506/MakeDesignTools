@@ -21,18 +21,26 @@ rollout rlt_tools_catalog "Tools"
     (
   
     )  
-      
+
     on btn_add_mesh pressed do
     (
-        MD_Data.ActiveTask.AddMesh = True
-        MD_UI.Update()
-        MD_BBox.SwitchMeshes()
+        if MD_Data.ActiveTask.AddMesh == undefined then
+        (
+            MD_Data.ActiveTask.AddMesh = True
+            MD_UI.Update()
+            MD_BBox.Update()
+        )
     )
 
     on btn_mesh_switch pressed do
     (
+        case MD_Data.ActiveTask.ActiveMesh of
+        (
+            1:(MD_Data.ActiveTask.ActiveMesh = 2)
+            2:(MD_Data.ActiveTask.ActiveMesh = 1)
+        )
         MD_UI.Update()
-        MD_BBox.SwitchMeshes()
+        MD_BBox.Update()
     )
 
     on btn_set_pivot pressed do

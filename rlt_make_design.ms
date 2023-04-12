@@ -19,7 +19,7 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try(destroyDialog dlg_load_work)catch()
         try(destroyDialog dlg_validation)catch()
 
-        for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
+        -- for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
         MD_BBox.Remove()
     )
 )
