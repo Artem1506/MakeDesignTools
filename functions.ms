@@ -146,7 +146,9 @@ fn GetUserEnvVar var =
 
 fn ConvertValueToSystemUnits input_units val = 
 (
-    -- Конвертирует input_units в системные единицы
+    -- Возращает изменённое входное значение, исходя из текущих системных единиц измерения
+	-- input_units: Единицы измерения входного числа [#mm | #cm | #m | #km]
+	-- val: Входное значение [float | int]
 
 	local new_val = undefined
 	local factor = case units.systemType of
@@ -166,4 +168,118 @@ fn ConvertValueToSystemUnits input_units val =
 	new_val = val*factor*shift
 
 	new_val
+)
+
+fn GetAllLayerNodes layer_name =
+(
+	-- Возвращает массив объектов находящихся на указанным слое, включая подслои
+	-- layer_name: Имя слоя [string]
+
+	local layer = LayerManager.getLayerFromName layer_name
+	local nodes = #()
+	
+	if layer != undefined then
+	(
+		local num_sub_layers = layer.getNumChildren()
+		
+		layer.nodes &nodes
+		if num_sub_layers != 0 then
+		(
+			for i = 1 to num_sub_layers do
+			(
+				local sl = layer.getChild i
+				local arr = #()
+				sl.nodes &arr
+				join nodes arr
+			)		
+		)
+	)
+	
+	nodes
+)
+
+fn DeleteAllSubLayers layer_name =
+(
+	-- Удаляет все пустые подслои в указанном слое
+	-- layer_name: Имя слоя [string]
+
+	local layer = LayerManager.getLayerFromName layer_name
+	local num_sub_layers = layer.getNumChildren()
+	local sub_layers = #()
+
+	if num_sub_layers != 0 then
+	(
+		for i = 1 to num_sub_layers do
+		(
+			local sl = layer.getChild i
+			append sub_layers sl
+		)
+		for sl in sub_layers do (LayerManager.deleteLayerByName sl.name)
+	)
+)
+
+fn CreatePreviewFromImageFile img_file max_size fill_bg:true bg_color:DN_CLR_BG type:#max =
+(
+	-- Создаёт битмап из указанного файла с изображением
+	-- img_file: Имя файла с изображением [string]
+	-- max_size: Размер битмапа по максимальной стороне [int]
+	-- fill_bg: Заливать или нет задний фон (имеет значение, если изображение не квадратное) [bool]
+	-- bg_color: Цвет заливки для заднего фона [int]
+	-- type: Тип возвращаемого объекта [#max | #dotnet]
+	-- Возвращает объект класса BitMap, если указан параметр type = #max, или dotNetObject, если type = #dotnet
+
+	local clipboard = dotnetclass "Clipboard"
+	local img
+	local source_size = #()
+	local target_size = #()
+	local fill_brush
+
+	if classof img_file == BitMap then
+	(
+		setclipboardBitmap img_file
+		img = clipboard.GetImage()
+	)
+	else if classof img_file == String then
+	(
+		img = (DotNetClass "System.Drawing.Image").FromFile img_file
+	)
+
+	source_size = #(img.width, img.height)
+
+    aspect = ((amin source_size) as float)/((amax source_size) as float)
+	if aspect == 1.0 then 
+	(
+		target_size[1] = max_size
+		target_size[2] = max_size
+	)
+	else
+	(
+		target_size[findItem source_size (amax source_size)] = max_size
+		target_size[findItem source_size (amin source_size)] = (max_size * aspect) as integer
+	)
+    bm_target = DotNetObject "System.Drawing.Bitmap" max_size max_size
+    graphic = (DotNetClass "System.Drawing.Graphics").FromImage bm_target
+    graphic.CompositingQuality = graphic.CompositingQuality.HighSpeed
+    graphic.InterpolationMode = graphic.InterpolationMode.Default
+    graphic.PixelOffsetMode = graphic.PixelOffsetMode.None
+	if fill_bg == true then
+	(
+		fill_brush = dotnetobject "System.Drawing.SolidBrush" DN_CLR_BG
+		graphic.FillRectangle fill_brush 0 0 max_size max_size
+	)
+	else
+	(
+		fill_brush = dotnetobject "System.Drawing.SolidBrush" DN_CLR_TRANSP
+		graphic.FillRectangle fill_brush 0 0 max_size max_size
+	)
+    graphic.DrawImage img ((max_size - target_size[1])/2) ((max_size - target_size[2])/2) target_size[1] target_size[2]
+    img.Dispose()
+    clipboard.SetImage bm_target
+	if type == #dotnet then bm = bm_target
+	else bm = getclipboardBitmap()
+
+	free source_size
+	free target_size
+
+    bm
 )

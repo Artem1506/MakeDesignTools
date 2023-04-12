@@ -1,4 +1,5 @@
 (
+    clearListener()
     try(cui.UnRegisterDialogBar ::rlt_make_design)catch()
     try(destroyDialog ::rlt_make_design)catch()
 
@@ -27,6 +28,7 @@
     MD_BBox = BoundingBox()
     MD_Data.ActiveTask = Task File:@"d:\MakeDesignLib\Catalog\06-02-009\06-02-009-014\Task\data.json"
 
+    MD_UI.FillData()
     MD_UI.Update()
 
 	ok

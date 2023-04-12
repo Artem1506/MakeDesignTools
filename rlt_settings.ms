@@ -30,12 +30,12 @@ rollout rlt_settings "Settings"
     
     on ckbx_show_bb changed arg do 
     (
-        
+        MD_BBox.Update()
     )
 
     on ckbx_auto_pivot changed arg do 
     (
-   
+        MD_BBox.Update()
     ) 
 
     on ckbx_tooltips changed arg do 

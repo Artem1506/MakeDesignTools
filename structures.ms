@@ -170,15 +170,19 @@ struct UI
 	ToolsProjects = rlt_tools_projects,
 	Help = rlt_about,
 	Dialogs = UI_Dialogs(),
-	Sections = Tasks.lst_sections,
-	Categories = Tasks.lst_basic_catalog,
-	SubCategories = Tasks.lst_sub_catalog,
-	ListMain = Tasks.lv_main,
-	ListAdd = Tasks.lv_add,
+	Sections = rlt_tasks.lst_sections,
+	Categories = rlt_tasks.lst_basic_catalog,
+	SubCategories = rlt_tasks.lst_sub_catalog,
+	ListMain = rlt_tasks.lv_main,
+	ListAdd = rlt_tasks.lv_add,
+	InfoCatalogPreview = rlt_info_catalog.img_prev,
+	InfoCatalogWeb = rlt_info_catalog.hpl_site,
+	InfoCatalogSize = rlt_info_catalog.lbl_size_txt,
 	ActiveMainItem = undefined,
 	ActiveAddItem = undefined,
 	CheckedItems = undefined,
-	
+	EMPTY_PREVIEW = undefined,
+
 	fn InitLists = (
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
 
@@ -230,6 +234,27 @@ struct UI
 				Categories.Items = MD_Data.main_categs
 				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
 				catch(SubCategories.Items = #())
+
+				try (
+					if MD_Data.ActiveTask.RefBitmap != undefined then
+					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.RefBitmap
+				) 
+				catch(MD_Log.Error "Не удалось загрузить изображение референса.")
+				
+				try (
+					InfoCatalogWeb.text = ""
+					InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+					InfoCatalogWeb.address = MD_Data.ActiveTask.Website
+				)
+				catch()
+
+				try (
+					local size_txt = ""
+					size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as string) + "    ")
+					size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as string) + "    ")
+					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as string))
+					InfoCatalogSize.text = size_txt
+				) catch()
 			)
 			2:(
 				Categories.Items = MD_Data.proj_main_categs
@@ -266,7 +291,7 @@ struct UI
 					)
 
 					-- Сохранить работу
-					if (MD_Data.ActiveTask.Layer != undefined and MD_Data.ActiveTask.Layer.getNumChildren != 0) then
+					if (MD_Data.ActiveTask.Layer != undefined and MD_Data.ActiveTask.Layer.getNumChildren() != 0) then
 					(
 						ToolsCatalog.btn_save_work.enabled = true
 					)
@@ -288,13 +313,11 @@ struct UI
 
 			)
 		)
-		ListMain.Focus()
 	),
 
 	fn Update = (
 		-- Обновляет интерфейс исходя из текущих данных
-		FillData()
-
+		
 		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
 		(
 			Tasks.btn_get.enabled = true
@@ -438,7 +461,14 @@ struct UI
 		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
 		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса.")
 
+		try(
+			EMPTY_PREVIEW = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE
+			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
+		)
+		catch (MD_Log.Error "Не удалось загрузить изображение \"NO PREVIEW\".")
+
 		Sections.Selection = MD_Data.ActiveSection
+
 		SwitchRollouts()
 		FillData()
 		Update()
@@ -516,29 +546,23 @@ struct BoundingBox
 
 	fn write_pivot_data =
 	(
-		-- task_dir = get_active_categ_lib_path() + "\\" + active_task_id + "\\Task"
-		-- data_file = task_dir + "\\data.json"
-		-- ReadDataFile data_file
-		-- data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
-		-- WriteDataFile data_file
+		ReadDataFile MD_Data.ActiveTask.File
+		data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
+		WriteDataFile MD_Data.ActiveTask.File
 	),
 	
 	fn read_pivot_data =
 	(
-		data_file = MD_Data.ActiveTask.File
-		ReadDataFile data_file
-		try(pivot_pos = data["pivot"])catch()
+		ReadDataFile MD_Data.ActiveTask.File
+		pivot_pos = data["pivot"]
 	),
 
 	fn Update =
 	(
 		local arrow_offset = ConvertValueToSystemUnits #cm 10.0
-		-- try
-		-- (
-		-- 	read_pivot_data()
-		-- 	pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
-		-- )
-		-- catch()
+
+		try read_pivot_data() catch()
+		pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
 
 		if MD_Data.ActiveTask.State == STATES[1] then 
 		(
@@ -580,6 +604,7 @@ struct BoundingBox
 
 			if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
 			else pp.isHidden = true
+			
 			arrow_rad = ConvertValueToSystemUnits #cm 20.0
 
 		)
@@ -590,6 +615,9 @@ struct BoundingBox
 		arrow.radius = arrow_rad
 		arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
 
+		if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
+		else Layer.on = false
+
 		completeRedraw()
 	),
 
@@ -598,11 +626,9 @@ struct BoundingBox
 		Remove()
 		CreateLayer()
 		CreateBBox()
-		-- try Update() catch()
 	),
 	on create do Init()
 )
-
 
 -- Структура материала активного задания
 struct TaskMaterial
@@ -617,7 +643,7 @@ struct TaskMaterial
 	texture_ard = undefined
 )
 
--- Структура активного задания
+-- Структура задания
 struct Task
 (
 	File = undefined,
@@ -640,12 +666,33 @@ struct Task
 	AddMesh = undefined,
 	ActiveMesh = 1,
 	SavedWorks = #(),
+	RefBitmap = undefined,
+	MatRefBitmaps = #(),
 	MatLibFile = undefined,
 	Valid = False,
 
 	fn CreateMaterial =
 	(
 
+	),
+
+	fn CreateWorkLayer =
+	(
+		LayerManager.newLayerFromName Article
+		Layer = LayerManager.getLayerFromName Article
+        Layer.on = true
+        Layer.current = true   
+	),
+
+	fn DeleteWorkLayer =
+	(
+		local nodes = GetAllLayerNodes Article
+
+		for n in nodes do DEFAULT_LAYER.addNode n
+		DeleteAllSubLayers Article
+		LayerManager.deleteLayerByName Article
+
+		Layer = undefined
 	),
 
 	fn Init = (
@@ -728,4 +775,3 @@ struct Task
 
 	on create do Init()
 )
-

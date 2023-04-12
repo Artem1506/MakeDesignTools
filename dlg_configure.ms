@@ -30,6 +30,7 @@ rollout dlg_configure "Configure" width:400 height:164
     on dlg_configure close do
     (
         MD_Data.Init()
+        MD_UI.FillData()
         MD_UI.Update()
     )
 

@@ -233,6 +233,6 @@ struct DotNetLib
 		ctrl
 	)
 )
-DN_LIB = DotNetLib()
+DN_Lib = DotNetLib()
 
 

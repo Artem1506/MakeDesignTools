@@ -26,17 +26,20 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveSection = arg
         MD_UI.SwitchRollouts()
+        MD_UI.FillData()
         MD_UI.Update()
     )
     
     on lst_basic_catalog selected arg do
     (
         try lst_sub_catalog.selection = 1 catch()
+        MD_UI.FillData()
         MD_UI.Update()
     )
 
     on lst_sub_catalog selected arg do
     (
+        MD_UI.FillData()
         MD_UI.Update()
     )
 
@@ -105,6 +108,8 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveTask.State = STATES[2]
         MD_Data.ActiveTask.ActiveMesh = 1
+        MD_Data.ActiveTask.CreateWorkLayer()
+        MD_UI.FillData()
         MD_UI.Update()
         MD_BBox.Update()
     )
@@ -113,6 +118,8 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveTask.State = STATES[1]
         MD_Data.ActiveTask.ActiveMesh = 1
+        MD_Data.ActiveTask.DeleteWorkLayer()
+        MD_UI.FillData()
         MD_UI.Update()
         MD_BBox.Update()
     )
