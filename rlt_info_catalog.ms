@@ -3,7 +3,7 @@ rollout rlt_info_catalog "Info"
 (
     imgTag 'img_prev' "" offset:[1, V_MARGIN] bitmap:undefined width:CTRL_WIDTH_1 height:CTRL_WIDTH_1 align:#center style:#bmp_center
     label 'lbl_site' "Website:" width:50 offset:[-3, 2] align:#left across:2
-    hyperLink 'hpl_site' "" address:"" width:166 offset:[-50, 2] align:#left visitedColor:(color 100 160 255) enabled:false
+    hyperLink 'hpl_site' "" address:"" width:166 offset:[-50, 2] align:#left visitedColor:(color 110 180 255) Color:(color 110 180 255) hoverColor:(color 120 190 255) enabled:false
     label 'lbl_size' "Size(cm):" width:50 offset:[-4, 0] align:#left across:2
     label 'lbl_size_txt' "" width:165 offset:[-50, 0] align:#left
 

@@ -23,6 +23,7 @@ MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
 MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
 MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR "common_data.json"
+TASK_FILE_NAME = "data.json"
 
 -- Файлы иконок
 ICON_NO_PRVIEW_FILE = pathConfig.appendPath ICONS_DIR "mdt_no_preview.png"
@@ -31,11 +32,12 @@ ICON_MDT_FILE = pathConfig.appendPath ICONS_DIR "mdt_48.png"
 -- Инфо
 author = "Зайцев Павел"
 version = "1.0.0"
-docs_file = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
+DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
 
 -- Списки
 STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
+TASK_INNER_DIRS = #("Task", "InWork")
 MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
 ADD_LIST_COLUMNS_1 = #("Parts", "Material", "D", "M", "N", "ARD")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
@@ -66,6 +68,9 @@ DN_CLR_X = DN_Lib.dnColor 200 50 50 255
 DN_CLR_OK = DN_Lib.dnColor 10 130 10 255
 DN_CLR_TRANSP = DN_Lib.dnColor 0 0 0 255
 DN_CLR_BG = DN_Lib.dnColor  30 30 30 255
+CLR_LINK = color 100 190 255
+CLR_BBOX_MAIN = color 60 150 255
+CLR_BBOX_ADD = color 255 100 50
 DEFAULT_LAYER = LayerManager.getLayer 0
 dn_max_ui_bg_color = undefined
 progress_dlg_title = ""

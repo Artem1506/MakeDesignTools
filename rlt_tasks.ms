@@ -14,7 +14,7 @@ rollout rlt_tasks "Tasks"
     
     on rlt_tasks open do
     (
-
+        
     )
     
     on rlt_tasks close do
@@ -24,23 +24,55 @@ rollout rlt_tasks "Tasks"
 
     on lst_sections selected arg do 
     (
+        MD_Callbacks.Add()
+        try (
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+            MD_Data.ActiveTaskIndex = 1
+        )catch(
+            MD_Data.ActiveTask = undefined
+            MD_Data.ActiveTaskIndex = undefined
+        )
         MD_Data.ActiveSection = arg
         MD_UI.SwitchRollouts()
-        MD_UI.FillData()
+        MD_Data.Update()
         MD_UI.Update()
+        MD_BBox.Update()
     )
     
     on lst_basic_catalog selected arg do
     (
+        MD_Callbacks.Add()
+        try (
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+            MD_Data.ActiveTaskIndex = 1
+        )catch(
+            MD_Data.ActiveTask = undefined
+            MD_Data.ActiveTaskIndex = undefined
+        )
+        try MD_Data.SwitchWorkLayer() catch()
         try lst_sub_catalog.selection = 1 catch()
-        MD_UI.FillData()
+        MD_Data.ActiveCategory = arg
+        MD_Data.Update()
         MD_UI.Update()
+        MD_BBox.Update()
     )
 
     on lst_sub_catalog selected arg do
     (
-        MD_UI.FillData()
+        MD_Callbacks.Add()
+        try (
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+            MD_Data.ActiveTaskIndex = 1
+        )catch(
+            MD_Data.ActiveTask = undefined
+            MD_Data.ActiveTaskIndex = undefined
+        )
+        try MD_Data.SwitchWorkLayer() catch()
+        MD_Data.ActiveCategory = lst_basic_catalog.selection
+        MD_Data.ActiveSubCategory = arg
+        MD_Data.Update()
         MD_UI.Update()
+        MD_BBox.Update()
     )
 
     on lst_sub_catalog rightClick do
@@ -91,7 +123,12 @@ rollout rlt_tasks "Tasks"
 
     on lv_main Click self arg do
     (
-  
+        MD_Callbacks.Add()
+        MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
+        MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
+        try MD_Data.SwitchWorkLayer() catch()
+        MD_UI.Update()
+        MD_BBox.Update()
     )
 
     on lv_add Click self arg do
@@ -108,8 +145,9 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveTask.State = STATES[2]
         MD_Data.ActiveTask.ActiveMesh = 1
-        MD_Data.ActiveTask.CreateWorkLayer()
-        -- MD_UI.FillData()
+        MD_Data.InWorkTask = MD_Data.ActiveTask.Article
+        MD_Data.CreateWorkLayer()
+        MD_Data.ActiveTask.Update()
         MD_UI.Update()
         MD_BBox.Update()
         MD_Callbacks.Add()
@@ -119,8 +157,9 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveTask.State = STATES[1]
         MD_Data.ActiveTask.ActiveMesh = 1
-        MD_Data.ActiveTask.DeleteWorkLayer()
-        -- MD_UI.FillData()
+        MD_Data.DeleteWorkLayer()
+        MD_Data.InWorkTask = undefined
+        MD_Data.ActiveTask.Update() 
         MD_UI.Update()
         MD_BBox.Update()
         MD_Callbacks.Destruct()

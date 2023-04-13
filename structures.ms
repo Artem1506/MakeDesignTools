@@ -47,25 +47,175 @@ struct UI_Tooltips
 )
 MD_Tooltips = UI_Tooltips()
 
+-- Структура материала активного задания
+struct TaskMaterial
+(
+	Article = undefined,
+	PartName = undefined,
+	Material = undefined,
+    RefFile = undefined,
+	texture_d = undefined,
+	texture_m = undefined,
+	texture_n = undefined,
+	texture_ard = undefined
+)
+
+-- Структура задания
+struct Task
+(
+	File = undefined,
+	Article = undefined,
+	DateCreate = undefined,
+	Object = undefined,
+	Website = undefined,
+	Materials = #(),
+	State = STATES[1],
+	Pivot = undefined,
+	Group = undefined,
+	UserId = undefined,
+	UserName = undefined,
+    RefFile = undefined,
+	Size = undefined,
+	SizeTrans = undefined,
+
+	Layer = undefined,
+	Mesh = undefined,
+	AddMesh = undefined,
+	ActiveMesh = 1,
+	SavedWorks = #(),
+	RefBitmap = undefined,
+	MatRefBitmaps = #(),
+	MatLibFile = undefined,
+	Valid = False,
+
+	fn CreateMaterial =
+	(
+
+	),
+
+	fn Update =
+	(
+		if MD_Data.ActiveTask != undefined then
+		(
+			ReadDataFile File
+			data["state"] = State
+			WriteDataFile File			
+		)
+	),
+
+	fn Init = (
+		-- Инициализация данных задания
+
+        if (File != undefined and DoesFileExist File) then
+        (
+			-- Читать данные из json файла
+            ReadDataFile File
+            if data != undefined then
+            (
+				local task_file_dir = getFilenamePath File
+				local task_in_work_dir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
+				local ref_file_name = data["ref_photo_name"]
+				local ref_file_type = getFilenameType ref_file_name
+				local task_dir_files = GetFiles (task_file_dir + "/*.*")
+				local mat_ref_files = #()
+
+				-- Найти и отсортировать файлы референсов
+				for f in task_dir_files do
+				(
+					if (FindString f data["article"]) then
+					(
+						if getFilenameFile f == data["article"] and getFilenameType f == ref_file_type 
+						then RefFile = f
+						else append mat_ref_files f
+					)
+				)
+				sort mat_ref_files
+
+                Article = data["article"]
+				DateCreate = data["date_create"]
+				Object = data["object"]
+                Website = data["web_site"]
+				for i = 1 to data["finishing_materials"].count do
+				(
+					local mat = TaskMaterial()
+
+					mat.Article = data["finishing_materials"][i]["article"]
+					mat.PartName = data["finishing_materials"][i]["name_part_object"]
+					mat.Material = data["finishing_materials"][i]["finishing_components"]
+					mat.RefFile = mat_ref_files[i]
+
+					append Materials mat
+				)
+				State = data["state"]
+				Pivot = data["pivot"]
+				try Group = data["tags"][1] catch()
+				UserId = data["userId"]
+                UserName = data["userName"]
+                Size = #(
+					ConvertValueToSystemUnits #cm data["size"][1],
+					ConvertValueToSystemUnits #cm data["size"][2],
+					ConvertValueToSystemUnits #cm data["size"][3]
+				)
+                try SizeTrans = #(
+					ConvertValueToSystemUnits #cm data["size_trans"][1], 
+					ConvertValueToSystemUnits #cm data["size_trans"][2], 
+					ConvertValueToSystemUnits #cm data["size_trans"][3]
+				) 
+				catch()
+				
+				if pathConfig.doesFileExist task_in_work_dir then
+				(
+					SavedWorks = GetFiles (task_in_work_dir + "/*.max")
+					sort SavedWorks
+				)
+				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
+
+				-- print "##############"
+				-- print File
+				-- print Article
+				-- print DateCreate
+				-- print Object
+				-- print Website
+				-- print Materials
+				-- print State
+				-- print Pivot
+				-- print Group
+				-- print UserId
+				-- print UserName
+				-- print RefFile
+				-- print Size
+				-- print SizeTrans	
+				-- print SavedWorks
+            )
+        )
+	),
+
+	on create do Init()
+)
+
 -- Структура для работы с глобальными данными
 struct GlobalData
 (
 	Categories = #(),
 	SubCategories = #(),
+	WorkLayer = undefined,
+	-- Tasks lists
 	ValidTasks = #(),
 	InvalidTasks = #(),
 	CompletedTasks = #(),
 	DeletedTasks = #(),
-	CurrentTasks = PY_BUILTINS.dict(), -- Задания для выбранной в данный момент подкатегории
+	Tasks = #(), -- Задания для выбранной в данный момент подкатегории
 	-- Catalog
-	main_categs = #(),
-	main_categ_ids = #(),
-	sub_categs = #(),
-	sub_categ_ids = #(),
+	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
+	main_categ_ids = #(), -- #("01-01", ...)
+	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
+	sub_categ_ids = #(), -- #(#()) Пути к категориям в локальной базе
 	ActiveSection = 1, --> [int] Активная категория
 	ActiveCategory = undefined, --> [int] Активная подкатегория
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.ListMain
+	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
+	InWorkTask = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 	exist_preview = Dictionary(),
 	-- Projects
@@ -77,6 +227,105 @@ struct GlobalData
 
 	Users = #(),
 
+	-- fn GetTasksInActiveCategory =
+	-- (
+	-- 	local activ_dir = sub_categ_ids[ActiveCategory][ActiveSubCategory]
+	-- 	local tasks_dirs = GetDirectories (activ_dir + "\\*")
+	-- 	local arr = #()
+
+	-- 	for dir in tasks_dirs do
+	-- 	(
+	-- 		local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
+	-- 		task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+
+	-- 		append arr (Task File:task_file)
+	-- 	)
+	-- 	Tasks[ActiveCategory][ActiveSubCategory] = arr
+	-- 	arr = #()
+	-- ),
+	fn SwitchWorkLayer =
+	(
+		if ActiveTask.Article == InWorkTask then WorkLayer.on = true
+		else WorkLayer.on = false
+	),
+
+	fn CreateWorkLayer =
+	(
+		if ActiveTask != undefined then
+		(
+			LayerManager.newLayerFromName ActiveTask.Article
+			WorkLayer = LayerManager.getLayerFromName ActiveTask.Article
+			WorkLayer.on
+			WorkLayer.current = true
+		)
+	),
+
+	fn DeleteWorkLayer =
+	(
+		if ActiveTask != undefined then
+		(
+			local nodes = GetAllLayerNodes WorkLayer.name
+
+			for n in nodes do DEFAULT_LAYER.addNode n
+			DeleteAllSubLayers WorkLayer.name
+			LayerManager.deleteLayerByName WorkLayer.name
+		)
+		WorkLayer = undefined
+	),
+
+	fn GetTasksInActiveCategory =
+	(
+		local activ_dir = sub_categ_ids[ActiveCategory][ActiveSubCategory]
+		local tasks_dirs = GetDirectories (activ_dir + "\\*")
+
+		Tasks = #()
+
+		for dir in tasks_dirs do
+		(
+			local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
+			task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+
+			append Tasks (Task File:task_file)
+		)
+	),
+
+	fn Update =
+	(
+		case ActiveSection of
+		(
+			1:(
+				try (GetTasksInActiveCategory()) catch()
+
+				if Tasks.count != 0 then
+				(
+					-- Установить активное задание
+					if ActiveTaskIndex == undefined then
+					ActiveTask = Tasks[1]
+					else ActiveTask = Tasks[ActiveTaskIndex]
+
+					-- Установить рабочее состояние
+					if ActiveTask != undefined then
+					(
+						if ActiveTask.State != STATES[1] then
+						(
+							InWorkTask = ActiveTask.Article
+							CreateWorkLayer()				
+						)
+					)						
+				)
+				else 
+				(
+					ActiveTask = undefined
+
+					try MD_Data.SwitchWorkLayer() catch()
+				)
+			)
+			2:(
+
+			)
+		)
+	),
+
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
 		Categories = #()
@@ -85,8 +334,9 @@ struct GlobalData
 		InvalidTasks = #()
 		CompletedTasks = #()
 		DeletedTasks = #()
-		CurrentTasks = PY_BUILTINS.dict()
+		CurrentTasks = #()
 
+		-- Импорт данных каталога объектов
 		ReadDataFile MD_CATALOG_DATA_FILE
 
 		exist_preview = #()
@@ -96,11 +346,11 @@ struct GlobalData
 		sub_categs = #()
 		sub_categ_ids = #()
 
-		free proj_exist_preview
-		free proj_main_categs
-		free proj_main_categ_ids
-		free proj_sub_categs
-		free proj_sub_categ_ids
+		proj_exist_preview = #()
+		proj_main_categs = #()
+		proj_main_categ_ids = #()
+		proj_sub_categs = #()
+		proj_sub_categ_ids = #()
 
 		try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
 		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
@@ -118,22 +368,26 @@ struct GlobalData
 					append main_categ_ids k["article"]
 					arr_names = #()
 					arr_ids = #()
+					arr_tasks = #()
 					for j in k["children"] as array do 
 					(
 						append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
-						append arr_ids j["article"]
+						-- append arr_ids j["article"]
+						sub_categ_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+						sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
+						append arr_ids sub_categ_dir
+						append arr_tasks undefined
 					)
 					append sub_categs arr_names
 					append sub_categ_ids arr_ids
+					-- append Tasks arr_tasks
 				)
 			)
 			
-			free arr_names
-			free arr_ids
-
 			local titles = #()
 			local us_ids = #()
 
+			-- Импорт данных пользователей
 			ReadDataFile MD_USERS_DATA_FILE
 			for i in data as array do 
 			(
@@ -142,8 +396,14 @@ struct GlobalData
 			)
 			append users titles
 			append users us_ids
+
+			arr_names = #()
+			arr_ids = #()
+			arr_tasks = #()
 		)
+
 	),
+
 	on create do Init()
 )
 
@@ -231,6 +491,64 @@ struct UI
 				MD_Data.ActiveCategory = Categories.Selection
 				MD_Data.ActiveSubCategory = SubCategories.Selection
 
+				-- Заполнить данными список заданий панели Tasks
+				local main_items = #()
+				local item_index = 0
+				local cur_sel = undefined
+
+				-- Индекс выделенного элемента в стике
+				if ListMain.SelectedItems.Count != 0 then cur_sel = ListMain.SelectedItems.Item[0].Index
+
+				for task in MD_Data.Tasks do
+				(
+					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
+					dn_list_item.Checked = false
+					dn_list_item.ForeColor = DN_CLR_DEFAULT
+
+					-- State
+					if task.State == STATES[2] then 
+					(
+						dn_list_item.SubItems.add task.State
+						if task.Article == MD_Data.ActiveTask.Article then
+						(
+							MD_Data.InWorkTask = task.Article
+							MD_Data.CreateWorkLayer()							
+						)
+					)
+					else dn_list_item.SubItems.add ""
+
+					-- Group
+					if task.Group != undefined then dn_list_item.SubItems.add task.Group
+					else dn_list_item.SubItems.add ""
+
+					-- Transformation
+					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
+					if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
+					else dn_list_item.SubItems.add ""
+
+					-- User name
+					dn_list_item.SubItems.add task.UserName
+
+					-- Отметить элемент как выделенный
+					if cur_sel == item_index then dn_list_item.Selected = true
+
+					append main_items dn_list_item 
+					item_index += 1
+				)
+
+				ListMain.Items.Clear()
+				ListMain.Items.AddRange main_items
+				ListMain.Update()
+
+				-- Заполнить данными список материалов панели Tasks
+				local add_items = #()
+				
+
+				ListAdd.Items.Clear()
+				ListAdd.Items.AddRange add_items
+				ListAdd.Update()
+
+				-- Заполнить данными панель Info
 				Categories.Items = MD_Data.main_categs
 				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
 				catch(SubCategories.Items = #())
@@ -239,7 +557,8 @@ struct UI
 					if MD_Data.ActiveTask.RefBitmap != undefined then
 					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.RefBitmap
 				) 
-				catch(MD_Log.Error "Не удалось загрузить изображение референса.")
+				catch()
+				-- catch(MD_Log.Error "Не удалось загрузить изображение референса.")
 				
 				try (
 					InfoCatalogWeb.text = ""
@@ -275,7 +594,7 @@ struct UI
 				local temp_layer_nodes = GetAllLayerNodes mdt_temp_layer
 				local objs = for obj in (objects as array) where (findItem temp_layer_nodes obj == 0) collect obj
 
-				if MD_Data.ActiveTask.Layer != undefined and MD_Data.ActiveTask.State == STATES[2] then
+				if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 				(
 					-- Пивот
 					ToolsCatalog.btn_set_pivot.enabled = true
@@ -297,7 +616,7 @@ struct UI
 					)
 
 					-- Сохранить работу
-					-- if (MD_Data.ActiveTask.Layer != undefined and task_layer_nodes.count != 0) then
+					-- if (MD_Data.WorkLayer != undefined and task_layer_nodes.count != 0) then
 					-- (
 					-- 	ToolsCatalog.btn_save_work.enabled = true
 					-- )
@@ -333,7 +652,11 @@ struct UI
 
 	fn Update = (
 		-- Обновляет интерфейс исходя из текущих данных
-		
+		FillData()
+
+        try MD_Data.ActiveCategory = Categories.selection catch()
+        try MD_Data.ActiveSubCategory = SubCategories.selection catch()
+
 		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
 		(
 			Tasks.btn_get.enabled = true
@@ -358,6 +681,12 @@ struct UI
 			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 
+			Tasks.btn_work_state.text = "Set Work State"
+			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
+			InfoCatalogWeb.text = ""
+			InfoCatalogWeb.address = ""
+			InfoCatalogSize.text = ""
+
 			Tasks.Controls[1].enabled = true
 			ListMain.enabled = true
 			ListAdd.enabled = true
@@ -381,6 +710,7 @@ struct UI
 				ToolsRltUpdate()
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
+		
 		)
 
 		if SubCategories.Items.Count != 0 then
@@ -494,7 +824,7 @@ struct UI
 		Sections.Selection = MD_Data.ActiveSection
 
 		SwitchRollouts()
-		FillData()
+		-- FillData()
 		Update()
 	),
 	
@@ -570,15 +900,21 @@ struct BoundingBox
 
 	fn write_pivot_data =
 	(
-		ReadDataFile MD_Data.ActiveTask.File
-		data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
-		WriteDataFile MD_Data.ActiveTask.File
+		if MD_Data.ActiveTask != undefined then
+		(
+			ReadDataFile MD_Data.ActiveTask.File
+			data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
+			WriteDataFile MD_Data.ActiveTask.File
+		)
 	),
 	
 	fn read_pivot_data =
 	(
-		ReadDataFile MD_Data.ActiveTask.File
-		pivot_pos = data["pivot"]
+		if MD_Data.ActiveTask != undefined then
+		(
+			ReadDataFile MD_Data.ActiveTask.File
+			pivot_pos = data["pivot"]
+		)
 	),
 
 	fn Update =
@@ -587,50 +923,53 @@ struct BoundingBox
 
 		try read_pivot_data() catch()
 		pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+		arrow_rad = 0.0
 
-		if MD_Data.ActiveTask.State == STATES[1] then 
+		if MD_Data.ActiveTask != undefined then
 		(
-			bbox_size = [0, 0, 0]
-			pp.isHidden = true
-			bb.wireColor = clr_main
-			arrow.wireColor = clr_main
-			arrow_rad = 0.0
-		)
-		else
-		(
-			case MD_Data.ActiveTask.ActiveMesh of
+			if MD_Data.ActiveTask.State == STATES[1] then 
 			(
-				1:(
-					bb_w = MD_Data.ActiveTask.Size[1]
-					bb_d = MD_Data.ActiveTask.Size[2]
-					bb_h = MD_Data.ActiveTask.Size[3]
-
-					bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
-					ConvertValueToSystemUnits #cm bb_d,\
-					ConvertValueToSystemUnits #cm bb_h]
-
-					bb.wireColor = clr_main
-					arrow.wireColor = clr_main
-				)
-				2:(
-					bt_w = MD_Data.ActiveTask.SizeTrans[1]
-					bt_d = MD_Data.ActiveTask.SizeTrans[2]
-					bt_h = MD_Data.ActiveTask.SizeTrans[3]
-
-					bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
-					ConvertValueToSystemUnits #cm bt_d,\
-					ConvertValueToSystemUnits #cm bt_h]
-
-					bb.wireColor = clr_add
-					arrow.wireColor = clr_add
-				)
+				bbox_size = [0, 0, 0]
+				pp.isHidden = true
+				bb.wireColor = clr_main
+				arrow.wireColor = clr_main
 			)
+			else 
+			(
+				case MD_Data.ActiveTask.ActiveMesh of
+				(
+					1:(
+						bb_w = MD_Data.ActiveTask.Size[1]
+						bb_d = MD_Data.ActiveTask.Size[2]
+						bb_h = MD_Data.ActiveTask.Size[3]
 
-			if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
-			else pp.isHidden = true
-			
-			arrow_rad = ConvertValueToSystemUnits #cm 20.0
+						bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
+						ConvertValueToSystemUnits #cm bb_d,\
+						ConvertValueToSystemUnits #cm bb_h]
 
+						bb.wireColor = clr_main
+						arrow.wireColor = clr_main
+					)
+					2:(
+						bt_w = MD_Data.ActiveTask.SizeTrans[1]
+						bt_d = MD_Data.ActiveTask.SizeTrans[2]
+						bt_h = MD_Data.ActiveTask.SizeTrans[3]
+
+						bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
+						ConvertValueToSystemUnits #cm bt_d,\
+						ConvertValueToSystemUnits #cm bt_h]
+
+						bb.wireColor = clr_add
+						arrow.wireColor = clr_add
+					)
+				)
+
+				if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
+				else pp.isHidden = true
+				
+				arrow_rad = ConvertValueToSystemUnits #cm 20.0
+
+			)
 		)
 
 		bb.length = bbox_size[1]
@@ -654,161 +993,6 @@ struct BoundingBox
 	on create do Init()
 )
 
--- Структура материала активного задания
-struct TaskMaterial
-(
-	Article = undefined,
-	PartName = undefined,
-	Material = undefined,
-    RefFile = undefined,
-	texture_d = undefined,
-	texture_m = undefined,
-	texture_n = undefined,
-	texture_ard = undefined
-)
-
--- Структура задания
-struct Task
-(
-	File = undefined,
-	Article = undefined,
-	DateCreate = undefined,
-	Object = undefined,
-	Website = undefined,
-	Materials = #(),
-	State = STATES[1],
-	Pivot = undefined,
-	Group = undefined,
-	UserId = undefined,
-	UserName = undefined,
-    RefFile = undefined,
-	Size = undefined,
-	SizeTrans = undefined,
-
-	Layer = undefined,
-	Mesh = undefined,
-	AddMesh = undefined,
-	ActiveMesh = 1,
-	SavedWorks = #(),
-	RefBitmap = undefined,
-	MatRefBitmaps = #(),
-	MatLibFile = undefined,
-	Valid = False,
-
-	fn CreateMaterial =
-	(
-
-	),
-
-	fn CreateWorkLayer =
-	(
-		LayerManager.newLayerFromName Article
-		Layer = LayerManager.getLayerFromName Article
-        Layer.on = true
-        Layer.current = true   
-	),
-
-	fn DeleteWorkLayer =
-	(
-		local nodes = GetAllLayerNodes Article
-
-		for n in nodes do DEFAULT_LAYER.addNode n
-		DeleteAllSubLayers Article
-		LayerManager.deleteLayerByName Article
-
-		Layer = undefined
-	),
-
-	fn Init = (
-		-- Инициализация данных задания
-
-        if (File != undefined and DoesFileExist File) then
-        (
-			-- Читать данные из json файла
-            ReadDataFile File
-            if data != undefined then
-            (
-				local task_file_dir = getFilenamePath File
-				local task_in_work_dir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
-				local ref_file_name = data["ref_photo_name"]
-				local ref_file_type = getFilenameType ref_file_name
-				local task_dir_files = GetFiles (task_file_dir + "/*.*")
-				local mat_ref_files = #()
-
-				-- Найти и отсортировать файлы референсов
-				for f in task_dir_files do
-				(
-					if (FindString f data["article"]) then
-					(
-						if getFilenameFile f == data["article"] and getFilenameType f == ref_file_type 
-						then RefFile = f
-						else append mat_ref_files f
-					)
-				)
-				sort mat_ref_files
-
-                Article = data["article"]
-				DateCreate = data["date_create"]
-				Object = data["object"]
-                Website = data["web_site"]
-				for i = 1 to data["finishing_materials"].count do
-				(
-					local mat = TaskMaterial()
-
-					mat.Article = data["finishing_materials"][i]["article"]
-					mat.PartName = data["finishing_materials"][i]["name_part_object"]
-					mat.Material = data["finishing_materials"][i]["finishing_components"]
-					mat.RefFile = mat_ref_files[i]
-
-					append Materials mat
-				)
-				State = data["state"]
-				Pivot = data["pivot"]
-				Group = data["tags"][1]
-				UserId = data["userId"]
-                UserName = data["userName"]
-                Size = #(
-					ConvertValueToSystemUnits #cm data["size"][1],
-					ConvertValueToSystemUnits #cm data["size"][2],
-					ConvertValueToSystemUnits #cm data["size"][3]
-				)
-                try SizeTrans = #(
-					ConvertValueToSystemUnits #cm data["size_trans"][1], 
-					ConvertValueToSystemUnits #cm data["size_trans"][2], 
-					ConvertValueToSystemUnits #cm data["size_trans"][3]
-				) 
-				catch()
-				
-				if pathConfig.doesFileExist task_in_work_dir then
-				(
-					SavedWorks = GetFiles (task_in_work_dir + "/*.max")
-					sort SavedWorks
-				)
-				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
-
-				print "##############"
-				-- print File
-				-- print Article
-				-- print DateCreate
-				-- print Object
-				-- print Website
-				-- print Materials
-				-- print State
-				-- print Pivot
-				-- print Group
-				-- print UserId
-				-- print UserName
-				-- print RefFile
-				-- print Size
-				-- print SizeTrans	
-				print SavedWorks
-            )
-        )
-	),
-
-	on create do Init()
-)
-
 struct Callback
 (
 	ToolsUIUpdate = undefined,
@@ -829,12 +1013,16 @@ struct Callback
 	(
 		if (callbacks.notificationParam()).name == MD_Data.ActiveTask.Article then
 		(
-			MD_Data.ActiveTask.State = STATES[1]
-			MD_Data.ActiveTask.ActiveMesh = 1
-			MD_Data.ActiveTask.Layer = undefined
-			-- MD_UI.FillData()
-			MD_UI.Update()
-			MD_BBox.Update()
+			if MD_Data.ActiveTask != undefined then
+			(
+				MD_Data.ActiveTask.State = STATES[1]
+				MD_Data.ActiveTask.ActiveMesh = 1
+				MD_Data.WorkLayer = undefined
+				MD_Data.ActiveTask.Update()
+				
+				MD_UI.Update()
+				MD_BBox.Update()				
+			)
 		)
 	),
 

@@ -1,3 +1,4 @@
+
 fn GetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#() exclude_list:#() =
 (
 	if onlyRollState == false then
@@ -21,6 +22,7 @@ fn GetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 				EdittextControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
 				LabelControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
 				SubRollout:(ctrl.pos = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
+				dotNetControl:(try ((getINISetting ini_file_path ini_tag (ctrl.name + "_selection"))) catch(print "ass"))
 			)
 			ctrl.enabled = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_enabled"))
 		)
@@ -54,6 +56,12 @@ fn SetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 				EdittextControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") ctrl.text)
 				LabelControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") ctrl.text)
 				SubRollout:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") (ctrl.pos as string))
+				dotNetControl:(
+					print ctrl.SelectedItems.Count
+					if ctrl.SelectedItems.Count != 0 then
+					(setINISetting ini_file_path ini_tag (ctrl.name + "_selection") (ctrl.SelectedItems.Item[0].Index as string))
+					print "okkkkk"
+				)
 			)
 			setINISetting ini_file_path ini_tag (ctrl.name + "_enabled") (ctrl.enabled as string)
 		)
@@ -76,8 +84,27 @@ fn ReadDataFile data_file =
     py_code += "with open(rt.data_file, 'r', encoding='utf-8') as f:" + "\n"
     py_code += "    rt.data = json.load(f)"
 
-    try(python.Execute py_code)
-    catch(MD_Log.Error "Не удалось загрузить данные для задания | global data = undefined")
+    try (python.Execute py_code)
+    catch (MD_Log.Error "Не удалось загрузить данные для задания | global data = undefined")
+)
+
+fn WriteDataFile data_file =
+(
+    ::data_file = data_file
+
+    local py_code = ""
+    py_code += "import json" + "\n"
+    py_code += "import pymxs" + "\n"
+    py_code += "rt = pymxs.runtime" + "\n"
+    py_code += "def WriteDataFile(data, filename):" + "\n"
+    py_code += "\t" + "data = json.dumps(data)" + "\n"
+    py_code += "\t" + "data = json.loads(str(data))" + "\n"
+    py_code += "\t" + "with open(filename, 'w', encoding = 'utf-8') as f:" + "\n"
+    py_code += "\t\t" + "json.dump(data, f, indent = 4, ensure_ascii = False, separators = (',', ': '))" + "\n"
+    py_code += "WriteDataFile(rt.data, rt.data_file)"
+
+    try (python.Execute py_code)
+	catch (MD_Log.Error "Не удалось записать данные в файл")
 )
 
 fn hex_to_rgb hex_value =
