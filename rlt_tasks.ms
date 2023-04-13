@@ -50,18 +50,18 @@ rollout rlt_tasks "Tasks"
     
     on btn_check pressed do 
     (
-        try(DestroyDialog ::dlg_check_tasks)catch()
-        CreateDialog dlg_check_tasks
+        try(DestroyDialog MD_UI.Dialogs.CheckTasks)catch()
+        CreateDialog MD_UI.Dialogs.CheckTasks
     )
 
     on btn_get pressed do 
     (
-        case btn_get.text of
-        (
-            "Get":()
-            "Send":()
-            "Update":()
-        )
+        -- case btn_get.text of
+        -- (
+        --     "Get":()
+        --     "Send":()
+        --     "Update":()
+        -- )
     )
 
     on lv_main ItemChecked self args do 
@@ -71,17 +71,17 @@ rollout rlt_tasks "Tasks"
 
     on btn_clear pressed do 
     (
-        case btn_clear.text of
-        (
-            "Clear":()
-            "Delete":
-                (
-                    if (queryBox "You want to delete these tasks?" title:"WARNING" icon:#warning) then
-                    (
+        -- case btn_clear.text of
+        -- (
+        --     "Clear":()
+        --     "Delete":
+        --         (
+        --             if (queryBox "You want to delete these tasks?" title:"WARNING" icon:#warning) then
+        --             (
 
-                    )
-                )
-        )
+        --             )
+        --         )
+        -- )
     )
 
     on lv_main ItemSelectionChanged self arg do 
@@ -109,9 +109,10 @@ rollout rlt_tasks "Tasks"
         MD_Data.ActiveTask.State = STATES[2]
         MD_Data.ActiveTask.ActiveMesh = 1
         MD_Data.ActiveTask.CreateWorkLayer()
-        MD_UI.FillData()
+        -- MD_UI.FillData()
         MD_UI.Update()
         MD_BBox.Update()
+        MD_Callbacks.Add()
     )
 
     on btn_exit_work_state pressed do
@@ -119,9 +120,10 @@ rollout rlt_tasks "Tasks"
         MD_Data.ActiveTask.State = STATES[1]
         MD_Data.ActiveTask.ActiveMesh = 1
         MD_Data.ActiveTask.DeleteWorkLayer()
-        MD_UI.FillData()
+        -- MD_UI.FillData()
         MD_UI.Update()
         MD_BBox.Update()
+        MD_Callbacks.Destruct()
     )
 
     on lv_add ColumnClick s e do

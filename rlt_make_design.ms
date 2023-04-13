@@ -21,5 +21,6 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
 
         -- for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
         MD_BBox.Remove()
+        MD_Callbacks.Destruct()
     )
 )

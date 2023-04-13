@@ -151,7 +151,7 @@ struct GlobalData
 struct UI_Dialogs
 (
 	Configure = dlg_configure,
-	CheckTasksParams = dlg_check_tasks,
+	CheckTasks = dlg_check_tasks,
 	PivotParams = dlg_pivot_params,
 	LoadWork = dlg_load_work,
 	Validation = dlg_validation,
@@ -271,9 +271,15 @@ struct UI
 			1:(
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+				local task_layer_nodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+				local temp_layer_nodes = GetAllLayerNodes mdt_temp_layer
+				local objs = for obj in (objects as array) where (findItem temp_layer_nodes obj == 0) collect obj
 
-				if MD_Data.ActiveTask.State == STATES[2] then
+				if MD_Data.ActiveTask.Layer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 				(
+					-- Пивот
+					ToolsCatalog.btn_set_pivot.enabled = true
+
 					-- Доп. меш
 					if MD_Data.ActiveTask.SizeTrans != undefined and MD_Data.ActiveTask.AddMesh != undefined then
 					(
@@ -291,10 +297,17 @@ struct UI
 					)
 
 					-- Сохранить работу
-					if (MD_Data.ActiveTask.Layer != undefined and MD_Data.ActiveTask.Layer.getNumChildren() != 0) then
+					-- if (MD_Data.ActiveTask.Layer != undefined and task_layer_nodes.count != 0) then
+					-- (
+					-- 	ToolsCatalog.btn_save_work.enabled = true
+					-- )
+
+					if objs.count != task_layer_nodes.count and objs.count != 0 then 
 					(
-						ToolsCatalog.btn_save_work.enabled = true
+						ToolsCatalog.btn_attach_to_task.enabled = true
+						ToolsCatalog.btn_save_work.enabled = false
 					)
+					else ToolsCatalog.btn_save_work.enabled = true
 
 					-- Загрузить работу
 					if MD_Data.ActiveTask.SavedWorks.count != 0 then
@@ -308,6 +321,9 @@ struct UI
 						ToolsCatalog.btn_export.enabled = true
 					)
 				)
+				free task_layer_nodes
+				free temp_layer_nodes
+				free objs
 			)
 			2:(
 
@@ -382,7 +398,15 @@ struct UI
 			for ctrl in ToolsCatalog.Controls do try(ctrl.tooltip = "")catch()
 			for ctrl in ToolsProjects.Controls do try(ctrl.tooltip = "")catch()
 		)
-		
+
+		-- Обновить текст веб ссылки (баг макса)
+		try
+		(
+			InfoCatalogWeb.text = ""
+			InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+		)
+		catch()
+
 		ListMain.Focus()
 	),
 
@@ -705,6 +729,7 @@ struct Task
             if data != undefined then
             (
 				local task_file_dir = getFilenamePath File
+				local task_in_work_dir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
 				local ref_file_name = data["ref_photo_name"]
 				local ref_file_type = getFilenameType ref_file_name
 				local task_dir_files = GetFiles (task_file_dir + "/*.*")
@@ -754,7 +779,14 @@ struct Task
 				) 
 				catch()
 				
-				-- print "##############"
+				if pathConfig.doesFileExist task_in_work_dir then
+				(
+					SavedWorks = GetFiles (task_in_work_dir + "/*.max")
+					sort SavedWorks
+				)
+				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
+
+				print "##############"
 				-- print File
 				-- print Article
 				-- print DateCreate
@@ -769,9 +801,50 @@ struct Task
 				-- print RefFile
 				-- print Size
 				-- print SizeTrans	
+				print SavedWorks
             )
         )
 	),
 
 	on create do Init()
+)
+
+struct Callback
+(
+	ToolsUIUpdate = undefined,
+
+	fn CallbackFn1 ev nd = 
+	(
+		MD_UI.ToolsRltUpdate()
+	),
+
+	fn Destruct =
+	(
+		callbacks.removeScripts id:#CheckExistTaskLayer
+		ToolsUIUpdate = undefined
+		gc light:true
+	),
+
+	fn CheckExistTaskLayer =
+	(
+		if (callbacks.notificationParam()).name == MD_Data.ActiveTask.Article then
+		(
+			MD_Data.ActiveTask.State = STATES[1]
+			MD_Data.ActiveTask.ActiveMesh = 1
+			MD_Data.ActiveTask.Layer = undefined
+			-- MD_UI.FillData()
+			MD_UI.Update()
+			MD_BBox.Update()
+		)
+	),
+
+	fn Add =
+	(
+		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#CheckExistTaskLayer
+		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
+		added:CallbackFn1 \
+		deleted:CallbackFn1 \
+		layerChanged:CallbackFn1 \
+		selectionChanged:CallbackFn1
+	)
 )
