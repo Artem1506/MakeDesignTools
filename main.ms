@@ -28,7 +28,7 @@
         MD_BBox = BoundingBox()
         MD_Callbacks = Callback()
 
-        MD_Data.ActiveTaskIndex = 1
+        -- MD_Data.ActiveTaskIndex = 1
         MD_Data.Update()
         MD_UI.Update()
         MD_Callbacks.Add()
@@ -39,7 +39,7 @@
         MD_Data.Update()
         MD_UI.Update()
         MD_BBox.Update()
-        print (classof MD_UI.ListMain)
+
     )
     else
     (

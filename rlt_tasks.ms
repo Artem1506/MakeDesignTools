@@ -14,7 +14,7 @@ rollout rlt_tasks "Tasks"
     
     on rlt_tasks open do
     (
-        
+        lv_main.Name = "lv_main"
     )
     
     on rlt_tasks close do
@@ -49,7 +49,6 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveTask = undefined
             MD_Data.ActiveTaskIndex = undefined
         )
-        try MD_Data.SwitchWorkLayer() catch()
         try lst_sub_catalog.selection = 1 catch()
         MD_Data.ActiveCategory = arg
         MD_Data.Update()
@@ -67,7 +66,6 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveTask = undefined
             MD_Data.ActiveTaskIndex = undefined
         )
-        try MD_Data.SwitchWorkLayer() catch()
         MD_Data.ActiveCategory = lst_basic_catalog.selection
         MD_Data.ActiveSubCategory = arg
         MD_Data.Update()

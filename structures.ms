@@ -656,6 +656,7 @@ struct UI
 
         try MD_Data.ActiveCategory = Categories.selection catch()
         try MD_Data.ActiveSubCategory = SubCategories.selection catch()
+		print "UPDATE"
 
 		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
 		(

@@ -22,7 +22,10 @@ fn GetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 				EdittextControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
 				LabelControl:(ctrl.text = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
 				SubRollout:(ctrl.pos = getINISetting ini_file_path ini_tag (ctrl.name + "_text"))
-				dotNetControl:(try ((getINISetting ini_file_path ini_tag (ctrl.name + "_selection"))) catch(print "ass"))
+				dotNetControl:(
+					if ctrl.SelectedItems.Count != 0 then
+					ctrl.SelectedItems.Item[0].Index = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_selection"))
+				)
 			)
 			ctrl.enabled = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_enabled"))
 		)
@@ -57,10 +60,8 @@ fn SetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 				LabelControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") ctrl.text)
 				SubRollout:(setINISetting ini_file_path ini_tag (ctrl.name + "_text") (ctrl.pos as string))
 				dotNetControl:(
-					print ctrl.SelectedItems.Count
 					if ctrl.SelectedItems.Count != 0 then
-					(setINISetting ini_file_path ini_tag (ctrl.name + "_selection") (ctrl.SelectedItems.Item[0].Index as string))
-					print "okkkkk"
+					setINISetting ini_file_path ini_tag (ctrl.name + "_selection") (ctrl.SelectedItems.Item[0].Index as string)
 				)
 			)
 			setINISetting ini_file_path ini_tag (ctrl.name + "_enabled") (ctrl.enabled as string)
