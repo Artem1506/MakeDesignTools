@@ -29,8 +29,13 @@
         MD_Callbacks = Callback()
 
         -- MD_Data.Update()
+        try MD_UI.FillAddList() catch()
         try MD_Callbacks.Add() catch()
         try MD_BBox.Update() catch()
+
+        include "print_data.ms"
+        -- PrintData structs:#(#active_task)
+        -- try PrintData structs:#(#global_data) catch()
 
     )
     else

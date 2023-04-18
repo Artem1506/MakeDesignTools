@@ -110,7 +110,32 @@ rollout rlt_tasks "Tasks"
 
     on lv_main ItemChecked self args do 
     (
+        -- MD_Data.CheckedTasks = for i in (self.CheckedItems) collect i
+        if keyboard.controlPressed == true then
+        (
+            for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
+        )
 
+        else if keyboard.altPressed == true then
+        (
+            for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
+        )
+
+        if self.CheckedItems.count > 0 then
+        (
+            MD_Data.CheckedTasks = for i = 0 to self.CheckedItems.count - 1 collect (self.CheckedItems.Item[i].Index + 1)
+        )
+        else MD_Data.CheckedTasks = #()
+
+        if MD_Data.CheckedTasks.Count > 0 then
+        (
+            btn_get.enabled = true
+            btn_clear.enabled = true
+        )
+        else(
+            btn_get.enabled = false
+            btn_clear.enabled = false 
+        )
     )
 
     on btn_clear pressed do 
@@ -135,20 +160,37 @@ rollout rlt_tasks "Tasks"
 
     on lv_main Click self arg do
     (
-        if MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1 then
+        MD_Data.ActiveList = 1
+        MD_Data.ActiveTaskAddIndex = 0
+
+        if (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1) then
         (
+            MD_Data.ActiveList = 1
             MD_Callbacks.Add()
             MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
             MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
-            try MD_Data.SwitchWorkLayer() catch()
+            MD_Data.SwitchWorkLayer()
             MD_UI.Update()
-            MD_BBox.Update()            
-        )
+            MD_BBox.Update()
+            MD_UI.FillAddList()
+
+            -- try PrintData structs:#(#global_data) catch()
+        )  
     )
 
     on lv_add Click self arg do
     (
-  
+        MD_Data.ActiveList = 2
+        MD_Data.ActiveTaskIndex = 0
+
+        if (MD_Data.ActiveTaskAddIndex != self.SelectedItems.Item[0].Index + 1) then
+        (
+            MD_Data.ActiveList = 2
+            MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
+            MD_UI.UpdateCatalogPreview()
+
+            -- try PrintData structs:#(#global_data) catch()
+        ) 
     )
 
     on lv_add MouseDoubleClick self arg do
@@ -158,27 +200,21 @@ rollout rlt_tasks "Tasks"
 
     on btn_work_state pressed do
     (
-        MD_Callbacks.Destruct()
-        MD_Data.ActiveTask.State = STATES[2]
-        MD_Data.ActiveTask.ActiveMesh = 1
-        MD_Data.InWorkTask = MD_Data.ActiveTask.Article
-        MD_Data.CreateWorkLayer()
-        MD_Data.ActiveTask.Update()
+        MD_Data.CreateWorkState()
+        MD_Data.Update()
         MD_UI.Update()
-        MD_BBox.Update()
-        MD_Callbacks.Add()
+        try MD_BBox.Update() catch()
+        try MD_Callbacks.Add() catch()
+
+        -- try PrintData structs:#(#global_data) catch()
     )
 
     on btn_exit_work_state pressed do
     (
-        MD_Data.ActiveTask.State = STATES[1]
-        MD_Data.ActiveTask.ActiveMesh = 1
-        MD_Data.DeleteWorkLayer()
-        MD_Data.InWorkTask = undefined
-        MD_Data.ActiveTask.Update() 
-        MD_UI.Update()
-        MD_BBox.Update()
-        MD_Callbacks.Destruct()
+        MD_Data.ExitWorkState()
+        MD_Data.Update()
+
+        -- try PrintData structs:#(#global_data) catch()
     )
 
     on lv_add ColumnClick s e do

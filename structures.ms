@@ -58,7 +58,8 @@ struct TaskMaterial
 	texture_d = undefined,
 	texture_m = undefined,
 	texture_n = undefined,
-	texture_ard = undefined
+	texture_ard = undefined,
+	RefBitmap = undefined
 )
 
 -- Структура задания
@@ -85,7 +86,6 @@ struct Task
 	ActiveMesh = 1,
 	SavedWorks = #(),
 	RefBitmap = undefined,
-	MatRefBitmaps = #(),
 	MatLibFile = undefined,
 	Valid = False,
 
@@ -144,6 +144,7 @@ struct Task
 					mat.PartName = data["finishing_materials"][i]["name_part_object"]
 					mat.Material = data["finishing_materials"][i]["finishing_components"]
 					mat.RefFile = mat_ref_files[i]
+					mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE
 
 					append Materials mat
 				)
@@ -199,7 +200,10 @@ struct GlobalData
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.ListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
+	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.ListAdd
+	ActiveList = 1, --> [int] Активный список
 	InWorkTask = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
+	InWorkTaskFile = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 
 	-- Projects
@@ -210,26 +214,13 @@ struct GlobalData
 
 	Users = #(),
 
-	-- fn GetTasksInActiveCategory =
-	-- (
-	-- 	local activ_dir = sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory]
-	-- 	local tasks_dirs = GetDirectories (activ_dir + "\\*")
-	-- 	local arr = #()
-
-	-- 	for dir in tasks_dirs do
-	-- 	(
-	-- 		local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
-	-- 		task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
-
-	-- 		append arr (Task File:task_file)
-	-- 	)
-	-- 	Tasks[ActiveCategory][ActiveSubCategory] = arr
-	-- 	arr = #()
-	-- ),
 	fn SwitchWorkLayer =
 	(
-		if ActiveTask.Article == InWorkTask then WorkLayer.on = true
-		else WorkLayer.on = false
+		try
+		(
+			if ActiveTask.Article == InWorkTask then WorkLayer.on = true
+			else WorkLayer.on = false			
+		)catch()
 	),
 
 	fn CreateWorkLayer =
@@ -254,6 +245,55 @@ struct GlobalData
 			LayerManager.deleteLayerByName WorkLayer.name
 		)
 		WorkLayer = undefined
+	),
+
+	fn ExitWorkState =
+	(
+        ActiveTask.State = STATES[1]
+        ActiveTask.ActiveMesh = 1
+        DeleteWorkLayer()
+        InWorkTask = undefined
+
+		try (
+			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			data["in_work_task"] = undefined
+			WriteDataFile MD_LIB_COMMON_DATA_FILE
+		)
+		catch (MD_Log.Error "[ExitWorkState] Не удалось сохранить данные в файл.")
+
+		ActiveTask.Update()
+        try MD_UI.Update() catch()
+        try MD_BBox.Update() catch()
+        try MD_Callbacks.Destruct() catch()
+	),
+
+	fn CreateWorkState =
+	(
+		try (
+			ReadDataFile InWorkTaskFile
+			data["state"] = STATES[1]
+			WriteDataFile InWorkTaskFile
+		)
+		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
+        try MD_Callbacks.Destruct() catch()
+        ActiveTask.State = STATES[2]
+        ActiveTask.ActiveMesh = 1
+        InWorkTask = ActiveTask
+		InWorkTaskFile = ActiveTask.File
+		CreateWorkLayer()
+
+		try (
+			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			data["in_work_task"] = InWorkTask.File
+			WriteDataFile MD_LIB_COMMON_DATA_FILE
+		)
+		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
+        
+		ActiveTask.Update()
+		-- MD_Data.Update()
+        -- try MD_UI.Update() catch()
+        -- try MD_BBox.Update() catch()
+        -- try MD_Callbacks.Add() catch()
 	),
 
 	fn GetTasksInActiveCategory =
@@ -289,10 +329,13 @@ struct GlobalData
 					-- Установить рабочее состояние
 					if ActiveTask != undefined then
 					(
-						if ActiveTask.State != STATES[1] then
+						case ActiveTask.State of
 						(
-							InWorkTask = ActiveTask.Article
-							CreateWorkLayer()				
+							(STATES[1]):()
+							(STATES[2]):(CreateWorkState())
+							(STATES[3]):()
+							(STATES[4]):()
+							-- InWorkTask = ActiveTask
 						)
 					)						
 				)
@@ -330,8 +373,18 @@ struct GlobalData
 		proj_sub_categs = #()
 		proj_sub_categ_ids = #()
 
-		try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
+		try (
+			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
+			MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
+		)
 		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
+
+		if DoesFileExist MD_LIB_COMMON_DATA_FILE then
+		(
+			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			InWorkTaskFile = data["in_work_task"]
+			WriteDataFile MD_LIB_COMMON_DATA_FILE
+		)
 
 		-- Инициализация списков категорий
 		if DoesDirectoryExist MD_LIB_DIR then
@@ -391,8 +444,6 @@ struct GlobalData
 				append users titles
 				append users us_ids				
 			)
-
-			
 		)
 		Update()
 	),
@@ -440,7 +491,7 @@ struct UI
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
 
 		-- Устанавливает параметры для контрола листвью
-		fn SetListViewParams list_view = (
+		fn SetListViewParams list_view CheckBoxes:true= (
 			list_view.BorderStyle = list_view.BorderStyle.None
 			list_view.gridLines = true
 			list_view.View = (dotNetClass "System.Windows.Forms.View").Details
@@ -448,7 +499,7 @@ struct UI
 			list_view.MultiSelect = false
 			list_view.HideSelection = false
 			list_view.HoverSelection  = false
-			list_view.CheckBoxes = true
+			list_view.CheckBoxes = CheckBoxes
 		)
 
 		-- Добавляет колонки в листвью
@@ -457,10 +508,11 @@ struct UI
 			try(list_view.Columns.add columns[i] widths[i])
 			catch(list_view.Columns.add columns[i])
 		)
+
 		ListMain.Columns.Clear()
 		ListAdd.Columns.Clear()
 		SetListViewParams ListMain
-		SetListViewParams ListAdd
+		SetListViewParams ListAdd CheckBoxes:false
 
 		case MD_Data.ActiveSection of
 		(
@@ -504,7 +556,7 @@ struct UI
 						dn_list_item.SubItems.add task.State
 						if task.Article == MD_Data.ActiveTask.Article then
 						(
-							MD_Data.InWorkTask = task.Article
+							MD_Data.InWorkTask = task
 							MD_Data.CreateWorkLayer()							
 						)
 					)
@@ -525,21 +577,16 @@ struct UI
 					-- Отметить элемент как выделенный
 					if cur_sel == item_index then dn_list_item.Selected = true
 
-					append main_items dn_list_item 
+					-- Добавить к основному списку элементов
+					append main_items dn_list_item
+
 					item_index += 1
 				)
 
+				-- Заполнить основной список панели Tasks (задания)
 				ListMain.Items.Clear()
 				ListMain.Items.AddRange main_items
 				ListMain.Update()
-
-				-- Заполнить данными список материалов панели Tasks
-				local add_items = #()
-				
-
-				ListAdd.Items.Clear()
-				ListAdd.Items.AddRange add_items
-				ListAdd.Update()
 
 				-- Заполнить данными панель Info
 				Categories.Items = MD_Data.main_categs
@@ -567,6 +614,8 @@ struct UI
 					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as string))
 					InfoCatalogSize.text = size_txt
 				) catch()
+
+				free main_items
 			)
 			2:(
 				Categories.Items = MD_Data.proj_main_categs
@@ -650,6 +699,46 @@ struct UI
 
 			)
 		)
+	),
+
+	fn FillAddList =
+	(
+		case MD_Data.ActiveSection of
+		(
+			1:(
+				local add_items = #()
+				-- Материалы
+				for mat in MD_Data.ActiveTask.Materials do
+				(
+					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
+					dn_list_item.ForeColor = DN_CLR_DEFAULT
+
+					dn_list_item.SubItems.add mat.material
+					try dn_list_item.SubItems.add mat.texture_d catch()
+					try dn_list_item.SubItems.add mat.texture_m catch()
+					try dn_list_item.SubItems.add mat.texture_n catch()
+					try dn_list_item.SubItems.add mat.texture_ard catch()
+
+					-- Добавить к доп. списку элементов
+					append add_items dn_list_item
+				)
+				
+				-- Заполнить доп. список панели Tasks (материалы)
+				ListAdd.Items.Clear()
+				ListAdd.Items.AddRange add_items
+				ListAdd.Update()
+
+				free add_items
+			)
+			2:(
+
+			)
+		)
+	),
+
+	fn UpdateCatalogPreview =
+	(
+		InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
 	),
 
 	fn Update = (

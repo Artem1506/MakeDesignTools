@@ -22,7 +22,8 @@ MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
 MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
-MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR "common_data.json"
+MD_LIB_COMMON_DATA_FILE = ""
+COMMON_DATA_FILE_NAME = "common_data.json"
 TASK_FILE_NAME = "data.json"
 
 -- Файлы иконок
