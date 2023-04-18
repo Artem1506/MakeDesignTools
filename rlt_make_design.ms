@@ -20,8 +20,8 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try(destroyDialog dlg_validation)catch()
 
         for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
-        MD_Callbacks.Destruct()
-        MD_BBox.Remove()
+        try MD_Callbacks.Destruct() catch()
+        try MD_BBox.Remove() catch()
         try MD_Data.DeleteWorkLayer() catch()
     )
 )

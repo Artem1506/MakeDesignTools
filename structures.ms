@@ -1,4 +1,5 @@
 
+PrintData
 -- Логирование
 struct LogSys
 (
@@ -169,23 +170,6 @@ struct Task
 					sort SavedWorks
 				)
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
-
-				-- print "##############"
-				-- print File
-				-- print Article
-				-- print DateCreate
-				-- print Object
-				-- print Website
-				-- print Materials
-				-- print State
-				-- print Pivot
-				-- print Group
-				-- print UserId
-				-- print UserName
-				-- print RefFile
-				-- print Size
-				-- print SizeTrans	
-				-- print SavedWorks
             )
         )
 	),
@@ -209,7 +193,7 @@ struct GlobalData
 	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
 	main_categ_ids = #(), -- #("01-01", ...)
 	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
-	sub_categ_ids = #(), -- #(#()) Пути к категориям в локальной базе
+	sub_categ_lib_dirs = #(), -- #(#()) Пути к категориям в локальной базе
 	ActiveSection = 1, --> [int] Активная категория
 	ActiveCategory = undefined, --> [int] Активная подкатегория
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
@@ -217,19 +201,18 @@ struct GlobalData
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
 	InWorkTask = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
-	exist_preview = Dictionary(),
+
 	-- Projects
 	proj_main_categs = #(),
 	proj_main_categ_ids = #(),
 	proj_sub_categs = #(),
 	proj_sub_categ_ids = #(),
-	proj_exist_preview = Dictionary(),
 
 	Users = #(),
 
 	-- fn GetTasksInActiveCategory =
 	-- (
-	-- 	local activ_dir = sub_categ_ids[ActiveCategory][ActiveSubCategory]
+	-- 	local activ_dir = sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory]
 	-- 	local tasks_dirs = GetDirectories (activ_dir + "\\*")
 	-- 	local arr = #()
 
@@ -275,7 +258,7 @@ struct GlobalData
 
 	fn GetTasksInActiveCategory =
 	(
-		local activ_dir = sub_categ_ids[ActiveCategory][ActiveSubCategory]
+		local activ_dir = sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory]
 		local tasks_dirs = GetDirectories (activ_dir + "\\*")
 
 		Tasks = #()
@@ -336,17 +319,12 @@ struct GlobalData
 		DeletedTasks = #()
 		CurrentTasks = #()
 
-		-- Импорт данных каталога объектов
-		ReadDataFile MD_CATALOG_DATA_FILE
-
-		exist_preview = #()
 		users = #()
 		main_categs = #()
 		main_categ_ids = #()
 		sub_categs = #()
-		sub_categ_ids = #()
+		sub_categ_lib_dirs = #()
 
-		proj_exist_preview = #()
 		proj_main_categs = #()
 		proj_main_categ_ids = #()
 		proj_sub_categs = #()
@@ -355,53 +333,68 @@ struct GlobalData
 		try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
 		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
 
-		if MD_LIB_DIR != "" then
+		-- Инициализация списков категорий
+		if DoesDirectoryExist MD_LIB_DIR then
 		(
-			local arr_names = #()
-			local arr_ids = #()
-
-			for i in data as array do 
+			-- Импорт данных каталога объектов
+			if DoesFileExist MD_CATALOG_DATA_FILE then
 			(
-				for k in i["children"] as array do 
+				ReadDataFile MD_CATALOG_DATA_FILE
+
+				local arr_names = #()
+				local arr_ids = #()
+				local arr_tasks = #()
+
+				for i in data as array do 
 				(
-					append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
-					append main_categ_ids k["article"]
-					arr_names = #()
-					arr_ids = #()
-					arr_tasks = #()
-					for j in k["children"] as array do 
+					
+					for k in i["children"] as array do 
 					(
-						append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
-						-- append arr_ids j["article"]
-						sub_categ_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
-						sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
-						append arr_ids sub_categ_dir
-						append arr_tasks undefined
+						append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
+						append main_categ_ids k["article"]
+
+						arr_names = #()
+						arr_ids = #()
+						arr_tasks = #()
+
+						for j in k["children"] as array do 
+						(
+							append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
+							-- append arr_ids j["article"]
+							sub_categ_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+							sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
+							append arr_ids sub_categ_dir
+							append arr_tasks undefined
+						)
+						append sub_categs arr_names
+						append sub_categ_lib_dirs arr_ids
+						-- append Tasks arr_tasks
 					)
-					append sub_categs arr_names
-					append sub_categ_ids arr_ids
-					-- append Tasks arr_tasks
 				)
+				arr_names = #()
+				arr_ids = #()
+				arr_tasks = #()
 			)
 			
-			local titles = #()
-			local us_ids = #()
-
 			-- Импорт данных пользователей
-			ReadDataFile MD_USERS_DATA_FILE
-			for i in data as array do 
+			if DoesFileExist MD_USERS_DATA_FILE then
 			(
-				append titles i["title"]
-				append us_ids i["user_id"]
+				local titles = #()
+				local us_ids = #()
+
+				ReadDataFile MD_USERS_DATA_FILE
+				for i in data as array do 
+				(
+					append titles i["title"]
+					append us_ids i["user_id"]
+				)
+				append users titles
+				append users us_ids				
 			)
-			append users titles
-			append users us_ids
 
-			arr_names = #()
-			arr_ids = #()
-			arr_tasks = #()
+			
 		)
-
+		Update()
 	),
 
 	on create do Init()
@@ -579,6 +572,11 @@ struct UI
 				Categories.Items = MD_Data.proj_main_categs
 				SubCategories.Items = MD_Data.proj_sub_categs
 				try SubCategories.Items = MD_Data.proj_sub_categs[Categories.Selection] catch()
+				ListMain.Items.Clear()
+				ListMain.Update()
+
+				ListAdd.Items.Clear()
+				ListAdd.Update()
 			)
 		)
 	),
@@ -590,12 +588,16 @@ struct UI
 			1:(
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
-				local task_layer_nodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-				local temp_layer_nodes = GetAllLayerNodes mdt_temp_layer
-				local objs = for obj in (objects as array) where (findItem temp_layer_nodes obj == 0) collect obj
+				local task_layer_nodes = #()
+				local temp_layer_nodes = #()
+				local objs = #()
 
 				if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 				(
+					task_layer_nodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+					temp_layer_nodes = GetAllLayerNodes mdt_temp_layer
+					objs = for obj in (objects as array) where (findItem temp_layer_nodes obj == 0) collect obj
+
 					-- Пивот
 					ToolsCatalog.btn_set_pivot.enabled = true
 
@@ -656,7 +658,6 @@ struct UI
 
         try MD_Data.ActiveCategory = Categories.selection catch()
         try MD_Data.ActiveSubCategory = SubCategories.selection catch()
-		print "UPDATE"
 
 		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
 		(
@@ -688,7 +689,9 @@ struct UI
 			InfoCatalogWeb.address = ""
 			InfoCatalogSize.text = ""
 
-			Tasks.Controls[1].enabled = true
+			Tasks.lst_sections.enabled = true
+			Tasks.lst_basic_catalog.enabled = true
+			Tasks.lst_sub_catalog.enabled = true
 			ListMain.enabled = true
 			ListAdd.enabled = true
 		)
@@ -711,7 +714,8 @@ struct UI
 				ToolsRltUpdate()
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
-		
+			
+			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
 		)
 
 		if SubCategories.Items.Count != 0 then
@@ -745,7 +749,7 @@ struct UI
 		-- Переключает роллоуты в зависимости от того, какой раздел выбран
 
         removeSubRollout Main.sub_rlt Help
-        case MD_Data.ActiveSection of
+        case Sections.Selection of
         (
             1:(
                 removeSubRollout Main.sub_rlt ToolsProjects
@@ -768,7 +772,7 @@ struct UI
 
 		InitLists()
 
-		Update()
+		-- Update()
 	),
 
 	fn Close = (
@@ -800,7 +804,11 @@ struct UI
 	),
 
 	fn Init = (
-		-- Создаёт главный роллаут
+
+		local exist_task_index = undefined
+		local exist_categ_index = undefined
+		local exist_sub_categ_index = undefined
+
 		Close()
 		-- Установить цветовую схему
 		SetColorScheme()
@@ -813,8 +821,26 @@ struct UI
 		AddSubRollout Main.sub_rlt ToolsCatalog rolledUp:false
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
+		-- Инициализация входных значений
+		try(
+			Categories.Selection = MD_Data.ActiveCategory
+			SubCategories.Selection = MD_Data.ActiveSubCategory
+		)catch()
+
 		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
 		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса.")
+
+		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_basic_catalog_selection")) catch()
+		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_sub_catalog_selection")) catch()
+		try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lv_main_selection") + 1) catch()
+		
+		try (
+			if exist_categ_index > 0 then Categories.Selection = MD_Data.ActiveCategory = exist_categ_index
+			else if exist_categ_index == 0 and MD_Data.main_categs.count != 0 then Categories.Selection = MD_Data.ActiveCategory = 1
+			if exist_sub_categ_index > 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = exist_sub_categ_index
+			else if exist_categ_index == 0 and MD_Data.main_categs.count != 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = 1
+		)
+		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса. [ActiveCategory, ActiveSubCategory]")
 
 		try(
 			EMPTY_PREVIEW = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE
@@ -822,10 +848,16 @@ struct UI
 		)
 		catch (MD_Log.Error "Не удалось загрузить изображение \"NO PREVIEW\".")
 
-		Sections.Selection = MD_Data.ActiveSection
+		MD_Data.ActiveSection = Sections.Selection
 
+		try MD_Data.ActiveTaskIndex = exist_task_index 
+		catch(MD_Log.Error "Не удалось инициализировать переменную. [ActiveTaskIndex]")
+
+		try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
+		catch(MD_Log.Error "Не удалось инициализировать переменную. [ActiveTask]")
+		
 		SwitchRollouts()
-		-- FillData()
+		MD_Data.Update()
 		Update()
 	),
 	

@@ -28,17 +28,9 @@
         MD_BBox = BoundingBox()
         MD_Callbacks = Callback()
 
-        -- MD_Data.ActiveTaskIndex = 1
-        MD_Data.Update()
-        MD_UI.Update()
-        MD_Callbacks.Add()
-
-        -- MD_Data.ActiveCategory = MD_UI.Categories.selection
-        -- MD_Data.ActiveSubCategory = MD_UI.SubCategories.selection
-        -- try MD_Data.ActiveTask = MD_Data.Tasks[MD_UI.ListMain.Item[0].Index + 1] catch()
-        MD_Data.Update()
-        MD_UI.Update()
-        MD_BBox.Update()
+        -- MD_Data.Update()
+        try MD_Callbacks.Add() catch()
+        try MD_BBox.Update() catch()
 
     )
     else

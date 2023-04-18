@@ -120,8 +120,9 @@ fn get_max_ui_bg_color =
 (
     -- Возвращает цвет интерфейса 3ds max
 
-	py_code = "from pymxs import runtime as rt" + "\n"
+    py_code = "import pymxs" + "\n"
 	py_code += "import xml.etree.ElementTree as ET" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
 	py_code += "tree = ET.parse(rt.MAX_CLRX_CONFIG_FILE)" + "\n"
 	py_code += "root = tree.getroot()" + "\n"
 	py_code += "for item in root.iter('color'):" + "\n"
@@ -142,7 +143,9 @@ fn SetUserEnvVar var val =
     ::val = val
     ::result = ""
 
-    py_code = "import winreg" + "\n"
+    py_code = "import pymxs" + "\n"
+    py_code += "import winreg" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
 	py_code += "key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, \"Environment\")" + "\n"
 	py_code += "winreg.SetValueEx(key, rt.var, 1, winreg.REG_SZ, rt.val)" + "\n"
 	py_code += "if key:" + "\n"
@@ -163,7 +166,9 @@ fn GetUserEnvVar var =
     ::var = var
     ::result = ""
 
-    py_code = "import winreg" + "\n"
+    py_code = "import pymxs" + "\n"
+	py_code += "import winreg" + "\n"
+    py_code += "rt = pymxs.runtime" + "\n"
 	py_code += "md_var_path = winreg.OpenKeyEx(winreg.HKEY_CURRENT_USER, \"Environment\")" + "\n"
 	py_code += "rt.result = (winreg.QueryValueEx(md_var_path, rt.var))[0]" + "\n"
 
