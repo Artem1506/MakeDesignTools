@@ -14,6 +14,10 @@ rollout rlt_info_catalog "Info"
 
     on img_prev lbuttondblclk point_click args do 
     (
-        HiddenDOSCommand MD_Data.ActiveTask.RefFile donotwait:true
+        case MD_Data.ActiveList of
+		(
+			1:(HiddenDOSCommand MD_Data.ActiveTask.RefFile donotwait:true)
+			2:(HiddenDOSCommand MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefFile donotwait:true)
+        )
     )
 )

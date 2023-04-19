@@ -110,32 +110,22 @@ rollout rlt_tasks "Tasks"
 
     on lv_main ItemChecked self args do 
     (
-        -- MD_Data.CheckedTasks = for i in (self.CheckedItems) collect i
+        -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
+        MD_Data.CheckedTasks = 
+        for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
+
+        -- Отметить все элементы списка если нажат control
         if keyboard.controlPressed == true then
         (
             for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
         )
-
+        -- Снять галочки со всех элементов если нажат alt
         else if keyboard.altPressed == true then
         (
             for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
         )
-
-        if self.CheckedItems.count > 0 then
-        (
-            MD_Data.CheckedTasks = for i = 0 to self.CheckedItems.count - 1 collect (self.CheckedItems.Item[i].Index + 1)
-        )
-        else MD_Data.CheckedTasks = #()
-
-        if MD_Data.CheckedTasks.Count > 0 then
-        (
-            btn_get.enabled = true
-            btn_clear.enabled = true
-        )
-        else(
-            btn_get.enabled = false
-            btn_clear.enabled = false 
-        )
+        -- Обоновить интерфейс
+        try MD_UI.TasksRltUpdate() catch()
     )
 
     on btn_clear pressed do 
@@ -173,7 +163,7 @@ rollout rlt_tasks "Tasks"
             MD_UI.Update()
             MD_BBox.Update()
             MD_UI.FillAddList()
-
+            MD_UI.CatalogPreviewRltUpdate()
             -- try PrintData structs:#(#global_data) catch()
         )  
     )
@@ -187,7 +177,7 @@ rollout rlt_tasks "Tasks"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
-            MD_UI.UpdateCatalogPreview()
+            MD_UI.CatalogPreviewRltUpdate()
 
             -- try PrintData structs:#(#global_data) catch()
         ) 
@@ -201,10 +191,6 @@ rollout rlt_tasks "Tasks"
     on btn_work_state pressed do
     (
         MD_Data.CreateWorkState()
-        MD_Data.Update()
-        MD_UI.Update()
-        try MD_BBox.Update() catch()
-        try MD_Callbacks.Add() catch()
 
         -- try PrintData structs:#(#global_data) catch()
     )
@@ -212,7 +198,6 @@ rollout rlt_tasks "Tasks"
     on btn_exit_work_state pressed do
     (
         MD_Data.ExitWorkState()
-        MD_Data.Update()
 
         -- try PrintData structs:#(#global_data) catch()
     )

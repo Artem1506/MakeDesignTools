@@ -59,7 +59,8 @@ struct TaskMaterial
 	texture_m = undefined,
 	texture_n = undefined,
 	texture_ard = undefined,
-	RefBitmap = undefined
+	RefBitmap = undefined,
+	WebSite = undefined
 )
 
 -- Структура задания
@@ -69,7 +70,7 @@ struct Task
 	Article = undefined,
 	DateCreate = undefined,
 	Object = undefined,
-	Website = undefined,
+	WebSite = undefined,
 	Materials = #(),
 	State = STATES[1],
 	Pivot = undefined,
@@ -145,6 +146,7 @@ struct Task
 					mat.Material = data["finishing_materials"][i]["finishing_components"]
 					mat.RefFile = mat_ref_files[i]
 					mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE
+					try (mat.WebSite = data["finishing_materials"][i]["web_site"]) catch()
 
 					append Materials mat
 				)
@@ -218,7 +220,7 @@ struct GlobalData
 	(
 		try
 		(
-			if ActiveTask.Article == InWorkTask then WorkLayer.on = true
+			if ActiveTask.Article == InWorkTask.Article then WorkLayer.on = true
 			else WorkLayer.on = false			
 		)catch()
 	),
@@ -234,17 +236,27 @@ struct GlobalData
 		)
 	),
 
+	fn AttachSelectedToWorkLayer =
+	(
+		try
+		(
+			for obj in selection do WorkLayer.addnode obj
+		)catch()
+	),
+
 	fn DeleteWorkLayer =
 	(
-		if ActiveTask != undefined then
+		try
 		(
-			local nodes = GetAllLayerNodes WorkLayer.name
+			local nodes = GetAllLayerNodes InWorkTask.Article
 
 			for n in nodes do DEFAULT_LAYER.addNode n
-			DeleteAllSubLayers WorkLayer.name
-			LayerManager.deleteLayerByName WorkLayer.name
+			DeleteAllSubLayers InWorkTask.Article
+			LayerManager.deleteLayerByName InWorkTask.Article
+			InWorkTask = undefined
+			WorkLayer = undefined
 		)
-		WorkLayer = undefined
+		catch()
 	),
 
 	fn ExitWorkState =
@@ -269,18 +281,22 @@ struct GlobalData
 
 	fn CreateWorkState =
 	(
+		try InWorkTask.State = STATES[1] catch()
 		try (
 			ReadDataFile InWorkTaskFile
 			data["state"] = STATES[1]
 			WriteDataFile InWorkTaskFile
 		)
 		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
+		DeleteWorkLayer()
         try MD_Callbacks.Destruct() catch()
+		
         ActiveTask.State = STATES[2]
         ActiveTask.ActiveMesh = 1
         InWorkTask = ActiveTask
 		InWorkTaskFile = ActiveTask.File
 		CreateWorkLayer()
+		AttachSelectedToWorkLayer()
 
 		try (
 			ReadDataFile MD_LIB_COMMON_DATA_FILE
@@ -289,11 +305,12 @@ struct GlobalData
 		)
 		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
         
+		
+		SwitchWorkLayer()
 		ActiveTask.Update()
-		-- MD_Data.Update()
-        -- try MD_UI.Update() catch()
-        -- try MD_BBox.Update() catch()
-        -- try MD_Callbacks.Add() catch()
+        try MD_UI.Update() catch()
+        try MD_BBox.Update() catch()
+        try MD_Callbacks.Add() catch()
 	),
 
 	fn GetTasksInActiveCategory =
@@ -343,7 +360,7 @@ struct GlobalData
 				(
 					ActiveTask = undefined
 
-					try MD_Data.SwitchWorkLayer() catch()
+					try SwitchWorkLayer() catch()
 				)
 			)
 			2:(
@@ -360,7 +377,6 @@ struct GlobalData
 		InvalidTasks = #()
 		CompletedTasks = #()
 		DeletedTasks = #()
-		CurrentTasks = #()
 
 		users = #()
 		main_categs = #()
@@ -736,9 +752,79 @@ struct UI
 		)
 	),
 
-	fn UpdateCatalogPreview =
+	fn CatalogPreviewRltUpdate =
 	(
-		InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
+		case MD_Data.ActiveList of
+		(
+			1:(
+				InfoCatalog.lbl_size.visible = true
+				InfoCatalog.lbl_size_txt.visible = true
+				InfoCatalog.lbl_site.visible = true
+				InfoCatalog.hpl_site.visible = true
+				InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite
+				InfoCatalog.hpl_site.address = MD_Data.ActiveTask.WebSite
+			)
+			2:(
+				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
+				InfoCatalog.lbl_size.visible = false
+				InfoCatalog.lbl_size_txt.visible = false
+
+				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
+				(
+					InfoCatalog.hpl_site.visible = true
+					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
+					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite			
+				)
+				else 
+				(
+					InfoCatalog.hpl_site.visible = false
+				)
+			)
+		)
+	),
+
+	fn TasksRltUpdate =
+	(
+        if MD_Data.CheckedTasks.Count > 0 then
+        (
+			Tasks.btn_clear.enabled = true
+
+			if MD_Data.ValidTasks.count != 0 then
+			(
+				Tasks.btn_get.enabled = true
+				Tasks.btn_get.text = "Get"
+			)
+
+			else if MD_Data.InvalidTasks.count != 0 then
+			(
+				Tasks.btn_get.enabled = true
+				Tasks.btn_get.text = "Send"
+			)
+
+			else if MD_Data.CompletedTasks.count != 0 then
+			(
+				Tasks.btn_get.enabled = true
+				Tasks.btn_get.text = "Backup"
+			)
+
+			else if MD_Data.DeletedTasks.count != 0 then
+			(
+				Tasks.btn_get.enabled = true
+				Tasks.btn_get.text = "Restore"
+			)
+
+			else
+			(
+				Tasks.btn_clear.text = "Delete"
+			)
+        )
+		else
+		(
+			Tasks.btn_get.enabled = false
+			Tasks.btn_clear.enabled = false
+			Tasks.btn_get.text = "Get"
+			Tasks.btn_clear.text = "Clear"
+		)
 	),
 
 	fn Update = (
@@ -748,22 +834,23 @@ struct UI
         try MD_Data.ActiveCategory = Categories.selection catch()
         try MD_Data.ActiveSubCategory = SubCategories.selection catch()
 
-		if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
-		(
-			Tasks.btn_get.enabled = true
-			Tasks.btn_clear.enabled = true
-		)
+		TasksRltUpdate()
+		-- if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
+		-- (
+		-- 	Tasks.btn_get.enabled = true
+		-- 	Tasks.btn_clear.enabled = true
+		-- )
 
-		if MD_Data.InvalidTasks.count != 0 then
-		(
-			Tasks.btn_get.text = "Send"
-		)
+		-- if MD_Data.InvalidTasks.count != 0 then
+		-- (
+		-- 	Tasks.btn_get.text = "Send"
+		-- )
 
-		if MD_Data.CheckedTasks.count != 0 then
-		(
-			Tasks.btn_clear.enabled = true
-			Tasks.btn_clear.text = "Delete"
-		)
+		-- if MD_Data.CheckedTasks.count != 0 then
+		-- (
+		-- 	Tasks.btn_clear.enabled = true
+		-- 	Tasks.btn_clear.text = "Delete"
+		-- )
 
 		if MD_Data.ActiveTask == undefined then
 		(
@@ -805,6 +892,7 @@ struct UI
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
 			
 			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
+
 		)
 
 		if SubCategories.Items.Count != 0 then
@@ -917,7 +1005,7 @@ struct UI
 		)catch()
 
 		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
-		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса.")
+		catch ()
 
 		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_basic_catalog_selection")) catch()
 		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_sub_catalog_selection")) catch()
@@ -929,7 +1017,7 @@ struct UI
 			if exist_sub_categ_index > 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = exist_sub_categ_index
 			else if exist_categ_index == 0 and MD_Data.main_categs.count != 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = 1
 		)
-		catch (MD_Log.Error "Не удалось загрузить данные конфигурации интерфейса. [ActiveCategory, ActiveSubCategory]")
+		catch ()
 
 		try(
 			EMPTY_PREVIEW = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE
@@ -940,10 +1028,10 @@ struct UI
 		MD_Data.ActiveSection = Sections.Selection
 
 		try MD_Data.ActiveTaskIndex = exist_task_index 
-		catch(MD_Log.Error "Не удалось инициализировать переменную. [ActiveTaskIndex]")
+		catch()
 
 		try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
-		catch(MD_Log.Error "Не удалось инициализировать переменную. [ActiveTask]")
+		catch()
 		
 		SwitchRollouts()
 		MD_Data.Update()
@@ -1139,11 +1227,12 @@ struct Callback
 			(
 				MD_Data.ActiveTask.State = STATES[1]
 				MD_Data.ActiveTask.ActiveMesh = 1
+				MD_Data.InWorkTask = undefined
 				MD_Data.WorkLayer = undefined
 				MD_Data.ActiveTask.Update()
 				
 				MD_UI.Update()
-				MD_BBox.Update()				
+				MD_BBox.Update()
 			)
 		)
 	),
