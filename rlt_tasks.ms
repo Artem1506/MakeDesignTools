@@ -37,8 +37,10 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ActiveTaskIndex = undefined
             )
             MD_UI.SwitchRollouts()
+            MD_Data.ActiveTaskAddIndex = 0
             MD_Data.Update()
             MD_UI.Update()
+            -- MD_UI.FillAddList()
             try MD_BBox.Update() catch()            
         )
     )
@@ -57,10 +59,12 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ActiveTask = undefined
                 MD_Data.ActiveTaskIndex = undefined
             )
+            
             try lst_sub_catalog.selection = 1 catch()
-
+            MD_Data.ActiveTaskAddIndex = 0
             MD_Data.Update()
             MD_UI.Update()
+            -- MD_UI.FillAddList()
             try MD_BBox.Update() catch()            
         )
     )
@@ -77,13 +81,15 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ActiveTaskIndex = 1
             )catch(
                 MD_Data.ActiveTask = undefined
-                MD_Data.ActiveTaskIndex = undefined
+                MD_Data.ActiveTaskIndex = 0
             )
             MD_Data.ActiveCategory = lst_basic_catalog.selection
-            
+            MD_Data.ActiveTaskAddIndex = 0
             MD_Data.Update()
             MD_UI.Update()
+            -- MD_UI.FillAddList()
             try MD_BBox.Update() catch()
+            -- try PrintData structs:#(#global_data) catch()
         )
     )
 
@@ -162,7 +168,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.SwitchWorkLayer()
             MD_UI.Update()
             MD_BBox.Update()
-            MD_UI.FillAddList()
+            -- MD_UI.FillAddList()
             MD_UI.CatalogPreviewRltUpdate()
             -- try PrintData structs:#(#global_data) catch()
         )  

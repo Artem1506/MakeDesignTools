@@ -207,6 +207,8 @@ struct GlobalData
 	InWorkTask = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	InWorkTaskFile = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
+	WorkLayerNodes = #(),
+	TempLayerNodes = #(),
 
 	-- Projects
 	proj_main_categs = #(),
@@ -227,13 +229,13 @@ struct GlobalData
 
 	fn CreateWorkLayer =
 	(
-		if ActiveTask != undefined then
+		try
 		(
 			LayerManager.newLayerFromName ActiveTask.Article
 			WorkLayer = LayerManager.getLayerFromName ActiveTask.Article
 			WorkLayer.on
 			WorkLayer.current = true
-		)
+		)catch()
 	),
 
 	fn AttachSelectedToWorkLayer =
@@ -241,6 +243,10 @@ struct GlobalData
 		try
 		(
 			for obj in selection do WorkLayer.addnode obj
+			WorkLayer.on
+			WorkLayer.current = true
+
+			WorkLayerNodes = GetAllLayerNodes ActiveTask.Article
 		)catch()
 	),
 
@@ -250,11 +256,16 @@ struct GlobalData
 		(
 			local nodes = GetAllLayerNodes InWorkTask.Article
 
-			for n in nodes do DEFAULT_LAYER.addNode n
+			for n in nodes do 
+			(
+				DEFAULT_LAYER.addNode n
+				n.IsHidden = False
+			)
 			DeleteAllSubLayers InWorkTask.Article
 			LayerManager.deleteLayerByName InWorkTask.Article
 			InWorkTask = undefined
 			WorkLayer = undefined
+			CompleteRedraw()
 		)
 		catch()
 	),
@@ -329,13 +340,62 @@ struct GlobalData
 		)
 	),
 
+	fn SetMesh =
+	(
+		if (selection.count == 1 and SuperClassOf selection[1] == GeometryClass) then
+		(
+			local obj = selection[1]
+
+			if MD_Data.ActiveTask.Mesh == obj then
+			(
+				MD_Data.ActiveTask.Mesh = undefined
+				MD_Data.ActiveTask.ActiveMesh = 1
+			)
+			else
+			(
+				MD_Data.ActiveTask.Mesh = obj
+				MD_Data.ActiveTask.ActiveMesh = 1
+			)
+
+
+			if MD_Data.ActiveTask.Mesh == MD_Data.ActiveTask.AddMesh then
+			MD_Data.ActiveTask.AddMesh = undefined
+		)
+	),
+
+	fn SetAddMesh =
+	(
+		if (selection.count == 1 and SuperClassOf selection[1] == GeometryClass) then
+		(
+			local obj = selection[1]
+
+			if MD_Data.ActiveTask.AddMesh == obj then
+			(
+				MD_Data.ActiveTask.AddMesh = undefined
+				obj.IsHidden = False
+				MD_Data.ActiveTask.ActiveMesh = 1
+			)
+			else
+			(
+				MD_Data.ActiveTask.AddMesh = obj
+				obj.IsHidden = True
+				MD_Data.ActiveTask.ActiveMesh = 2
+			)
+
+			if MD_Data.ActiveTask.AddMesh == MD_Data.ActiveTask.Mesh then
+			MD_Data.ActiveTask.Mesh = undefined
+			CompleteRedraw()
+		)
+	),
+
 	fn Update =
 	(
 		case ActiveSection of
 		(
 			1:(
 				try (GetTasksInActiveCategory()) catch()
-
+				-- try (WorkLayerNodes = GetAllLayerNodes ActiveTask.Article)catch()
+				
 				if Tasks.count != 0 then
 				(
 					-- Установить активное задание
@@ -651,49 +711,91 @@ struct UI
 		case Sections.Selection of
 		(
 			1:(
+				ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+				ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+				ToolsCatalog.btn_mesh_switch.text = ">> Switch Between Meshes"
+
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
-				local task_layer_nodes = #()
-				local temp_layer_nodes = #()
+
 				local objs = #()
 
 				if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 				(
-					task_layer_nodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-					temp_layer_nodes = GetAllLayerNodes mdt_temp_layer
-					objs = for obj in (objects as array) where (findItem temp_layer_nodes obj == 0) collect obj
+					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+
+					objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
 
 					-- Пивот
 					ToolsCatalog.btn_set_pivot.enabled = true
 
 					-- Доп. меш
-					if MD_Data.ActiveTask.SizeTrans != undefined and MD_Data.ActiveTask.AddMesh != undefined then
+					if MD_Data.ActiveTask.SizeTrans != undefined then 
 					(
-						ToolsCatalog.btn_mesh_switch.enabled = true
-
-						case MD_Data.ActiveTask.ActiveMesh of
+						if (selection.count == 1 and \
+							SuperClassOf selection[1] == GeometryClass and \
+							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 						(
-							1:(
-								ToolsCatalog.btn_mesh_switch.text = ">> Add"								
+							ToolsCatalog.btn_main_mesh.enabled = true	
+
+							if MD_Data.ActiveTask.Mesh != undefined then
+							(
+								ToolsCatalog.btn_add_mesh.enabled = true
+								ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
 							)
-							2:(
-								ToolsCatalog.btn_mesh_switch.text = "<< Main"
-							)							
+							else
+							(
+								ToolsCatalog.btn_add_mesh.enabled = true
+								ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+							)				
+						)
+
+						if MD_Data.ActiveTask.AddMesh != undefined then
+						(
+							ToolsCatalog.btn_mesh_switch.enabled = true
+							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
+
+							case MD_Data.ActiveTask.ActiveMesh of
+							(
+								1:(
+									ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"								
+								)
+								2:(
+									ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
+								)							
+							)						
+						)
+						else(
+							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+						)
+
+						if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
+						(
+							ToolsCatalog.btn_valid.enabled = true
 						)
 					)
-
+					else
+					(
+						if (selection.count == 1 and \
+							SuperClassOf selection[1] == GeometryClass and \
+							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+						(
+							ToolsCatalog.btn_main_mesh.enabled = true							
+						)
+					)
+					
 					-- Сохранить работу
-					-- if (MD_Data.WorkLayer != undefined and task_layer_nodes.count != 0) then
-					-- (
-					-- 	ToolsCatalog.btn_save_work.enabled = true
-					-- )
+					if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
+					(
+						ToolsCatalog.btn_save_work.enabled = true
+					)
 
-					if objs.count != task_layer_nodes.count and objs.count != 0 then 
+					-- Добавить к рабочему слою
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 					(
 						ToolsCatalog.btn_attach_to_task.enabled = true
 						ToolsCatalog.btn_save_work.enabled = false
 					)
-					else ToolsCatalog.btn_save_work.enabled = true
 
 					-- Загрузить работу
 					if MD_Data.ActiveTask.SavedWorks.count != 0 then
@@ -707,8 +809,8 @@ struct UI
 						ToolsCatalog.btn_export.enabled = true
 					)
 				)
-				free task_layer_nodes
-				free temp_layer_nodes
+				-- free MD_Data.WorkLayerNodes
+				-- free MD_Data.TempLayerNodes
 				free objs
 			)
 			2:(
@@ -724,21 +826,25 @@ struct UI
 			1:(
 				local add_items = #()
 				-- Материалы
-				for mat in MD_Data.ActiveTask.Materials do
+				try
 				(
-					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
-					dn_list_item.ForeColor = DN_CLR_DEFAULT
+					for mat in MD_Data.ActiveTask.Materials do
+					(
+						dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
+						dn_list_item.ForeColor = DN_CLR_DEFAULT
 
-					dn_list_item.SubItems.add mat.material
-					try dn_list_item.SubItems.add mat.texture_d catch()
-					try dn_list_item.SubItems.add mat.texture_m catch()
-					try dn_list_item.SubItems.add mat.texture_n catch()
-					try dn_list_item.SubItems.add mat.texture_ard catch()
+						dn_list_item.SubItems.add mat.material
+						try dn_list_item.SubItems.add mat.texture_d catch()
+						try dn_list_item.SubItems.add mat.texture_m catch()
+						try dn_list_item.SubItems.add mat.texture_n catch()
+						try dn_list_item.SubItems.add mat.texture_ard catch()
 
-					-- Добавить к доп. списку элементов
-					append add_items dn_list_item
+						-- Добавить к доп. списку элементов
+						append add_items dn_list_item
+					)					
 				)
-				
+				catch()
+
 				-- Заполнить доп. список панели Tasks (материалы)
 				ListAdd.Items.Clear()
 				ListAdd.Items.AddRange add_items
@@ -830,7 +936,8 @@ struct UI
 	fn Update = (
 		-- Обновляет интерфейс исходя из текущих данных
 		FillData()
-
+		FillAddList()
+		
         try MD_Data.ActiveCategory = Categories.selection catch()
         try MD_Data.ActiveSubCategory = SubCategories.selection catch()
 
@@ -1097,6 +1204,8 @@ struct BoundingBox
 		select cur_sel
 		snapMode.toFrozen = true
 		completeRedraw()
+
+		MD_Data.TempLayerNodes = GetAllLayerNodes Layer.Name
 	),
 
 	fn CreateLayer =
@@ -1146,6 +1255,8 @@ struct BoundingBox
 			)
 			else 
 			(
+				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+
 				case MD_Data.ActiveTask.ActiveMesh of
 				(
 					1:(
@@ -1159,6 +1270,9 @@ struct BoundingBox
 
 						bb.wireColor = clr_main
 						arrow.wireColor = clr_main
+
+						try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
+						try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
 					)
 					2:(
 						bt_w = MD_Data.ActiveTask.SizeTrans[1]
@@ -1171,8 +1285,12 @@ struct BoundingBox
 
 						bb.wireColor = clr_add
 						arrow.wireColor = clr_add
+
+						try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
+						try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
 					)
 				)
+				completeRedraw()
 
 				if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
 				else pp.isHidden = true
@@ -1207,9 +1325,27 @@ struct Callback
 (
 	ToolsUIUpdate = undefined,
 
-	fn CallbackFn1 ev nd = 
+	fn UpdateUI ev nd = 
 	(
 		MD_UI.ToolsRltUpdate()
+	),
+
+	fn DeleteObject ev nd = 
+	(
+		if MD_Data.ActiveTask != undefined then
+		(
+			try SuperClassOf MD_Data.ActiveTask.Mesh != GeometryClass catch
+			(
+				MD_Data.ActiveTask.Mesh = undefined
+			)
+			try SuperClassOf MD_Data.ActiveTask.AddMesh != GeometryClass catch
+			(
+				MD_Data.ActiveTask.AddMesh = undefined
+			)
+			MD_Data.ActiveTask.ActiveMesh = 1
+			MD_BBox.Update()
+		)
+		UpdateUI ev nd
 	),
 
 	fn Destruct =
@@ -1241,9 +1377,9 @@ struct Callback
 	(
 		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#CheckExistTaskLayer
 		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
-		added:CallbackFn1 \
-		deleted:CallbackFn1 \
-		layerChanged:CallbackFn1 \
-		selectionChanged:CallbackFn1
+		added:UpdateUI \
+		deleted:DeleteObject \
+		layerChanged:UpdateUI \
+		selectionChanged:UpdateUI
 	)
 )
