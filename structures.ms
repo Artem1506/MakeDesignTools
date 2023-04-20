@@ -692,8 +692,8 @@ struct UI
 		(
 			1:(
 				ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-				ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-				ToolsCatalog.btn_mesh_switch.text = ">> Switch Between Meshes"
+				ToolsCatalog.btn_add_mesh.text = "Add Mesh"
+				-- ToolsCatalog.btn_mesh_switch.text = ">> Switch Between Meshes"
 
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
@@ -717,25 +717,30 @@ struct UI
 							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 						(
 							ToolsCatalog.btn_main_mesh.enabled = true				
+							ToolsCatalog.btn_add_mesh.enabled = true				
 						)
 
 						if MD_Data.ActiveTask.AddMesh != undefined then
 						(
-							ToolsCatalog.btn_mesh_switch.enabled = true
-							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
+							-- ToolsCatalog.btn_mesh_switch.enabled = true
+							ToolsCatalog.btn_add_mesh_icon.text = "•"
+							ToolsCatalog.btn_add_mesh_icon.enabled = true
+							ToolsCatalog.btn_add_mesh_icon.tooltip = MD_Data.ActiveTask.AddMesh.name
 
-							case MD_Data.ActiveTask.ActiveMesh of
-							(
-								1:(
-									ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"								
-								)
-								2:(
-									ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
-								)							
-							)						
+							-- case MD_Data.ActiveTask.ActiveMesh of
+							-- (
+							-- 	1:(
+							-- 		ToolsCatalog.btn_mesh_switch.text = ">> Switch To Add Mesh"								
+							-- 	)
+							-- 	2:(
+							-- 		ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
+							-- 	)							
+							-- )						
 						)
 						else(
-							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+							ToolsCatalog.btn_add_mesh_icon.text = ""
+							ToolsCatalog.btn_add_mesh_icon.tooltip = ""
+							ToolsCatalog.btn_add_mesh_icon.enabled = false
 						)
 
 						if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
@@ -756,12 +761,16 @@ struct UI
 					-- Основной меш
 					if MD_Data.ActiveTask.Mesh != undefined then
 					(
-						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+						ToolsCatalog.btn_main_mesh_icon.text = "•"
+						ToolsCatalog.btn_main_mesh_icon.enabled = true
+						ToolsCatalog.btn_main_mesh_icon.tooltip = MD_Data.ActiveTask.Mesh.Name
 						ToolsCatalog.btn_valid.enabled = true
 					)
 					else
 					(
-						ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+						ToolsCatalog.btn_main_mesh_icon.text = ""
+						ToolsCatalog.btn_main_mesh_icon.enabled = false
+						ToolsCatalog.btn_main_mesh_icon.tooltip = ""
 						ToolsCatalog.btn_valid.enabled = false
 					)
 
@@ -772,10 +781,13 @@ struct UI
 					)
 
 					-- Добавить к рабочему слою
-					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 and selection.count != 0 then 
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 					(
+						local obj_outside = false
+
+						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+						if obj_outside then
 						ToolsCatalog.btn_attach_to_task.enabled = true
-						ToolsCatalog.btn_save_work.enabled = false
 					)
 
 					-- Загрузить работу
@@ -1215,6 +1227,30 @@ struct BoundingBox
 		)
 	),
 
+	fn SetPivotPos =
+	(
+		try(
+			bb_x = [bb.min.x, bb.center.x, bb.max.x]
+			bb_y = [bb.min.y, bb.center.y, bb.max.y]
+			bb_z = [bb.min.z, bb.center.z, bb.max.z]
+
+			pivot_pos = [bb_x[MD_UI.Dialogs.PivotParams.lst_x.selection], \
+			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
+			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
+			
+			pp.pos = pivot_pos			
+		)catch()
+	),
+
+	fn ResetPivot =
+	(
+		try(
+			pivot_pos = [0.0, 0.0, 0.0]
+			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			write_pivot_data()
+		)catch()
+	),
+
 	fn Update =
 	(
 		case MD_Data.ActiveSection of
@@ -1331,6 +1367,17 @@ struct Callback
 		UpdateUI ev nd
 	),
 
+	fn LayerChange ev nd = 
+	(
+		try
+		(
+			MD_Data.ActiveTask.Mesh = undefined
+			MD_Data.ActiveTask.AddMesh = undefined
+		)catch()
+
+		UpdateUI ev nd
+	),
+
 	fn Destruct =
 	(
 		callbacks.removeScripts id:#CheckExistTaskLayer
@@ -1362,7 +1409,7 @@ struct Callback
 		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
 		added:UpdateUI \
 		deleted:DeleteObject \
-		layerChanged:UpdateUI \
+		layerChanged:LayerChange \
 		selectionChanged:UpdateUI
 	)
 )
