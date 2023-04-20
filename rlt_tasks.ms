@@ -12,9 +12,28 @@ rollout rlt_tasks "Tasks"
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
     
+    fn UpdateAll =
+    (
+        try (
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+            MD_Data.ActiveTaskIndex = 1
+        )catch(
+            MD_Data.ActiveTask = undefined
+            MD_Data.ActiveTaskIndex = undefined
+        )
+        
+        MD_Data.SwitchWorkLayer()
+        MD_Data.Update()
+        MD_UI.Update()
+        try MD_BBox.Update() catch()
+    )
+
     on rlt_tasks open do
     (
         lv_main.Name = "lv_main"
+        MD_Data.ActiveSection = lst_sections.selection
+        MD_Data.ActiveCategory = lst_basic_catalog.selection
+        MD_Data.ActiveSubCategory = lst_sub_catalog.selection
     )
     
     on rlt_tasks close do
@@ -27,21 +46,11 @@ rollout rlt_tasks "Tasks"
         if MD_Data.ActiveSection != arg then
         (
             MD_Data.ActiveSection = arg
-
+            
             try MD_Callbacks.Destruct() catch()
-            try (
-                MD_Data.ActiveTask = MD_Data.Tasks[1]
-                MD_Data.ActiveTaskIndex = 1
-            )catch(
-                MD_Data.ActiveTask = undefined
-                MD_Data.ActiveTaskIndex = undefined
-            )
             MD_UI.SwitchRollouts()
-            MD_Data.ActiveTaskAddIndex = 0
-            MD_Data.Update()
-            MD_UI.Update()
-            -- MD_UI.FillAddList()
-            try MD_BBox.Update() catch()            
+
+            UpdateAll()
         )
     )
     
@@ -50,22 +59,10 @@ rollout rlt_tasks "Tasks"
         if MD_Data.ActiveCategory != arg then
         (
             MD_Data.ActiveCategory = arg
-
-            try MD_Callbacks.Destruct() catch()
-            try (
-                MD_Data.ActiveTask = MD_Data.Tasks[1]
-                MD_Data.ActiveTaskIndex = 1
-            )catch(
-                MD_Data.ActiveTask = undefined
-                MD_Data.ActiveTaskIndex = undefined
-            )
-            
             try lst_sub_catalog.selection = 1 catch()
-            MD_Data.ActiveTaskAddIndex = 0
-            MD_Data.Update()
-            MD_UI.Update()
-            -- MD_UI.FillAddList()
-            try MD_BBox.Update() catch()            
+            MD_Data.ActiveSubCategory = lst_sub_catalog.selection            
+
+            UpdateAll()
         )
     )
 
@@ -73,23 +70,10 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
-            MD_Data.ActiveSubCategory = arg
-
-            try MD_Callbacks.Destruct() catch()
-            try (
-                MD_Data.ActiveTask = MD_Data.Tasks[1]
-                MD_Data.ActiveTaskIndex = 1
-            )catch(
-                MD_Data.ActiveTask = undefined
-                MD_Data.ActiveTaskIndex = 0
-            )
             MD_Data.ActiveCategory = lst_basic_catalog.selection
-            MD_Data.ActiveTaskAddIndex = 0
-            MD_Data.Update()
-            MD_UI.Update()
-            -- MD_UI.FillAddList()
-            try MD_BBox.Update() catch()
-            -- try PrintData structs:#(#global_data) catch()
+            MD_Data.ActiveSubCategory = arg
+            
+            UpdateAll()
         )
     )
 
@@ -168,9 +152,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.SwitchWorkLayer()
             MD_UI.Update()
             MD_BBox.Update()
-            -- MD_UI.FillAddList()
             MD_UI.CatalogPreviewRltUpdate()
-            -- try PrintData structs:#(#global_data) catch()
         )  
     )
 
@@ -184,8 +166,6 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
             MD_UI.CatalogPreviewRltUpdate()
-
-            -- try PrintData structs:#(#global_data) catch()
         ) 
     )
 
@@ -197,15 +177,11 @@ rollout rlt_tasks "Tasks"
     on btn_work_state pressed do
     (
         MD_Data.CreateWorkState()
-
-        -- try PrintData structs:#(#global_data) catch()
     )
 
     on btn_exit_work_state pressed do
     (
         MD_Data.ExitWorkState()
-
-        -- try PrintData structs:#(#global_data) catch()
     )
 
     on lv_add ColumnClick s e do

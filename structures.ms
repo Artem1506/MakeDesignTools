@@ -1,6 +1,4 @@
 
-PrintData
--- Логирование
 struct LogSys
 (
 	fn Info msg_text = (format "MDT_INFO: %\n" msg_text),
@@ -9,7 +7,6 @@ struct LogSys
 )
 MD_Log = LogSys()
 
--- Подсказки
 struct UI_Tooltips
 (
     -- Settings
@@ -48,7 +45,6 @@ struct UI_Tooltips
 )
 MD_Tooltips = UI_Tooltips()
 
--- Структура материала активного задания
 struct TaskMaterial
 (
 	Article = undefined,
@@ -63,7 +59,6 @@ struct TaskMaterial
 	WebSite = undefined
 )
 
--- Структура задания
 struct Task
 (
 	File = undefined,
@@ -107,7 +102,6 @@ struct Task
 
 	fn Init = (
 		-- Инициализация данных задания
-
         if (File != undefined and DoesFileExist File) then
         (
 			-- Читать данные из json файла
@@ -180,7 +174,6 @@ struct Task
 	on create do Init()
 )
 
--- Структура для работы с глобальными данными
 struct GlobalData
 (
 	Categories = #(),
@@ -209,7 +202,6 @@ struct GlobalData
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 	WorkLayerNodes = #(),
 	TempLayerNodes = #(),
-
 	-- Projects
 	proj_main_categs = #(),
 	proj_main_categ_ids = #(),
@@ -220,8 +212,7 @@ struct GlobalData
 
 	fn SwitchWorkLayer =
 	(
-		try
-		(
+		try (
 			if ActiveTask.Article == InWorkTask.Article then WorkLayer.on = true
 			else WorkLayer.on = false			
 		)catch()
@@ -229,8 +220,7 @@ struct GlobalData
 
 	fn CreateWorkLayer =
 	(
-		try
-		(
+		try (
 			LayerManager.newLayerFromName ActiveTask.Article
 			WorkLayer = LayerManager.getLayerFromName ActiveTask.Article
 			WorkLayer.on
@@ -240,20 +230,19 @@ struct GlobalData
 
 	fn AttachSelectedToWorkLayer =
 	(
-		try
-		(
+		try (
 			for obj in selection do WorkLayer.addnode obj
 			WorkLayer.on
 			WorkLayer.current = true
 
 			WorkLayerNodes = GetAllLayerNodes ActiveTask.Article
+			select cur_selection
 		)catch()
 	),
 
 	fn DeleteWorkLayer =
 	(
-		try
-		(
+		try (
 			local nodes = GetAllLayerNodes InWorkTask.Article
 
 			for n in nodes do 
@@ -326,10 +315,10 @@ struct GlobalData
 
 	fn GetTasksInActiveCategory =
 	(
+		Tasks = #()
+
 		local activ_dir = sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory]
 		local tasks_dirs = GetDirectories (activ_dir + "\\*")
-
-		Tasks = #()
 
 		for dir in tasks_dirs do
 		(
@@ -393,15 +382,19 @@ struct GlobalData
 		case ActiveSection of
 		(
 			1:(
+				ActiveTaskAddIndex = undefined
+
 				try (GetTasksInActiveCategory()) catch()
-				-- try (WorkLayerNodes = GetAllLayerNodes ActiveTask.Article)catch()
-				
+
 				if Tasks.count != 0 then
 				(
 					-- Установить активное задание
-					if ActiveTaskIndex == undefined then
-					ActiveTask = Tasks[1]
-					else ActiveTask = Tasks[ActiveTaskIndex]
+					try
+					(
+						if ActiveTaskIndex == undefined then
+						ActiveTask = Tasks[1]
+						else ActiveTask = Tasks[ActiveTaskIndex]
+					)catch()
 
 					-- Установить рабочее состояние
 					if ActiveTask != undefined then
@@ -412,14 +405,13 @@ struct GlobalData
 							(STATES[2]):(CreateWorkState())
 							(STATES[3]):()
 							(STATES[4]):()
-							-- InWorkTask = ActiveTask
 						)
 					)						
 				)
 				else 
 				(
 					ActiveTask = undefined
-
+					ActiveTaskAddIndex = undefined
 					try SwitchWorkLayer() catch()
 				)
 			)
@@ -489,7 +481,6 @@ struct GlobalData
 						for j in k["children"] as array do 
 						(
 							append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
-							-- append arr_ids j["article"]
 							sub_categ_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
 							sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
 							append arr_ids sub_categ_dir
@@ -497,7 +488,6 @@ struct GlobalData
 						)
 						append sub_categs arr_names
 						append sub_categ_lib_dirs arr_ids
-						-- append Tasks arr_tasks
 					)
 				)
 				arr_names = #()
@@ -521,13 +511,11 @@ struct GlobalData
 				append users us_ids				
 			)
 		)
-		Update()
 	),
 
 	on create do Init()
 )
 
--- Структура хранит диалоговые окна
 struct UI_Dialogs
 (
 	Configure = dlg_configure,
@@ -538,7 +526,6 @@ struct UI_Dialogs
 	Progress = dlg_progress
 )
 
--- Структура для работы с интерфейсом
 struct UI
 (
 	Main = rlt_make_design,
@@ -558,9 +545,6 @@ struct UI
 	InfoCatalogPreview = rlt_info_catalog.img_prev,
 	InfoCatalogWeb = rlt_info_catalog.hpl_site,
 	InfoCatalogSize = rlt_info_catalog.lbl_size_txt,
-	ActiveMainItem = undefined,
-	ActiveAddItem = undefined,
-	CheckedItems = undefined,
 	EMPTY_PREVIEW = undefined,
 
 	fn InitLists = (
@@ -609,9 +593,6 @@ struct UI
 		case MD_Data.ActiveSection of
 		(
 			1:(
-				MD_Data.ActiveCategory = Categories.Selection
-				MD_Data.ActiveSubCategory = SubCategories.Selection
-
 				-- Заполнить данными список заданий панели Tasks
 				local main_items = #()
 				local item_index = 0
@@ -643,8 +624,8 @@ struct UI
 					else dn_list_item.SubItems.add ""
 
 					-- Transformation
-					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
-					if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
+					if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
+					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
 					else dn_list_item.SubItems.add ""
 
 					-- User name
@@ -674,7 +655,6 @@ struct UI
 					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.RefBitmap
 				) 
 				catch()
-				-- catch(MD_Log.Error "Не удалось загрузить изображение референса.")
 				
 				try (
 					InfoCatalogWeb.text = ""
@@ -736,18 +716,7 @@ struct UI
 							SuperClassOf selection[1] == GeometryClass and \
 							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 						(
-							ToolsCatalog.btn_main_mesh.enabled = true	
-
-							if MD_Data.ActiveTask.Mesh != undefined then
-							(
-								ToolsCatalog.btn_add_mesh.enabled = true
-								ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-							)
-							else
-							(
-								ToolsCatalog.btn_add_mesh.enabled = true
-								ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-							)				
+							ToolsCatalog.btn_main_mesh.enabled = true				
 						)
 
 						if MD_Data.ActiveTask.AddMesh != undefined then
@@ -784,6 +753,18 @@ struct UI
 						)
 					)
 					
+					-- Основной меш
+					if MD_Data.ActiveTask.Mesh != undefined then
+					(
+						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+						ToolsCatalog.btn_valid.enabled = true
+					)
+					else
+					(
+						ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+						ToolsCatalog.btn_valid.enabled = false
+					)
+
 					-- Сохранить работу
 					if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
 					(
@@ -791,7 +772,7 @@ struct UI
 					)
 
 					-- Добавить к рабочему слою
-					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 and selection.count != 0 then 
 					(
 						ToolsCatalog.btn_attach_to_task.enabled = true
 						ToolsCatalog.btn_save_work.enabled = false
@@ -809,8 +790,7 @@ struct UI
 						ToolsCatalog.btn_export.enabled = true
 					)
 				)
-				-- free MD_Data.WorkLayerNodes
-				-- free MD_Data.TempLayerNodes
+				free MD_Data.WorkLayerNodes
 				free objs
 			)
 			2:(
@@ -938,8 +918,8 @@ struct UI
 		FillData()
 		FillAddList()
 		
-        try MD_Data.ActiveCategory = Categories.selection catch()
-        try MD_Data.ActiveSubCategory = SubCategories.selection catch()
+        -- try MD_Data.ActiveCategory = Categories.selection catch()
+        -- try MD_Data.ActiveSubCategory = SubCategories.selection catch()
 
 		TasksRltUpdate()
 		-- if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
@@ -1106,10 +1086,10 @@ struct UI
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
 		-- Инициализация входных значений
-		try(
-			Categories.Selection = MD_Data.ActiveCategory
-			SubCategories.Selection = MD_Data.ActiveSubCategory
-		)catch()
+		-- try(
+		-- 	Categories.Selection = MD_Data.ActiveCategory
+		-- 	SubCategories.Selection = MD_Data.ActiveSubCategory
+		-- )catch()
 
 		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
 		catch ()
@@ -1148,7 +1128,6 @@ struct UI
 	on create do Init()
 )
 
--- Габаритный контейнер
 struct BoundingBox
 (
 	Layer = undefined,
@@ -1238,78 +1217,82 @@ struct BoundingBox
 
 	fn Update =
 	(
-		local arrow_offset = ConvertValueToSystemUnits #cm 10.0
-
-		try read_pivot_data() catch()
-		pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
-		arrow_rad = 0.0
-
-		if MD_Data.ActiveTask != undefined then
+		case MD_Data.ActiveSection of
 		(
-			if MD_Data.ActiveTask.State == STATES[1] then 
-			(
+			1:(
+				local arrow_offset = ConvertValueToSystemUnits #cm 10.0
+
+				try read_pivot_data() catch()
+				pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+				arrow_rad = 0.0
 				bbox_size = [0, 0, 0]
+				bb.isHidden = false
+				arrow.isHidden = false
 				pp.isHidden = true
 				bb.wireColor = clr_main
 				arrow.wireColor = clr_main
-			)
-			else 
-			(
-				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 
-				case MD_Data.ActiveTask.ActiveMesh of
+				if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State != STATES[1] then
 				(
-					1:(
-						bb_w = MD_Data.ActiveTask.Size[1]
-						bb_d = MD_Data.ActiveTask.Size[2]
-						bb_h = MD_Data.ActiveTask.Size[3]
+					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 
-						bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
-						ConvertValueToSystemUnits #cm bb_d,\
-						ConvertValueToSystemUnits #cm bb_h]
+					case MD_Data.ActiveTask.ActiveMesh of
+					(
+						1:(
+							bb_w = MD_Data.ActiveTask.Size[1]
+							bb_d = MD_Data.ActiveTask.Size[2]
+							bb_h = MD_Data.ActiveTask.Size[3]
 
-						bb.wireColor = clr_main
-						arrow.wireColor = clr_main
+							bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
+							ConvertValueToSystemUnits #cm bb_d,\
+							ConvertValueToSystemUnits #cm bb_h]
 
-						try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
-						try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
+							bb.wireColor = clr_main
+							arrow.wireColor = clr_main
+
+							try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
+							try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
+						)
+						2:(
+							bt_w = MD_Data.ActiveTask.SizeTrans[1]
+							bt_d = MD_Data.ActiveTask.SizeTrans[2]
+							bt_h = MD_Data.ActiveTask.SizeTrans[3]
+
+							bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
+							ConvertValueToSystemUnits #cm bt_d,\
+							ConvertValueToSystemUnits #cm bt_h]
+
+							bb.wireColor = clr_add
+							arrow.wireColor = clr_add
+
+							try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
+							try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
+						)
 					)
-					2:(
-						bt_w = MD_Data.ActiveTask.SizeTrans[1]
-						bt_d = MD_Data.ActiveTask.SizeTrans[2]
-						bt_h = MD_Data.ActiveTask.SizeTrans[3]
 
-						bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
-						ConvertValueToSystemUnits #cm bt_d,\
-						ConvertValueToSystemUnits #cm bt_h]
-
-						bb.wireColor = clr_add
-						arrow.wireColor = clr_add
-
-						try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
-						try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
-					)
+					if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
+					else pp.isHidden = true
+					
+					arrow_rad = ConvertValueToSystemUnits #cm 20.0
 				)
+
+				bb.length = bbox_size[1]
+				bb.width = bbox_size[2]
+				bb.height = bbox_size[3]
+				arrow.radius = arrow_rad
+				arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+
+				if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
+				else Layer.on = false
+
 				completeRedraw()
-
-				if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
-				else pp.isHidden = true
-				
-				arrow_rad = ConvertValueToSystemUnits #cm 20.0
-
+			)
+			2:(
+				bb.isHidden = true
+				arrow.isHidden = true
+				pp.isHidden = true
 			)
 		)
-
-		bb.length = bbox_size[1]
-		bb.width = bbox_size[2]
-		bb.height = bbox_size[3]
-		arrow.radius = arrow_rad
-		arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
-
-		if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
-		else Layer.on = false
-
-		completeRedraw()
 	),
 
 	fn Init =

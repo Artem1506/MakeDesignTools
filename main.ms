@@ -23,6 +23,8 @@
         include "rlt_about.ms"
         include "rlt_make_design.ms"
         
+        local cur_selection = selection as array
+
         MD_Data = GlobalData()
         MD_UI = UI()
         MD_BBox = BoundingBox()
@@ -33,6 +35,8 @@
         try MD_Callbacks.Add() catch()
         try MD_BBox.Update() catch()
 
+        select cur_selection
+        
         include "print_data.ms"
         -- PrintData structs:#(#active_task)
         -- try PrintData structs:#(#global_data) catch()
