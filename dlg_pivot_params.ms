@@ -13,26 +13,15 @@ rollout dlg_pivot_params "Pivot settings"
 
     on dlg_pivot_params close do
     (
-
+        MD_BBox.write_pivot_data()
     )
 
     on btn_ok pressed do
     (
-
+        destroyDialog MD_UI.Dialogs.PivotParams  
     )
 
-    on lst_x selected arg do 
-    (
-
-    )
-
-    on lst_y selected arg do 
-    (
-
-    )
-
-    on lst_z selected arg do
-    (
-
-    )
+    on lst_x selected arg do MD_BBox.SetPivotPos()
+    on lst_y selected arg do MD_BBox.SetPivotPos()
+    on lst_z selected arg do MD_BBox.SetPivotPos()
 )

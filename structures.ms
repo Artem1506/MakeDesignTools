@@ -81,15 +81,42 @@ struct Task
 	AddMesh = undefined,
 	ActiveMesh = 1,
 	SavedWorks = #(),
+	SavedWorksPreviews = #(),
 	RefBitmap = undefined,
 	MatLibFile = undefined,
 	Valid = False,
+	InWorkDir = undefined,
 
 	fn CreateMaterial =
 	(
 
 	),
 
+	fn LoadWork saved_file quiet_mode:true =
+	(
+		local cur_sel_objs = (selection as array)
+		local load = true
+	
+		MD_Data.WorkLayerNodes = GetAllLayerNodes Article
+
+		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
+		(
+			load = (queryBox "Are you sure?\nBefore loading, all previously unsaved objects from the working layer will be deleted!" \
+			title:"Warning!" icon:#information)
+		)
+		
+		if load then
+		(
+			with redraw off
+			(
+				try(delete MD_Data.WorkLayerNodes; gc())catch()
+				mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
+				try(select cur_sel_objs)catch()
+			)
+			completeRedraw()				
+		)
+	),
+	
 	fn Update =
 	(
 		if MD_Data.ActiveTask != undefined then
@@ -109,7 +136,7 @@ struct Task
             if data != undefined then
             (
 				local task_file_dir = getFilenamePath File
-				local task_in_work_dir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
+				InWorkDir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
 				local ref_file_name = data["ref_photo_name"]
 				local ref_file_type = getFilenameType ref_file_name
 				local task_dir_files = GetFiles (task_file_dir + "/*.*")
@@ -161,9 +188,9 @@ struct Task
 				) 
 				catch()
 				
-				if pathConfig.doesFileExist task_in_work_dir then
+				if pathConfig.doesFileExist InWorkDir then
 				(
-					SavedWorks = GetFiles (task_in_work_dir + "/*.max")
+					SavedWorks = GetFiles (InWorkDir + "/*.max")
 					sort SavedWorks
 				)
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
@@ -523,7 +550,95 @@ struct UI_Dialogs
 	PivotParams = dlg_pivot_params,
 	LoadWork = dlg_load_work,
 	Validation = dlg_validation,
-	Progress = dlg_progress
+	Progress = dlg_progress,
+
+	fn UpdatePreview =
+	(
+		local item_index = LoadWork.lv_files.SelectedItems.Item[0].Index + 1
+		LoadWork.img_prew.Image = MD_Data.ActiveTask.SavedWorksPreviews[item_index]
+	),
+
+	fn DeleteSavedFiles =
+	(
+		local indexes = #()
+
+		if (queryBox "Are you sure?\nAll saves except the last one will be deleted!" title:"Warning!" icon:#warning) then
+		(
+			for i = 0 to LoadWork.lv_files.Items.count - 1 do
+			(
+				if LoadWork.lv_files.Items.Item[i].Checked == true then
+				(
+					local index = LoadWork.lv_files.Items.Item[i].Index + 1
+					max_file = MD_Data.ActiveTask.SavedWorks[index]
+					prev_file = (trimRight max_file ".max") + ".jpg"
+					
+					deleteFile max_file
+					deleteFile prev_file
+
+					append indexes index
+				)
+			)
+
+			-- Удалить ненужные элементы в обраном порядке
+			for i = indexes.count to 1 by -1 do
+			(
+				deleteItem MD_Data.ActiveTask.SavedWorks indexes[i]
+				deleteItem MD_Data.ActiveTask.SavedWorksPreviews indexes[i]
+			)
+		)
+	),
+
+	fn InitLoadWork =
+	(
+		-- Список сохранённых работ
+		LoadWork.lv_files.Columns.Clear()
+		LoadWork.lv_files.BorderStyle = DN_Lib.BorderNone
+		LoadWork.lv_files.gridLines = true
+		LoadWork.lv_files.View = (dotNetClass "System.Windows.Forms.View").Details
+		LoadWork.lv_files.fullRowSelect = true
+		LoadWork.lv_files.MultiSelect = false
+		LoadWork.lv_files.HideSelection = false
+		LoadWork.lv_files.HoverSelection  = false
+		LoadWork.lv_files.CheckBoxes = true
+		LoadWork.lv_files.Columns.add SAVED_WORKS_LIST_COLUMNS[1] 110
+		LoadWork.lv_files.Columns.add SAVED_WORKS_LIST_COLUMNS[2] 110
+		
+		local items = #()
+		local date_time = time_part = date_time = ""
+		local prev_file
+
+		for i = 1 to MD_Data.ActiveTask.SavedWorks.count do
+		(
+			li = dotNetObject "System.Windows.Forms.ListViewItem" (getFilenameFile MD_Data.ActiveTask.SavedWorks[i])
+			li.ForeColor = DN_CLR_DEFAULT
+
+			-- Создать битмап с превью
+			prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[i] ".max") + ".jpg"
+			prev_bm = CreatePreviewFromImageFile prev_file SAVED_PREVIEW_SIZE type:#dotnet
+			append MD_Data.ActiveTask.SavedWorksPreviews prev_bm
+
+			-- Дата сохранения
+			date_time = filterString (getFileCreateDate MD_Data.ActiveTask.SavedWorks[i]) " "
+			time_part = filterString date_time[2] ":"
+			date_time = date_time[1] + "  " + time_part[1] + ":" + time_part[2]
+			li.SubItems.add date_time
+
+			append items li
+		)
+		-- Заполнить список
+		LoadWork.lv_files.Items.Clear()
+		LoadWork.lv_files.Items.AddRange items
+		LoadWork.lv_files.Update()
+		try LoadWork.lv_files.Items.Item[0].selected = true catch()
+
+		-- Превью выбранной работы
+		LoadWork.img_prew.backColor = DN_CLR_BG
+		LoadWork.img_prew.Margin = LoadWork.img_prew.Padding = DN_Lib.Pad 0 0 0 0
+		LoadWork.img_prew.SizeMode = LoadWork.img_prew.SizeMode.CenterImage
+		try LoadWork.img_prew.Image = MD_Data.ActiveTask.SavedWorksPreviews[1] catch()
+
+		-- if MD_Data.ActiveTask.SavedWorks.count > 1 then LoadWork.btn_clear.enabled = true
+	)
 )
 
 struct UI
@@ -692,8 +807,8 @@ struct UI
 		(
 			1:(
 				ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-				ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-				ToolsCatalog.btn_mesh_switch.text = ">> Switch Between Meshes"
+				ToolsCatalog.btn_add_mesh.text = "Add Mesh"
+				-- ToolsCatalog.btn_mesh_switch.text = ">> Switch Between Meshes"
 
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
@@ -717,25 +832,20 @@ struct UI
 							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 						(
 							ToolsCatalog.btn_main_mesh.enabled = true				
+							ToolsCatalog.btn_add_mesh.enabled = true				
 						)
 
 						if MD_Data.ActiveTask.AddMesh != undefined then
 						(
-							ToolsCatalog.btn_mesh_switch.enabled = true
-							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-
-							case MD_Data.ActiveTask.ActiveMesh of
-							(
-								1:(
-									ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"								
-								)
-								2:(
-									ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
-								)							
-							)						
+							-- ToolsCatalog.btn_mesh_switch.enabled = true
+							ToolsCatalog.btn_add_mesh_icon.text = "•"
+							ToolsCatalog.btn_add_mesh_icon.enabled = true
+							ToolsCatalog.btn_add_mesh_icon.tooltip = MD_Data.ActiveTask.AddMesh.name						
 						)
 						else(
-							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+							ToolsCatalog.btn_add_mesh_icon.text = ""
+							ToolsCatalog.btn_add_mesh_icon.tooltip = ""
+							ToolsCatalog.btn_add_mesh_icon.enabled = false
 						)
 
 						if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
@@ -756,12 +866,16 @@ struct UI
 					-- Основной меш
 					if MD_Data.ActiveTask.Mesh != undefined then
 					(
-						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+						ToolsCatalog.btn_main_mesh_icon.text = "•"
+						ToolsCatalog.btn_main_mesh_icon.enabled = true
+						ToolsCatalog.btn_main_mesh_icon.tooltip = MD_Data.ActiveTask.Mesh.Name
 						ToolsCatalog.btn_valid.enabled = true
 					)
 					else
 					(
-						ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+						ToolsCatalog.btn_main_mesh_icon.text = ""
+						ToolsCatalog.btn_main_mesh_icon.enabled = false
+						ToolsCatalog.btn_main_mesh_icon.tooltip = ""
 						ToolsCatalog.btn_valid.enabled = false
 					)
 
@@ -772,10 +886,13 @@ struct UI
 					)
 
 					-- Добавить к рабочему слою
-					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 and selection.count != 0 then 
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 					(
+						local obj_outside = false
+
+						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+						if obj_outside then
 						ToolsCatalog.btn_attach_to_task.enabled = true
-						ToolsCatalog.btn_save_work.enabled = false
 					)
 
 					-- Загрузить работу
@@ -1215,6 +1332,30 @@ struct BoundingBox
 		)
 	),
 
+	fn SetPivotPos =
+	(
+		try(
+			bb_x = [bb.min.x, bb.center.x, bb.max.x]
+			bb_y = [bb.min.y, bb.center.y, bb.max.y]
+			bb_z = [bb.min.z, bb.center.z, bb.max.z]
+
+			pivot_pos = [bb_x[MD_UI.Dialogs.PivotParams.lst_x.selection], \
+			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
+			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
+			
+			pp.pos = pivot_pos			
+		)catch()
+	),
+
+	fn ResetPivot =
+	(
+		try(
+			pivot_pos = [0.0, 0.0, 0.0]
+			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			write_pivot_data()
+		)catch()
+	),
+
 	fn Update =
 	(
 		case MD_Data.ActiveSection of
@@ -1331,6 +1472,17 @@ struct Callback
 		UpdateUI ev nd
 	),
 
+	fn LayerChange ev nd = 
+	(
+		try
+		(
+			MD_Data.ActiveTask.Mesh = undefined
+			MD_Data.ActiveTask.AddMesh = undefined
+		)catch()
+
+		UpdateUI ev nd
+	),
+
 	fn Destruct =
 	(
 		callbacks.removeScripts id:#CheckExistTaskLayer
@@ -1362,7 +1514,7 @@ struct Callback
 		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
 		added:UpdateUI \
 		deleted:DeleteObject \
-		layerChanged:UpdateUI \
+		layerChanged:LayerChange \
 		selectionChanged:UpdateUI
 	)
 )
