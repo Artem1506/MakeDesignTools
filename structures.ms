@@ -184,7 +184,7 @@ struct Task
 				-- Найти и отсортировать файлы референсов
 				for f in task_dir_files do
 				(
-					if (FindString f data["article"]) then
+					if (FindString f data["article"]) != undefined then
 					(
 						if getFilenameFile f == data["article"] and getFilenameType f == ref_file_type 
 						then RefFile = f
@@ -666,6 +666,8 @@ struct UI_Dialogs
 		local date_time = time_part = date_time = ""
 		local prev_file
 
+		MD_Data.ActiveTask.SavedWorksPreviews = #()
+
 		for i = 1 to MD_Data.ActiveTask.SavedWorks.count do
 		(
 			li = dotNetObject "System.Windows.Forms.ListViewItem" (getFilenameFile MD_Data.ActiveTask.SavedWorks[i])
@@ -673,7 +675,11 @@ struct UI_Dialogs
 
 			-- Создать битмап с превью
 			prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[i] ".max") + ".jpg"
-			prev_bm = CreatePreviewFromImageFile prev_file SAVED_PREVIEW_SIZE type:#dotnet
+			try(
+				prev_bm = CreatePreviewFromImageFile prev_file SAVED_PREVIEW_SIZE type:#dotnet
+			)catch(
+				prev_bm = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE SAVED_PREVIEW_SIZE type:#dotnet
+			)
 			append MD_Data.ActiveTask.SavedWorksPreviews prev_bm
 
 			-- Дата сохранения
@@ -684,6 +690,7 @@ struct UI_Dialogs
 
 			append items li
 		)
+
 		-- Заполнить список
 		LoadWork.lv_files.Items.Clear()
 		LoadWork.lv_files.Items.AddRange items
@@ -695,8 +702,6 @@ struct UI_Dialogs
 		LoadWork.img_prew.Margin = LoadWork.img_prew.Padding = DN_Lib.Pad 0 0 0 0
 		LoadWork.img_prew.SizeMode = LoadWork.img_prew.SizeMode.CenterImage
 		try LoadWork.img_prew.Image = MD_Data.ActiveTask.SavedWorksPreviews[1] catch()
-
-		-- if MD_Data.ActiveTask.SavedWorks.count > 1 then LoadWork.btn_clear.enabled = true
 	)
 )
 
@@ -946,7 +951,7 @@ struct UI
 					)
 					
 					-- Сохранить работу
-					if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
+					if (MD_Data.WorkLayer != undefined and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count)) then
 					(
 						ToolsCatalog.btn_save_work.enabled = true
 					)
@@ -1259,8 +1264,8 @@ struct UI
 
 		if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
 		(       
-			local msg = "Some objects on the scene do not attached to the current task layer.\n\n"
-			msg += "Select all the objects and use the command \"Attach To Task\" before saving."
+			local msg = "Сохранение возможно только если все объекты на сцене привязаны к рабочему слою задания.\n"
+			msg += "Необходимо выбрать все объекты на сцене и использовать команду \"Attach To Task\" перед сохранением."
 			messageBox msg title:"Warning!" icon:#warning
 		)
 		else
@@ -1268,7 +1273,7 @@ struct UI
 			local index
 			MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 	
-			if MD_Data.ActiveTask.SavedWorks.count == 0 then 
+			if MD_Data.ActiveTask.SavedWorks.count == 0 then
 				index = formattedPrint 1 format:#02d
 			else
 			(
@@ -1296,17 +1301,25 @@ struct UI
 	
 					index = formattedPrint (max_index + 1) format:#02d
 				)
+
 			)
+
+			local file_name = (SAVED_FILE_NAME + "_" + index)
+
 			-- Сохранить рабочий файл .max
-			file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (SAVED_FILE_NAME + "_" + index + ".max"))
+			file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
 			save_nodes MD_Data.WorkLayerNodes file_path
 
 			-- Сохранить скриншот сцены .jpg
-			prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (SAVED_FILE_NAME + "_" + index + ".jpg"))
+			prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
+
 			ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
 
-			DisplayTempPrompt "The work has been saved." 5000
-			MD_Log.Info "The work has been saved."
+			MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
+			sort MD_Data.ActiveTask.SavedWorks
+
+			DisplayTempPrompt "Работа была сохранена." 5000
+			MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
 		)
 	),
 
@@ -1490,7 +1503,12 @@ struct BoundingBox
 				local arrow_offset = ConvertValueToSystemUnits #cm 10.0
 
 				try read_pivot_data() catch()
-				pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+				try pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] catch(
+					Remove()
+					CreateLayer()
+					CreateBBox()
+				)
+
 				arrow_rad = 0.0
 				bbox_size = [0, 0, 0]
 				bb.isHidden = false
@@ -1549,8 +1567,10 @@ struct BoundingBox
 				arrow.radius = arrow_rad
 				arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
 
-				if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
-				else Layer.on = false
+				try (
+					if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
+					else Layer.on = false
+				)catch()
 
 				completeRedraw()
 			)
@@ -1577,7 +1597,7 @@ struct Callback
 
 	fn UpdateUI ev nd = 
 	(
-		MD_UI.ToolsRltUpdate()
+		try MD_UI.ToolsRltUpdate() catch()
 	),
 
 	fn DeleteObject ev nd = 
@@ -1593,7 +1613,7 @@ struct Callback
 				MD_Data.ActiveTask.AddMesh = undefined
 			)
 			MD_Data.ActiveTask.ActiveMesh = 1
-			MD_BBox.Update()
+			try MD_BBox.Update() catch()
 		)
 		UpdateUI ev nd
 	),
@@ -1619,13 +1639,24 @@ struct Callback
 			)
 			
 		)catch()
+
+		for obj in selection do 
+		(
+			if obj.Layer != MD_Data.WorkLayer then
+			(
+				obj.Material = undefined
+				if (findString obj.Name MD_Data.WorkLayer.Name) != undefined then obj.Name = uniqueName "Object"
+				obj = undefined
+			)
+		)
+
 		completeRedraw()
 		UpdateUI ev nd
 	),
 
 	fn Destruct =
 	(
-		callbacks.removeScripts id:#CheckExistTaskLayer
+		callbacks.removeScripts id:#md_callbacks
 		ToolsUIUpdate = undefined
 		gc light:true
 	),
@@ -1643,14 +1674,24 @@ struct Callback
 				MD_Data.ActiveTask.Update()
 				
 				MD_UI.Update()
-				MD_BBox.Update()
+				try MD_BBox.Update() catch()
 			)
 		)
 	),
 
+	fn WorkLayerState =
+	(
+		try (
+			if MD_Data.ActiveTask == MD_Data.InWorkTask then
+			MD_Data.CreateWorkLayer() --??????????
+		)catch()
+	),
+
 	fn Add =
 	(
-		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#CheckExistTaskLayer
+		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#md_callbacks
+		callbacks.addScript #filePreOpen WorkLayerState id:#md_callbacks
+
 		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
 		added:UpdateUI \
 		deleted:DeleteObject \

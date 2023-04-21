@@ -178,8 +178,11 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.CreateWorkState()
         try(
-            MD_Data.ActiveTask.LoadWork \
-            MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+            if MD_Data.WorkLayerNodes.count == 0 then -- ???????????
+            (
+                MD_Data.ActiveTask.LoadWork \
+                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true                
+            )
         ) catch()
     )
 

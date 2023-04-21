@@ -372,9 +372,10 @@ fn ViewportSnapshot save_file size auto_frame:true =
     else grab_bm = gw.getViewportDib gammaCorrect:false
 
     jpeg.setQuality 85
-    local new_bm = CreatePreviewFromImageFile2 grab_bm size fill_bg:true
+    local new_bm = CreatePreviewFromImageFile grab_bm size fill_bg:true
     new_bm.filename = save_file
 	save new_bm gamma:1.0
+	
 	gc()
 )
 
