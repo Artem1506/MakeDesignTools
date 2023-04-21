@@ -25,6 +25,8 @@ MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
 MD_LIB_COMMON_DATA_FILE = ""
 COMMON_DATA_FILE_NAME = "common_data.json"
 TASK_FILE_NAME = "data.json"
+SAVED_FILE_NAME = "Saving"
+TASK_MAT_NAME = "Material"
 
 -- Файлы иконок
 ICON_NO_PRVIEW_FILE = pathConfig.appendPath ICONS_DIR "mdt_no_preview.png"

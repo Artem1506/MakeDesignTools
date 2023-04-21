@@ -177,6 +177,10 @@ rollout rlt_tasks "Tasks"
     on btn_work_state pressed do
     (
         MD_Data.CreateWorkState()
+        try(
+            MD_Data.ActiveTask.LoadWork \
+            MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+        ) catch()
     )
 
     on btn_exit_work_state pressed do

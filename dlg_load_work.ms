@@ -8,17 +8,24 @@ rollout dlg_load_work "Saved Works"
 
    on dlg_load_work open do
    (
+      -- Инициализация содержимого диалогового окна
       MD_UI.Dialogs.InitLoadWork()
    )
 
    on lv_files Click self arg do
    (
+      -- Обновить превью файла при выборе элемна в списке
       MD_UI.Dialogs.UpdatePreview()
    )
 
    on btn_load pressed do
    (
-      MD_Data.ActiveTask.LoadWork MD_Data.ActiveTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
+      -- Загрузить в сцену объекты из выбранного файл
+      -- При этом все объекты на текущем рабочем слое будут удалены
+      try(
+         MD_Data.ActiveTask.LoadWork \
+         MD_Data.ActiveTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
+      )catch()
    )
 
    on lv_files ItemChecked self args do 
@@ -35,6 +42,7 @@ rollout dlg_load_work "Saved Works"
            for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
        )
 
+       -- Вкл/Выкл кнопки "Clear"
        if self.CheckedItems.Count > 0 then
        btn_clear.enabled = true
        else btn_clear.enabled = false
@@ -42,8 +50,13 @@ rollout dlg_load_work "Saved Works"
 
    on btn_clear pressed do
    (
+      -- Удалить отмеченные файлы
       MD_UI.Dialogs.DeleteSavedFiles()
+
+      -- Обновить
       MD_UI.Dialogs.InitLoadWork()
+
+      -- При удалении всех заданий закрыть текущее диалоговое окно
       if MD_Data.ActiveTask.SavedWorks.Count == 0 then
       (
          destroyDialog dlg_load_work

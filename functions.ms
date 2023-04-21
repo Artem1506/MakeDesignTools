@@ -316,3 +316,83 @@ fn CreatePreviewFromImageFile img_file max_size fill_bg:true bg_color:DN_CLR_BG 
 
     bm
 )
+
+fn save_nodes nodes max_file_path reset_trans:false = 
+(
+	local cur_sel_state = (selection as array)
+	clearSelection()
+	try(max_ver = (maxversion())[8] - 3)catch()
+	saveNodes nodes max_file_path saveAsVersion:max_ver quiet:true
+	select cur_sel_state
+)
+
+fn ViewportSnapshot save_file size auto_frame:true =
+(
+    local grab_bm
+
+    if auto_frame then
+    (
+        local cur_tm = viewport.getTM()
+        local cur_layout = viewport.getLayout()
+        local active_view_num = viewport.activeViewport 
+        local cur_view = viewport.getType()
+        local show_edges = viewport.GetShowEdgeFaces()
+        local rend_level = viewport.GetRenderLevel()
+        local view_is_max = not (viewport.NumViews > 1)
+        local bg_is_solid = viewport.IsSolidBackgroundColorMode()
+        local tm = (matrix3 [0,0,1] [1,0,0] [0,1,0] [0.0,0.0,0.0])
+    
+        DisableSceneRedraw()
+        -- viewport.setLayout #layout_1
+        if view_is_max == false then max tool maximize
+        viewport.setType #view_persp_user
+        -- max vpt persp user
+        viewport.SetShowEdgeFaces true
+        viewport.SetRenderLevel #smoothhighlights
+        viewport.EnableSolidBackgroundColorMode true
+        viewport.setTM tm
+        max tool zoomextents
+        viewport.zoom 1.1
+        
+        enableSceneRedraw()
+        completeredraw()
+        DisableSceneRedraw()
+        grab_bm = gw.getViewportDib gammaCorrect:false
+        -- viewport.setLayout cur_layout
+        if view_is_max == false then max tool maximize
+        -- viewport.activeViewportEx active_view_num
+        viewport.setType cur_view
+        viewport.SetShowEdgeFaces show_edges
+        viewport.SetRenderLevel rend_level
+    
+        viewport.setTM cur_tm
+        enableSceneRedraw()
+        completeredraw()
+    )
+    else grab_bm = gw.getViewportDib gammaCorrect:false
+
+    jpeg.setQuality 85
+    local new_bm = CreatePreviewFromImageFile2 grab_bm size fill_bg:true
+    new_bm.filename = save_file
+	save new_bm gamma:1.0
+	gc()
+)
+
+fn DeleteAllEmptyLayers =
+(
+	try
+	(	
+		_total_layers = layerManager.count - 1
+		_layercount = #()
+		_layercount = for i = 1 to _total_layers collect i
+		_revlayers = #()
+		for i in _layercount.count to 1 by -1 do append _revlayers _layercount[i]
+	
+		for j in _revlayers do
+		(
+			_getlayer = layerManager.getlayer j
+			LayerManager.deleteLayerByName _getlayer.name
+		)
+	)
+	catch()
+)

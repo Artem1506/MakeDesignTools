@@ -30,17 +30,25 @@
         MD_BBox = BoundingBox()
         MD_Callbacks = Callback()
 
-        -- MD_Data.Update()
         try MD_UI.FillAddList() catch()
         try MD_Callbacks.Add() catch()
         try MD_BBox.Update() catch()
 
         select cur_selection
         
-        include "print_data.ms"
-        -- PrintData structs:#(#active_task)
-        -- try PrintData structs:#(#global_data) catch()
-
+        -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+        -- Условия:
+        -- MD_Data.ActiveTask != undefined
+        -- MD_Data.ActiveTask == MD_Data.InWorkTask
+        -- MD_Data.ActiveTask.SavedWorks.count != 0
+        -- MD_Data.WorkLayerNodes.count != 0
+        try(
+            if MD_Data.WorkLayerNodes.count != 0 then
+            (
+                MD_Data.ActiveTask.LoadWork \
+                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+            )
+        ) catch()
     )
     else
     (
