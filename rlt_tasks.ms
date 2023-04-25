@@ -97,6 +97,21 @@ rollout rlt_tasks "Tasks"
         --     "Update":()
         -- )
     )
+    
+    on btn_clear pressed do 
+    (
+        -- case btn_clear.text of
+        -- (
+        --     "Clear":()
+        --     "Delete":
+        --         (
+        --             if (queryBox "You want to delete these tasks?" title:"WARNING" icon:#warning) then
+        --             (
+
+        --             )
+        --         )
+        -- )
+    )
 
     on lv_main ItemChecked self args do 
     (
@@ -116,21 +131,6 @@ rollout rlt_tasks "Tasks"
         )
         -- Обоновить интерфейс
         try MD_UI.TasksRltUpdate() catch()
-    )
-
-    on btn_clear pressed do 
-    (
-        -- case btn_clear.text of
-        -- (
-        --     "Clear":()
-        --     "Delete":
-        --         (
-        --             if (queryBox "You want to delete these tasks?" title:"WARNING" icon:#warning) then
-        --             (
-
-        --             )
-        --         )
-        -- )
     )
 
     on lv_main ItemSelectionChanged self arg do 
@@ -176,19 +176,56 @@ rollout rlt_tasks "Tasks"
 
     on btn_work_state pressed do
     (
-        MD_Data.CreateWorkState()
-        try(
-            if MD_Data.WorkLayerNodes.count == 0 then -- ???????????
-            (
-                MD_Data.ActiveTask.LoadWork \
-                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true                
+        -- Проверка состояния кнопки
+        case btn_work_state.text of
+        (
+            "Set Work State":(
+
+                -- Создать рабочее состояние
+                try MD_Data.ClearWorkLayer() catch()
+                MD_Data.CreateWorkState()
+
+                -- Если имеются ранее сохранённые рабочие файлы
+                if MD_Data.ActiveTask.SavedWorks.count != 0 then
+                (
+                    dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
+                    dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
+
+                    if queryBox dlg_msg title:"Сообщение" then (
+
+                        -- Удалить все объекты с рабочего слоя
+                        try MD_Data.ClearWorkLayer() catch()
+
+                        -- Загрузить последнюю сохранённую работу
+                        try MD_Data.ActiveTask.LoadWork \
+                            MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true catch()
+                    )       
+                )
             )
-        ) catch()
+            "Update Work State":(
+
+                -- Создать рабочее состояние
+                MD_Data.CreateWorkState()
+            )
+        ) 
     )
 
     on btn_exit_work_state pressed do
     (
+        -- Взять массив объектов на рабочем слое
+        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+
+        -- Если кол-во объектов на рабочем слое != 0
+        if MD_Data.WorkLayerNodes.count != 0 then
+        (
+            if queryBox "Очистить рабочий слой после удаления?" title:"Выход из рабочего сосотяния" then (
+                -- Удалить все объекты с рабочего слоя
+                MD_Data.ClearWorkLayer()
+            )            
+        )
+        -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
+        MD_UI.ToolsRltUpdate()
     )
 
     on lv_add ColumnClick s e do

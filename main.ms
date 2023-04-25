@@ -35,7 +35,7 @@
         try MD_BBox.Update() catch()
 
         select cur_selection
-        
+
         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
         -- Условия:
         -- MD_Data.ActiveTask != undefined
@@ -43,10 +43,12 @@
         -- MD_Data.ActiveTask.SavedWorks.count != 0
         -- MD_Data.WorkLayerNodes.count != 0
         try(
+            MD_Data.SwitchVisibleLayers()
             if MD_Data.WorkLayerNodes.count != 0 then
             (
                 MD_Data.ActiveTask.LoadWork \
                 MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                MD_Data.SwitchVisibleLayers()
             )
         ) catch()
     )

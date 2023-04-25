@@ -1,8 +1,8 @@
 
-rollout dlg_validation "Validation" width:300  height:170
+rollout dlg_validation "Validation" width:300  height:220
 (
-    label 'lbl_one_mesh' "1 - Number of objects on the working layer" width:210 align:#left offset:[6, 10] across:2 tooltip:"Tooltip"
-        dotnetcontrol 'lbl_one_mesh_txt' "System.Windows.Forms.Label" text:"X" width:24 offset:[-4, 10] align:#right
+    label 'lbl_one_mesh' "1 - Number of objects on the working layer" width:210 align:#left offset:[6, 18] across:2 tooltip:"Tooltip"
+        dotnetcontrol 'lbl_one_mesh_txt' "System.Windows.Forms.Label" text:"X" width:24 offset:[-4, 18] align:#right
     label 'lbl_epoly' "2 - Object type is Geometry" width:160 align:#left offset:[6, 2] across:2 tooltip:"Tooltip"
         dotnetcontrol 'lbl_epoly_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_bounds' "3 - Bounds and position" width:160 align:#left offset:[6, 2] across:2 tooltip:"Tooltip"
@@ -25,10 +25,11 @@ rollout dlg_validation "Validation" width:300  height:170
             dlg_validation.controls[i].font = DN_LIB.Font 5 10 3 
             dlg_validation.controls[i].TextAlign = DN_LIB.MiddleCenter      
         )
+        registerRedrawViewsCallback MD_Data.validation
     )
 
     on dlg_validation close do
     (
-
+        unRegisterRedrawViewsCallback MD_Data.validation
     )
 )

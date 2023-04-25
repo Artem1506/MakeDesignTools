@@ -79,6 +79,7 @@ DEFAULT_LAYER = LayerManager.getLayer 0
 dn_max_ui_bg_color = undefined
 progress_dlg_title = ""
 mdt_temp_layer = "_mdt_temp_"
+TRANS_POSTFIX = "trans"
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018

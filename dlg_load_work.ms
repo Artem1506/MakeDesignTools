@@ -25,6 +25,7 @@ rollout dlg_load_work "Saved Works"
       try(
          MD_Data.ActiveTask.LoadWork \
          MD_Data.ActiveTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
+         destroyDialog dlg_load_work
       )catch()
    )
 

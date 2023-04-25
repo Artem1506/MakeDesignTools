@@ -86,7 +86,7 @@ fn ReadDataFile data_file =
     py_code += "    rt.data = json.load(f)"
 
     try (python.Execute py_code)
-    catch (MD_Log.Error "Не удалось загрузить данные для задания | global data = undefined")
+    catch ()
 )
 
 fn WriteDataFile data_file =
@@ -396,4 +396,99 @@ fn DeleteAllEmptyLayers =
 		)
 	)
 	catch()
+)
+
+fn GetMaterialIDList obj =
+(
+	local mat_ids = #()
+	if classof obj == Editable_Poly then
+	(
+		for f = 1 to obj.numfaces do 
+		appendifunique mat_ids (polyop.getFaceMatID obj f)		
+	)
+	else if classof obj == Editable_Mesh then
+	(
+		for f = 1 to obj.numfaces do 
+		appendifunique mat_ids (getFaceMatID obj f)	
+	)
+
+	mat_ids
+)
+
+fn GetNumUVChannels obj = 
+(
+	local count = 0
+	if classof obj == Editable_Poly then
+	(
+		for i in 1 to polyOp.getNumMaps obj do
+		if polyOp.getMapSupport obj i then count += 1
+	)
+	else
+	(
+		if classof obj == editable_mesh then
+		(
+			for i in 1 to meshOp.getNumMaps obj do
+			if meshOp.getMapSupport obj i then count += 1
+		)
+	)
+
+	return count
+)
+
+fn Triangulate obj =
+(
+	local ttp_mod = Turn_to_Poly limitPolySize:on maxPolySize:3
+	addModifier obj ttp_mod
+)
+
+fn SetFBXSettings =
+(
+	FbxExporterSetParam "SmoothingGroups" true
+	FbxExporterSetParam "ConvertUnit" "cm"
+	FbxExporterSetParam "TangentSpaceExport" true
+)
+
+fn ExportToFBX objs fbx_file_path =
+(
+    local sel_arr = #()
+    local obj = undefined
+    local copies = #()
+
+    for n in objs do
+    (
+        append sel_arr n.isSelected
+        obj = copy n
+        append copies obj
+        Triangulate obj
+        obj.name = n.name
+
+		ResetXForm obj
+		collapseStack obj
+		obj.transform = matrix3 1
+    )
+
+    clearSelection()
+
+    select copies
+
+    SetFBXSettings()
+
+    exportFile fbx_file_path #noPrompt selectedOnly:true using:fbxexp
+
+    for i = 1 to sel_arr.count do
+    (
+        objs[i].isSelected = sel_arr[i]
+    )
+
+    delete copies
+	gc()
+)
+
+fn SaveSelectedObjects nodes max_file_path = 
+(
+    local cur_sel_state = (selection as array)
+    clearSelection()
+    try(max_ver = (maxversion())[8] - 3)catch()
+    saveNodes nodes max_file_path saveAsVersion:max_ver quiet:true
+    select cur_sel_state
 )

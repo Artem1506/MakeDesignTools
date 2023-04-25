@@ -140,8 +140,8 @@ struct Task
 
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
-			load = (queryBox "Are you sure?\nBefore loading, all previously unsaved objects from the working layer will be deleted!" \
-			title:"Warning!" icon:#information)
+			load = (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены!" \
+			title:"Внимание!" icon:#information)
 		)
 		
 		if load then
@@ -150,8 +150,11 @@ struct Task
 			(
 				try(delete MD_Data.WorkLayerNodes; gc())catch()
 				mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
+
 				try(select cur_sel_objs)catch()
 			)
+			MD_Data.AttachObjectsToWorkState()
+
 			completeRedraw()				
 		)
 	),
@@ -278,8 +281,120 @@ struct GlobalData
 	proj_main_categ_ids = #(),
 	proj_sub_categs = #(),
 	proj_sub_categ_ids = #(),
+	VisibleLayrs = true,
 
 	Users = #(),
+
+	fn validation =
+	(
+		try WorkLayerNodes = GetAllLayerNodes WorkLayer.Name catch()
+		-- TempLayerNodes = GetAllLayerNodes MD_BBox.Layer.Name
+
+		local obj, th, bb, sub_mats_count, mat_ids, uv_count
+		sub_mats_count = 0
+		local mat_ids = uv_count = #()
+		local val = true
+		local msg = ""
+		local valids = #("X", "X", "X", "X", "X", "X", "X")
+		local objs = #(ActiveTask.Mesh, ActiveTask.AddMesh)
+
+		-- Check count
+		if ActiveTask.SizeTrans == undefined then
+		(
+			if WorkLayerNodes.count == 1 and ActiveTask.Mesh != undefined and ActiveTask.AddMesh == undefined then
+			(
+				valids[1] = "OK"
+				obj = WorkLayerNodes[1]
+			)
+		)else if WorkLayerNodes.count == 2 and ActiveTask.Mesh != undefined and ActiveTask.AddMesh != undefined then
+		(
+			valids[1] = "OK"
+			obj = objs[MD_Data.ActiveTask.ActiveMesh]
+		)
+		else (msg = "The task layer contains more than one object.")
+		
+		if obj != undefined and not (isdeleted obj) then
+		(
+			if superClassOf obj == GeometryClass then
+			(
+				valids[2] = "OK"
+				
+				-- Check dimensions and position
+				threshold = ConvertValueToSystemUnits #cm 0.25
+				
+				if ((distance MD_BBox.bb.min obj.min) < threshold) and ((distance MD_BBox.bb.max obj.max) < threshold) then 
+				(
+					valids[3] = "OK"
+					
+				)else (msg = "Either the dimensions of the object or its position is not correct.")
+	
+				-- Check material
+				if obj.material != undefined then
+				(
+					valids[4] = "OK"
+	
+					-- Check material IDs
+					sub_mats_count = 0
+					try(sub_mats_count = obj.material.count)catch()
+					if obj.material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count then
+					(
+						valids[5] = "OK"
+	
+						-- Check material id count
+						mat_ids = GetMaterialIDList obj
+						if mat_ids.count >= ActiveTask.Materials.count then
+						(
+							valids[6] = "OK"
+						)else (msg = "The number of material IDs for the object does not match.")
+					)else (msg = "The wrong material is assigned.")
+				)else (msg = "The object has no material.")
+	
+				-- Check uv channels count
+				uv_count = GetNumUVChannels obj
+				if uv_count == 2 then
+				(
+					valids[7] = "OK"                                    
+				)else(msg = "The number of UV channels is not equal to 2.")
+			)else (msg = "The object must be of the Geometry type.")
+		)
+	
+		for v in valids where v == "X" do (val = false; exit)
+	
+		try(
+			for i = 2 to MD_UI.Dialogs.Validation.controls.count by 2 do
+			(
+				v = valids[i/2]
+				MD_UI.Dialogs.Validation.controls[i].text = v
+				if v == "OK" then MD_UI.Dialogs.Validation.controls[i].ForeColor = DN_CLR_OK
+				else MD_UI.Dialogs.Validation.controls[i].ForeColor = DN_CLR_X
+			)                
+		)catch()
+
+		if val then MD_UI.ToolsCatalog.btn_export.enabled = true
+		ActiveTask.Valid = val
+		return #(val, msg, valids, obj)
+	),
+
+	fn AttachObjectsToWorkState =
+	(
+		try (
+			for obj in objects do
+			(
+				if obj.name == ActiveTask.Article then
+				(
+					MD_Data.SetMesh obj
+					WorkLayer.addNode obj
+
+				)
+				if obj.name == (ActiveTask.Article + "_" + TRANS_POSTFIX) then
+				(
+					MD_Data.SetAddMesh obj
+					WorkLayer.addNode obj
+
+				)
+			)
+		)catch()
+	),
 
 	fn SwitchWorkLayer =
 	(
@@ -288,6 +403,34 @@ struct GlobalData
 			else WorkLayer.on = false			
 		)catch()
 	),
+
+    fn SwitchVisibleLayers =
+    (
+        case VisibleLayrs of
+        (
+            true:(
+                for i = 0 to LayerManager.count - 1 do
+                (
+                    lr = LayerManager.getLayer i
+                    if lr != WorkLayer and lr != MD_BBox.Layer then
+                    lr.on = true
+                ) 
+                VisibleLayrs = false
+                MD_UI.ToolsCatalog.btn_vis_switch.text = "Hide All Layers"
+            )
+            false:(
+                for i = 0 to LayerManager.count - 1 do
+                (
+                    lr = LayerManager.getLayer i
+                    if lr != WorkLayer and lr != MD_BBox.Layer then
+                    lr.on = false
+                ) 
+                VisibleLayrs = true
+                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show All Layers"
+            )
+        )
+		completeRedraw()
+    ),
 
 	fn CreateWorkLayer =
 	(
@@ -361,7 +504,7 @@ struct GlobalData
 			data["state"] = STATES[1]
 			WriteDataFile InWorkTaskFile
 		)
-		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
+		catch ()
 		DeleteWorkLayer()
         try MD_Callbacks.Destruct() catch()
 		
@@ -377,7 +520,7 @@ struct GlobalData
 			data["in_work_task"] = InWorkTask.File
 			WriteDataFile MD_LIB_COMMON_DATA_FILE
 		)
-		catch (MD_Log.Error "[CreateWorkState] Не удалось сохранить данные в файл.")
+		catch ()
         
 		-- Обновить
 		SwitchWorkLayer()
@@ -406,12 +549,10 @@ struct GlobalData
 		)
 	),
 
-	fn SetMesh =
+	fn SetMesh obj =
 	(
-		if (selection.count == 1 and SuperClassOf selection[1] == GeometryClass) then
+		if (SuperClassOf obj == GeometryClass) then
 		(
-			local obj = selection[1]
-
 			if MD_Data.ActiveTask.Mesh == obj then
 			(
 				MD_Data.ActiveTask.Mesh.Material = undefined
@@ -433,12 +574,10 @@ struct GlobalData
 		)
 	),
 
-	fn SetAddMesh =
+	fn SetAddMesh obj =
 	(
-		if (selection.count == 1 and SuperClassOf selection[1] == GeometryClass) then
+		if (SuperClassOf obj == GeometryClass) then
 		(
-			local obj = selection[1]
-
 			if MD_Data.ActiveTask.AddMesh == obj then
 			(
 				MD_Data.ActiveTask.AddMesh.Material = undefined
@@ -450,7 +589,7 @@ struct GlobalData
 			else
 			(
 				MD_Data.ActiveTask.AddMesh = obj
-				MD_Data.ActiveTask.AddMesh.Name = MD_Data.ActiveTask.Article + "_trans"
+				MD_Data.ActiveTask.AddMesh.Name = MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX
 				obj.IsHidden = True
 				-- MD_Data.ActiveTask.ActiveMesh = 2
 				MD_Data.ActiveTask.AddMesh.Material = MD_Data.ActiveTask.Material
@@ -461,6 +600,60 @@ struct GlobalData
 			clearSelection()
 			CompleteRedraw()
 		)
+	),
+
+	fn ExportTask =
+	(
+		local valid_result = validation()
+		local objs = #()
+
+		if valid_result[1] then
+		(
+			MD_Callbacks.Destruct()
+
+			if ActiveTask.SizeTrans == undefined then objs = #(ActiveTask.Mesh)
+			else objs = #(ActiveTask.Mesh, ActiveTask.AddMesh)
+
+			local main_dir = pathConfig.removePathLeaf (getFilenamePath ActiveTask.File)
+			local save_fbx_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".fbx")
+			local save_max_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".max")
+
+			for obj in objs do 
+			(
+				if MD_UI.Settings.ckbx_auto_pivot.checked then 
+				(
+					obj.pivot.x = MD_BBox.pivot_pos[1]
+					obj.pivot.y = MD_BBox.pivot_pos[2]
+					obj.pivot.z = MD_BBox.pivot_pos[3]
+				)				
+			)
+
+			with redraw off 
+			(
+				try(
+					SaveSelectedObjects objs save_max_path
+				)catch(MD_Log.Error "Не удалось сохранить текущее состояние сцены!")
+
+				try(
+					ExportToFBX objs save_fbx_path
+				)catch(MD_Log.Error "Не удалось экспортировать задание!")
+			)
+
+			for obj in objs do 
+			(
+				obj.pos = MD_BBox.pp.pos
+			)
+
+			MD_Callbacks.Add()
+			CompleteRedraw()
+		)
+	),
+
+	fn ClearWorkLayer =
+	(
+		WorkLayerNodes = GetAllLayerNodes WorkLayer.Name
+		delete WorkLayerNodes
+		gc()
 	),
 
 	fn Update =
@@ -881,6 +1074,8 @@ struct UI
 
 				if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 				(
+					ToolsCatalog.btn_vis_switch.enabled = true
+
 					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 
 					objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
@@ -889,10 +1084,10 @@ struct UI
 					ToolsCatalog.btn_set_pivot.enabled = true
 
 					-- Основной меш
-					if MD_Data.ActiveTask.Mesh != undefined then
+					if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
 					(
 						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-						ToolsCatalog.btn_main_mesh.tooltip = MD_Data.ActiveTask.Mesh.Name
+						try ToolsCatalog.btn_main_mesh.tooltip = MD_Data.ActiveTask.Mesh.Name catch()
 					)
 					else
 					(
@@ -919,7 +1114,7 @@ struct UI
 						)
 
 						-- Доп. меш
-						if MD_Data.ActiveTask.AddMesh != undefined then
+						if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
 						(
 							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
 							ToolsCatalog.btn_add_mesh.tooltip = MD_Data.ActiveTask.AddMesh.Name
@@ -932,6 +1127,9 @@ struct UI
 						if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
 						(
 							ToolsCatalog.btn_valid.enabled = true
+
+							local valid = (MD_Data.validation())[1]
+							if valid then ToolsCatalog.btn_export.enabled = true
 						)
 					)
 					-- Если задание НЕ имеет поле трансформации
@@ -982,7 +1180,7 @@ struct UI
 				free objs
 			)
 			2:(
-
+				
 			)
 		)
 	),
@@ -1262,64 +1460,70 @@ struct UI
 		local file_path
 		local prev_file
 
-		if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
-		(       
-			local msg = "Сохранение возможно только если все объекты на сцене привязаны к рабочему слою задания.\n"
-			msg += "Необходимо выбрать все объекты на сцене и использовать команду \"Attach To Task\" перед сохранением."
-			messageBox msg title:"Warning!" icon:#warning
+		if MD_Data.WorkLayerNodes.count != 0 then
+		(
+			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
+			(       
+				local msg = "Сохранение возможно только если все объекты на сцене привязаны к рабочему слою задания.\n"
+				msg += "Необходимо выбрать все объекты на сцене и использовать команду \"Attach To Task\" перед сохранением."
+				messageBox msg title:"Warning!" icon:#warning
+			)
+			else
+			(
+				local index
+		
+				if MD_Data.ActiveTask.SavedWorks.count == 0 then
+					index = formattedPrint 1 format:#02d
+				else
+				(
+					if MD_Data.ActiveTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
+					(
+						local last_file = MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count]
+						local last_file_index = (filterString (getFilenameFile last_file) "_")[2] as integer
+						local first_max_file = MD_Data.ActiveTask.SavedWorks[1]
+						local first_prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[1] ".max") + ".jpg"
+		
+						index = formattedPrint (last_file_index + 1) format:#02d
+		
+						deleteFile first_max_file
+						deleteFile first_prev_file
+					)
+					else
+					(
+						local max_index = 0
+		
+						for f in MD_Data.ActiveTask.SavedWorks do
+						(
+							local f_index = (filterString (getFilenameFile f) "_")[2] as integer
+							if f_index > max_index then max_index = f_index
+						)
+		
+						index = formattedPrint (max_index + 1) format:#02d
+					)
+
+				)
+
+				local file_name = (SAVED_FILE_NAME + "_" + index)
+
+				-- Сохранить рабочий файл .max
+				file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
+				save_nodes MD_Data.WorkLayerNodes file_path
+
+				-- Сохранить скриншот сцены .jpg
+				prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
+
+				ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
+
+				MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
+				sort MD_Data.ActiveTask.SavedWorks
+
+				DisplayTempPrompt "Работа была сохранена." 5000
+				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
+			)
 		)
 		else
 		(
-			local index
-			MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-	
-			if MD_Data.ActiveTask.SavedWorks.count == 0 then
-				index = formattedPrint 1 format:#02d
-			else
-			(
-				if MD_Data.ActiveTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
-				(
-					local last_file = MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count]
-					local last_file_index = (filterString (getFilenameFile last_file) "_")[2] as integer
-					local first_max_file = MD_Data.ActiveTask.SavedWorks[1]
-					local first_prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[1] ".max") + ".jpg"
-	
-					index = formattedPrint (last_file_index + 1) format:#02d
-	
-					deleteFile first_max_file
-					deleteFile first_prev_file
-				)
-				else
-				(
-					local max_index = 0
-	
-					for f in MD_Data.ActiveTask.SavedWorks do
-					(
-						local f_index = (filterString (getFilenameFile f) "_")[2] as integer
-						if f_index > max_index then max_index = f_index
-					)
-	
-					index = formattedPrint (max_index + 1) format:#02d
-				)
-
-			)
-
-			local file_name = (SAVED_FILE_NAME + "_" + index)
-
-			-- Сохранить рабочий файл .max
-			file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
-			save_nodes MD_Data.WorkLayerNodes file_path
-
-			-- Сохранить скриншот сцены .jpg
-			prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
-
-			ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
-
-			MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
-			sort MD_Data.ActiveTask.SavedWorks
-
-			DisplayTempPrompt "Работа была сохранена." 5000
-			MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
+			messageBox "Рабочий слой не содержит объектов!" title:"Сообщение"
 		)
 	),
 
@@ -1692,7 +1896,7 @@ struct Callback
 		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#md_callbacks
 		callbacks.addScript #filePreOpen WorkLayerState id:#md_callbacks
 
-		ToolsUIUpdate = NodeEventCallback mouseUp:true delay:1000 \
+		ToolsUIUpdate = NodeEventCallback mouseUp:false delay:500 \
 		added:UpdateUI \
 		deleted:DeleteObject \
 		layerChanged:LayerChange \
