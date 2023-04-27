@@ -14,10 +14,23 @@ rollout rlt_tasks "Tasks"
     
     fn UpdateAll =
     (
-        try (
+        MD_Data.ActiveList = 1
+        MD_Data.ActiveTaskAddIndex = undefined
+
+        if MD_Data.Tasks.count != 0 then
+        (
             MD_Data.ActiveTask = MD_Data.Tasks[1]
             MD_Data.ActiveTaskIndex = 1
-        )catch(
+
+            if MD_Data.ActiveTask == MD_Data.InWorkTask then
+            (
+                -- MD_Data.AttachObjectsToWorkState()
+                MD_Data.CreateWorkState()
+                MD_UI.ToolsRltUpdate()
+            )
+        )
+        else
+        (
             MD_Data.ActiveTask = undefined
             MD_Data.ActiveTaskIndex = undefined
         )
@@ -49,11 +62,16 @@ rollout rlt_tasks "Tasks"
             
             try MD_Callbacks.Destruct() catch()
             MD_UI.SwitchRollouts()
+            MD_Data.ActiveList = 1
+            MD_Data.ActiveTaskAddIndex = undefined
 
-            UpdateAll()
+            MD_Data.Update()
+            MD_Data.SwitchWorkLayer()
+            MD_UI.Update()
+            MD_BBox.Update()
         )
     )
-    
+
     on lst_basic_catalog selected arg do
     (
         if MD_Data.ActiveCategory != arg then
@@ -61,8 +79,14 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveCategory = arg
             try lst_sub_catalog.selection = 1 catch()
             MD_Data.ActiveSubCategory = lst_sub_catalog.selection            
+            try MD_Callbacks.Destruct() catch()
+            MD_Data.ActiveList = 1
+            MD_Data.ActiveTaskAddIndex = undefined
 
-            UpdateAll()
+            MD_Data.Update()
+            MD_Data.SwitchWorkLayer()
+            MD_UI.Update()
+            MD_BBox.Update()
         )
     )
 
@@ -70,10 +94,15 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
-            MD_Data.ActiveCategory = lst_basic_catalog.selection
             MD_Data.ActiveSubCategory = arg
-            
-            UpdateAll()
+            MD_Callbacks.Destruct()
+            MD_Data.ActiveList = 1
+            MD_Data.ActiveTaskAddIndex = undefined
+
+            MD_Data.Update()
+            MD_Data.SwitchWorkLayer()
+            MD_UI.Update()
+            MD_BBox.Update()
         )
     )
 
@@ -145,14 +174,56 @@ rollout rlt_tasks "Tasks"
 
         if (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1) then
         (
-            MD_Data.ActiveList = 1
-            MD_Callbacks.Add()
             MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
             MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
+            MD_Data.ActiveTaskAddIndex = undefined
+
             MD_Data.SwitchWorkLayer()
+
+            if MD_Data.ActiveTask.State == STATES[2] then
+            (
+                MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+                MD_Data.ActiveTask.ActiveMesh = 1
+
+                for obj in MD_Data.WorkLayerNodes do
+                (
+                    if obj.name == MD_Data.ActiveTask.Article then
+                    (
+                        MD_Data.ActiveTask.Mesh = obj
+                    )
+                    if obj.name == (MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX) then
+                    (
+                        MD_Data.ActiveTask.AddMesh = obj
+                        MD_Data.ActiveTask.AddMesh.isHidden = true
+                    )
+                    
+                )
+            )
+
+            -- try MD_Data.AttachObjectsToWorkState() catch(print "ass")
             MD_UI.Update()
             MD_BBox.Update()
-            MD_UI.CatalogPreviewRltUpdate()
+
+            -- MD_Data.WorkLayerNodes.count
+
+            -- MD_Data.SwitchWorkLayer()
+            -- -- try MD_Data.AttachObjectsToWorkState() catch()
+            -- MD_UI.Update()
+            -- MD_BBox.Update()
+            -- MD_UI.CatalogPreviewRltUpdate()
+
+            -- -- if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
+            -- -- (
+            -- --     if MD_Data.WorkLayerNodes.count == 0 and MD_Data.ActiveTask.SavedWorks.count != 0 then
+            -- --     (
+            -- --         MD_Data.ActiveTask.LoadWork \
+            -- --         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+            -- --         MD_Data.SwitchVisibleLayers()
+            -- --     )            
+            -- -- )
+       
+            -- try print MD_Data.ActiveTask.Mesh catch()       
+            -- try print MD_Data.ActiveTask.AddMesh catch()       
         )  
     )
 
@@ -165,8 +236,9 @@ rollout rlt_tasks "Tasks"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
-            MD_UI.CatalogPreviewRltUpdate()
-        ) 
+            try MD_UI.CatalogPreviewRltUpdate() catch()
+            try MD_UI.ToolsRltUpdate() catch()
+        )
     )
 
     on lv_add MouseDoubleClick self arg do
@@ -181,8 +253,6 @@ rollout rlt_tasks "Tasks"
         (
             "Set Work State":(
 
-                -- Создать рабочее состояние
-                try MD_Data.ClearWorkLayer() catch()
                 MD_Data.CreateWorkState()
 
                 -- Если имеются ранее сохранённые рабочие файлы
@@ -191,23 +261,23 @@ rollout rlt_tasks "Tasks"
                     dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
                     dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
 
+                    -- Удалить все объекты с рабочего слоя
+                    try MD_Data.ClearWorkLayer() catch()
                     if queryBox dlg_msg title:"Сообщение" then (
-
-                        -- Удалить все объекты с рабочего слоя
-                        try MD_Data.ClearWorkLayer() catch()
-
                         -- Загрузить последнюю сохранённую работу
+                        
                         try MD_Data.ActiveTask.LoadWork \
                             MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true catch()
-                    )       
+                    )     
                 )
             )
             "Update Work State":(
 
                 -- Создать рабочее состояние
-                MD_Data.CreateWorkState()
+                MD_Data.UpdateWorkState()
             )
-        ) 
+        )
+        MD_UI.ToolsRltUpdate()
     )
 
     on btn_exit_work_state pressed do

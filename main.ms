@@ -12,7 +12,7 @@
         include "dlg_configure.ms"
         include "dlg_pivot_params.ms"
         include "dlg_load_work.ms"
-        include "dlg_validation.ms"
+        include "dlg_export.ms"
         include "dlg_progress.ms"
         include "rlt_settings.ms"
         include "rlt_info_catalog.ms"
@@ -36,21 +36,18 @@
 
         select cur_selection
 
+        MD_Data.SwitchVisibleLayers()
+        
         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-        -- Условия:
-        -- MD_Data.ActiveTask != undefined
-        -- MD_Data.ActiveTask == MD_Data.InWorkTask
-        -- MD_Data.ActiveTask.SavedWorks.count != 0
-        -- MD_Data.WorkLayerNodes.count != 0
-        try(
-            MD_Data.SwitchVisibleLayers()
-            if MD_Data.WorkLayerNodes.count != 0 then
-            (
-                MD_Data.ActiveTask.LoadWork \
-                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-                MD_Data.SwitchVisibleLayers()
-            )
-        ) catch()
+        -- try(
+        --     MD_Data.SwitchVisibleLayers()
+        --     if MD_Data.WorkLayerNodes.count == 0 then
+        --     (
+        --         MD_Data.ActiveTask.LoadWork \
+        --         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+        --         MD_Data.SwitchVisibleLayers()
+        --     )
+        -- ) catch()
     )
     else
     (

@@ -21,6 +21,7 @@ struct UI_Tooltips
 	tasks_02_a = "Загрузить отмеченные задания и сохранить в локальную базу.",
 	tasks_02_b = "Автоматическая разослать сообщения об ошибках.\nСообщения будут оправлены адресно для каждого отмеченного задания.",
 	tasks_02_c = "Обновить отмеченные задания в случае их изменений на удалённом сервере.",
+	tasks_02_d = "Восстановить удалённые задания.",
 	tasks_03_a = "Очистить текущий список заданий.",
 	tasks_03_b = "Удалить отмеченные задания. При этом, если задание уже было в работе и имеются сохранённые этапы работы, то оно будет помещено в собственную корзину локальной базы. В дальнейшем это задание можно будет либо восстановить, либо полностью удалить.",
 	tasks_04_a = "Взять выбранное задание в работу. При этом будет создан рабочий слой и все выбранные в данный момент обекты будут добавлены в него.",
@@ -29,19 +30,28 @@ struct UI_Tooltips
 	-- ToolsCatalog
 	tools_cat_01 = "Добавить выделенные объекты в рабочий слой.",
 	tools_cat_02 = "Установить опорную точку габаритного контейнера. Если в свитке \"Settings\" параметр \"Auto Pivot\" = ON, то при экспорте опорная точка объекта будет автоматически установлена в положение опорной точки габаритного контейнера.",
-	tools_cat_03 = "Назначить материал на выделенный объект, если он находится в рабочем слое.",
+	tools_cat_03 = "Назначить Material ID на выделенные полигоны, соответствующий порядковому номеру, выбранного в данный момент, элемента в списке материалов",
 	tools_cat_04 = "Назначить текстуры на выбранный материал.",
 	tools_cat_05 = "Сохранить текущее состояние работы. Будут сохранены только те объекты, которые находятся на рабочем слое.",
 	tools_cat_06 = "ЛКМ - Загрузить последнее сохранение.\nПКМ - Открыть диалоговое окно, где можно увидеть все ранее сделанные сохранения.",
-	tools_cat_07 = "Создать дополнительный объект (mesh). Необходимо только если активное задание имеет параметр \"Trans\" = true.",
+	tools_cat_07_a = "Указать выделенный в данный момент объект в качеств основного.\nОбъект будет переименован в соответствии с артикулом задания.",
+	tools_cat_07_b = "Указать выделенный в данный момент объект в качестве дополнительного. Необходимо только если активное задание имеет значение в поле \"Trans\".\nОбъект будет переименован в соответствии с артикулом задания.",
+	tools_cat_07_c = "Для переключения состояния нажмите кнопку ещё раз.",
 	tools_cat_08 = "Переключиться между основным и дополнительным объектами.",
 	tools_cat_09 = "Интерактивная проверка готовности задания.",
-	tools_cat_10 = "Экспорт задания в локальную базу.",
+	tools_cat_10 = "Проверка задания и экспорт в локальную базу.",
 	-- Сheck params
 	chk_01 = "Запросить список новых корректно составленных заданий.\nТакие задания имеют все необходимые данные и их можно брать в работу.",
 	chk_02 = "Запросить список новых НЕкорректно составленных заданий.\nТакие задания нельзя брать в работу и загружать в локальную базу, но можно разослать составителям сообщения об ошибках.",
 	chk_03 = "Запросить список ранее сделанных заданий.\nИх можно загрузить в локальную базу в случае если данные были потеряны или если эти задания выполнял другой пользватель.\nПри необходимости можно возобновить работу над заданиями после того как администратор изменит их состояние на \"None\".",
-	chk_04 = "Запросить список ранее удалённых заданий, хранящихся в корзине локальной базы."
+	chk_04 = "Запросить список ранее удалённых заданий, хранящихся в корзине локальной базы.",
+	-- Validation and export
+	val_exp_01 = "На рабочем слое должен быть только один объект (Main Mesh), за исключением тех случаев, когда задание имеет значение в поле Trans. В таких случаях на слое должен так же располагаться дополнительный объект (Additional Mesh), представляющий основной объект в трансформированном виде.",
+	val_exp_02 = "Тип геометрии должен быть Editable Poly или Editable Mesh.",
+	val_exp_03 = "Габаритные размеры объекта(ов) должны соответствовать указанным в задании. Так же он должен располагаться так, чтобы не выходить за границы вспомогательного габаритного контейнера.",
+	val_exp_04 = "На объект(ы) должен быть назначен корректный материал. Материал создаётся автоматически при создании рабочего состояния и назначается на объект(ы) при указании его в качестве основного или вспомагательного меша.",
+	val_exp_05 = "Количество Material ID должно соответствовать количеству элементов в списке матералов.",
+	val_exp_06 = "Объект(ы) должны иметь минимум два канала UV развёртки."
 )
 MD_Tooltips = UI_Tooltips()
 
@@ -128,35 +138,39 @@ struct Task
 		)
 		Material = mat
         append MatLib mat
-        saveTempMaterialLibrary MatLib (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat"))
+        try saveTempMaterialLibrary MatLib (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) catch()
 	),
 
 	fn LoadWork saved_file quiet_mode:true =
 	(
 		local cur_sel_objs = (selection as array)
-		local load = true
+		local load_result = true
 	
 		MD_Data.WorkLayerNodes = GetAllLayerNodes Article
+		MD_Data.ActiveTask.ActiveMesh = 1
 
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
-			load = (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены!" \
+			load_result = (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены!" \
 			title:"Внимание!" icon:#information)
 		)
 		
-		if load then
+		if load_result then
 		(
 			with redraw off
 			(
 				try(delete MD_Data.WorkLayerNodes; gc())catch()
 				mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
+				MD_Data.AttachObjectsToWorkState()
 
 				try(select cur_sel_objs)catch()
 			)
-			MD_Data.AttachObjectsToWorkState()
+
+			try (select MD_Data.ActiveTask.Mesh) catch()
 
 			completeRedraw()				
 		)
+		return load_result
 	),
 	
 	fn Update =
@@ -261,7 +275,7 @@ struct GlobalData
 	Tasks = #(), -- Задания для выбранной в данный момент подкатегории
 	-- Catalog
 	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
-	main_categ_ids = #(), -- #("01-01", ...)
+	main_categ_ids = #(), -- #(#("01-01-001", ...), ...)
 	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
 	sub_categ_lib_dirs = #(), -- #(#()) Пути к категориям в локальной базе
 	ActiveSection = 1, --> [int] Активная категория
@@ -271,7 +285,7 @@ struct GlobalData
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
 	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.ListAdd
 	ActiveList = 1, --> [int] Активный список
-	InWorkTask = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
+	InWorkTask = undefined, --> [task] Задание, находящееся в данный момент в рабочем состоянии
 	InWorkTaskFile = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 	WorkLayerNodes = #(),
@@ -281,11 +295,22 @@ struct GlobalData
 	proj_main_categ_ids = #(),
 	proj_sub_categs = #(),
 	proj_sub_categ_ids = #(),
-	VisibleLayrs = true,
+	VisibleLayrs = false,
 
 	Users = #(),
 
-	fn validation =
+	fn AssignMatID =
+	(
+		try(
+			if subobjectLevel == 4 then
+			(
+				SetMatID $ ActiveTaskAddIndex
+				DisplayTempPrompt ("OK") 5000
+			)
+		)catch()
+	),
+
+	fn Validation =
 	(
 		try WorkLayerNodes = GetAllLayerNodes WorkLayer.Name catch()
 		-- TempLayerNodes = GetAllLayerNodes MD_BBox.Layer.Name
@@ -295,7 +320,7 @@ struct GlobalData
 		local mat_ids = uv_count = #()
 		local val = true
 		local msg = ""
-		local valids = #("X", "X", "X", "X", "X", "X", "X")
+		local valids = #("X", "X", "X", "X", "X", "X")
 		local objs = #(ActiveTask.Mesh, ActiveTask.AddMesh)
 
 		-- Check count
@@ -331,20 +356,18 @@ struct GlobalData
 				-- Check material
 				if obj.material != undefined then
 				(
-					valids[4] = "OK"
-	
-					-- Check material IDs
+					-- Check submaterials count
 					sub_mats_count = 0
 					try(sub_mats_count = obj.material.count)catch()
 					if obj.material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count then
 					(
-						valids[5] = "OK"
+						valids[4] = "OK"
 	
 						-- Check material id count
 						mat_ids = GetMaterialIDList obj
 						if mat_ids.count >= ActiveTask.Materials.count then
 						(
-							valids[6] = "OK"
+							valids[5] = "OK"
 						)else (msg = "The number of material IDs for the object does not match.")
 					)else (msg = "The wrong material is assigned.")
 				)else (msg = "The object has no material.")
@@ -353,7 +376,7 @@ struct GlobalData
 				uv_count = GetNumUVChannels obj
 				if uv_count == 2 then
 				(
-					valids[7] = "OK"                                    
+					valids[6] = "OK"                                    
 				)else(msg = "The number of UV channels is not equal to 2.")
 			)else (msg = "The object must be of the Geometry type.")
 		)
@@ -361,16 +384,19 @@ struct GlobalData
 		for v in valids where v == "X" do (val = false; exit)
 	
 		try(
-			for i = 2 to MD_UI.Dialogs.Validation.controls.count by 2 do
+			for i = 2 to MD_UI.Dialogs.Export.controls.count by 2 do
 			(
 				v = valids[i/2]
-				MD_UI.Dialogs.Validation.controls[i].text = v
-				if v == "OK" then MD_UI.Dialogs.Validation.controls[i].ForeColor = DN_CLR_OK
-				else MD_UI.Dialogs.Validation.controls[i].ForeColor = DN_CLR_X
+				MD_UI.Dialogs.Export.controls[i].text = v
+				if v == "OK" then MD_UI.Dialogs.Export.controls[i].ForeColor = DN_CLR_OK
+				else MD_UI.Dialogs.Export.controls[i].ForeColor = DN_CLR_X
 			)                
 		)catch()
 
-		if val then MD_UI.ToolsCatalog.btn_export.enabled = true
+		-- --Переключение состояния кнопки "EXPORT"
+		-- if val then MD_UI.Dialogs.Export.btn_export.enabled = true
+		-- else MD_UI.Dialogs.Export.btn_export.enabled = false
+
 		ActiveTask.Valid = val
 		return #(val, msg, valids, obj)
 	),
@@ -390,7 +416,6 @@ struct GlobalData
 				(
 					MD_Data.SetAddMesh obj
 					WorkLayer.addNode obj
-
 				)
 			)
 		)catch()
@@ -399,7 +424,7 @@ struct GlobalData
 	fn SwitchWorkLayer =
 	(
 		try (
-			if ActiveTask.Article == InWorkTask.Article then WorkLayer.on = true
+			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then WorkLayer.on = true
 			else WorkLayer.on = false			
 		)catch()
 	),
@@ -416,7 +441,7 @@ struct GlobalData
                     lr.on = true
                 ) 
                 VisibleLayrs = false
-                MD_UI.ToolsCatalog.btn_vis_switch.text = "Hide All Layers"
+                MD_UI.ToolsCatalog.btn_vis_switch.text = "Isolate Task Layer"
             )
             false:(
                 for i = 0 to LayerManager.count - 1 do
@@ -426,7 +451,7 @@ struct GlobalData
                     lr.on = false
                 ) 
                 VisibleLayrs = true
-                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show All Layers"
+                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show All Objects"
             )
         )
 		completeRedraw()
@@ -459,11 +484,13 @@ struct GlobalData
 		try (
 			local nodes = GetAllLayerNodes InWorkTask.Article
 
-			for n in nodes do 
-			(
-				DEFAULT_LAYER.addNode n
-				n.IsHidden = False
-			)
+			-- for n in nodes do 
+			-- (
+			-- 	DEFAULT_LAYER.addNode n
+			-- 	n.IsHidden = False
+			-- )
+			Delete nodes
+			gc()
 			DeleteAllSubLayers InWorkTask.Article
 			LayerManager.deleteLayerByName InWorkTask.Article
 			InWorkTask = undefined
@@ -495,9 +522,6 @@ struct GlobalData
 
 	fn CreateWorkState =
 	(
-		-- Удалить пустые слои
-		DeleteAllEmptyLayers()
-
 		try InWorkTask.State = STATES[1] catch()
 		try (
 			ReadDataFile InWorkTaskFile
@@ -505,7 +529,7 @@ struct GlobalData
 			WriteDataFile InWorkTaskFile
 		)
 		catch ()
-		DeleteWorkLayer()
+		if ActiveTask != InWorkTask then DeleteWorkLayer()
         try MD_Callbacks.Destruct() catch()
 		
         ActiveTask.State = STATES[2]
@@ -514,6 +538,7 @@ struct GlobalData
 		InWorkTaskFile = ActiveTask.File
 		CreateWorkLayer()
 		AttachSelectedToWorkLayer()
+		try AttachObjectsToWorkState() catch()
 
 		try (
 			ReadDataFile MD_LIB_COMMON_DATA_FILE
@@ -531,6 +556,26 @@ struct GlobalData
 
 		-- Создать рабочую папку
 		MakeDir MD_Data.ActiveTask.InWorkDir
+	),
+
+	fn UpdateWorkState =
+	(
+		MD_Callbacks.Destruct()
+        ActiveTask.State = STATES[2]
+        ActiveTask.ActiveMesh = 1
+        InWorkTask = ActiveTask
+		InWorkTaskFile = ActiveTask.File
+		CreateWorkLayer()
+		try (
+			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			data["in_work_task"] = InWorkTask.File
+			WriteDataFile MD_LIB_COMMON_DATA_FILE
+		)
+		catch ()
+		SwitchWorkLayer()
+		MD_UI.ToolsRltUpdate()
+		MakeDir MD_Data.ActiveTask.InWorkDir
+		MD_Callbacks.Add()
 	),
 
 	fn GetTasksInActiveCategory =
@@ -562,6 +607,7 @@ struct GlobalData
 			)
 			else
 			(
+				obj.IsHidden = false
 				MD_Data.ActiveTask.Mesh = obj
 				MD_Data.ActiveTask.Mesh.Name = MD_Data.ActiveTask.Article
 				-- MD_Data.ActiveTask.ActiveMesh = 1
@@ -584,14 +630,12 @@ struct GlobalData
 				MD_Data.ActiveTask.AddMesh.Name = uniqueName "Object"
 				MD_Data.ActiveTask.AddMesh = undefined
 				obj.IsHidden = False
-				-- MD_Data.ActiveTask.ActiveMesh = 1
 			)
 			else
 			(
 				MD_Data.ActiveTask.AddMesh = obj
 				MD_Data.ActiveTask.AddMesh.Name = MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX
 				obj.IsHidden = True
-				-- MD_Data.ActiveTask.ActiveMesh = 2
 				MD_Data.ActiveTask.AddMesh.Material = MD_Data.ActiveTask.Material
 			)
 
@@ -690,14 +734,84 @@ struct GlobalData
 				else 
 				(
 					ActiveTask = undefined
-					ActiveTaskAddIndex = undefined
-					try SwitchWorkLayer() catch()
+					ActiveTaskIndex = undefined
+
+					-- try SwitchWorkLayer() catch()
 				)
+				-- ##############################################
+				-- out_str = ""
+				-- out_str += "\nGLOBAL DATA:\n\n"
+				-- for pr in (getPropNames this) do
+				-- (
+				-- 	if classOf (getProperty this pr) != MAXScriptFunction then
+				-- 	out_str += "\t" + ((pr as string) + " : " + (getProperty this pr) as string) + "\n"	
+				-- )
+				-- print out_str
+				-- ##############################################
 			)
 			2:(
 
 			)
 		)
+	),
+
+	fn request args info_output:undefined waiting_txt:"Waiting" add_text:"" =
+	(
+		-- local dots = #("", ".", "..", "...", "....")
+		-- local last_update_datetime = getFileModDate requests_config_file
+		local i = 0
+		local response_data = #()
+
+		local process = dotNetObject "System.Diagnostics.Process"
+		process.StartInfo.RedirectStandardOutput = true
+		process.StartInfo.RedirectStandardError = true
+
+		local dn_timer = dotNetObject "System.Windows.Forms.Timer"
+		dn_timer.Interval = 200
+
+		-- HiddenDOSCommand "TaskKill /IM md_requests.exe /f"
+		-- dos_cmd = ("start \"\" \"" + HTTP_CLIENT + "\"")
+		-- dos_cmd = "start \"d:\Scripts\MakeDesignTools\http_client\md_requests.exe\""
+		-- HiddenDOSCommand dos_cmd donotwait:true prompt:unsupplied ExitCode:&variable
+		-- print variable
+
+		shellLaunch HTTP_CLIENT args
+		-- pushPrompt ""
+	
+		while proc_final != true do 
+		(
+			dn_timer.Start()
+		-- 	msg = waiting_txt + dots[((mod i 5) + 1)]
+		-- 	if (classof info_output == LabelControl) then info_output.text = msg
+		-- 	else PushPrompt msg
+			
+		-- 	sleep .5
+			proc = process.GetProcessesByName("md_requests")
+	
+			if proc.count == 0 then 
+			(
+				print "!!!!!!!!"
+		-- 		try(
+		-- 			pushPrompt ""
+		-- 			msg = ""
+					
+		-- 			cb = (FilterString (getclipboardText()) separ)
+		-- 			for i = 1 to cb.count do
+		-- 			(
+		-- 				append response_data cb[i]
+		-- 			)
+		-- 			try(msg = response_data[2] + " " + add_text)catch()
+	
+		-- 			if (classof info_output == LabelControl) then info_output.text = msg
+		-- 			else (DisplayTempPrompt msg 5000)
+					proc_final = true
+					dn_timer.Stop()
+		-- 		)catch()
+		-- 		-- )catch(messageBox "Something went wrong!" title:"ERROR!" icon:#critical)
+			)
+			i += 1
+		)
+		response_data
 	),
 
 	fn Init = (
@@ -730,7 +844,7 @@ struct GlobalData
 		(
 			ReadDataFile MD_LIB_COMMON_DATA_FILE
 			InWorkTaskFile = data["in_work_task"]
-			WriteDataFile MD_LIB_COMMON_DATA_FILE
+			InWorkTask = Task file:InWorkTaskFile
 		)
 
 		-- Инициализация списков категорий
@@ -751,11 +865,12 @@ struct GlobalData
 					for k in i["children"] as array do 
 					(
 						append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
-						append main_categ_ids k["article"]
+						-- append main_categ_ids k["article"]
 
 						arr_names = #()
 						arr_ids = #()
 						arr_tasks = #()
+						arr_idss = #()
 
 						for j in k["children"] as array do 
 						(
@@ -764,14 +879,17 @@ struct GlobalData
 							sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
 							append arr_ids sub_categ_dir
 							append arr_tasks undefined
+							append arr_idss j["article"]
 						)
 						append sub_categs arr_names
+						append main_categ_ids arr_idss
 						append sub_categ_lib_dirs arr_ids
 					)
 				)
 				arr_names = #()
 				arr_ids = #()
 				arr_tasks = #()
+				arr_idss = #()
 			)
 			
 			-- Импорт данных пользователей
@@ -801,7 +919,7 @@ struct UI_Dialogs
 	CheckTasks = dlg_check_tasks,
 	PivotParams = dlg_pivot_params,
 	LoadWork = dlg_load_work,
-	Validation = dlg_validation,
+	Export = dlg_export,
 	Progress = dlg_progress,
 
 	fn UpdatePreview =
@@ -814,7 +932,7 @@ struct UI_Dialogs
 	(
 		local indexes = #()
 
-		if (queryBox "Are you sure?\nAll saves except the last one will be deleted!" title:"Warning!" icon:#warning) then
+		if (queryBox "Действительно удалить отмеченные файлы?" title:"Внимание!" icon:#warning) then
 		(
 			for i = 0 to LoadWork.lv_files.Items.count - 1 do
 			(
@@ -1087,12 +1205,12 @@ struct UI
 					if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
 					(
 						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-						try ToolsCatalog.btn_main_mesh.tooltip = MD_Data.ActiveTask.Mesh.Name catch()
+						try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
 					)
 					else
 					(
 						ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-						ToolsCatalog.btn_main_mesh.tooltip = ""
+						ToolsCatalog.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
 					)
 
 					-- Если задание имеет поле трансформации
@@ -1117,20 +1235,19 @@ struct UI
 						if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
 						(
 							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-							ToolsCatalog.btn_add_mesh.tooltip = MD_Data.ActiveTask.AddMesh.Name
+							try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
 						)
 						else(
 							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-							ToolsCatalog.btn_add_mesh.tooltip = ""
+							ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
 						)
 
-						if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
-						(
-							ToolsCatalog.btn_valid.enabled = true
-
-							local valid = (MD_Data.validation())[1]
-							if valid then ToolsCatalog.btn_export.enabled = true
-						)
+						-- if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
+						-- (
+							-- ToolsCatalog.btn_export.enabled = true
+						-- 	-- local valid = (MD_Data.validation())[1]
+						-- 	-- if valid then ToolsCatalog.btn_export.enabled = true
+						-- )
 					)
 					-- Если задание НЕ имеет поле трансформации
 					else
@@ -1142,16 +1259,20 @@ struct UI
 							ToolsCatalog.btn_main_mesh.enabled = true							
 						)
 
-						if MD_Data.ActiveTask.Mesh != undefined then
-						(
-							ToolsCatalog.btn_valid.enabled = true
-						)
+						-- if MD_Data.ActiveTask.Mesh != undefined then
+						-- (
+						-- 	ToolsCatalog.btn_export.enabled = true
+						-- )
 					)
 					
 					-- Сохранить работу
-					if (MD_Data.WorkLayer != undefined and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count)) then
+
+					if (MD_Data.WorkLayer != undefined \
+						and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count) \
+						and MD_Data.WorkLayerNodes.count != 0) then
 					(
 						ToolsCatalog.btn_save_work.enabled = true
+						ToolsCatalog.btn_export.enabled = true
 					)
 
 					-- Добавить к рабочему слою
@@ -1170,10 +1291,13 @@ struct UI
 						ToolsCatalog.btn_load_work.enabled = true
 					)
 
-					-- Экспорт
-					if MD_Data.ActiveTask.Valid != False then
+					-- Material ID и текстуры
+					if MD_Data.ActiveList == 2 then
 					(
-						ToolsCatalog.btn_export.enabled = true
+						ToolsCatalog.btn_assign_texts.enabled = true
+
+						if subobjectLevel == 4 then
+						ToolsCatalog.btn_assign_mat_id.enabled = true
 					)
 				)
 				free MD_Data.WorkLayerNodes
@@ -1265,29 +1389,34 @@ struct UI
 			(
 				Tasks.btn_get.enabled = true
 				Tasks.btn_get.text = "Get"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
 			)
 
 			else if MD_Data.InvalidTasks.count != 0 then
 			(
 				Tasks.btn_get.enabled = true
 				Tasks.btn_get.text = "Send"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_b
 			)
 
 			else if MD_Data.CompletedTasks.count != 0 then
 			(
 				Tasks.btn_get.enabled = true
 				Tasks.btn_get.text = "Backup"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_c
 			)
 
 			else if MD_Data.DeletedTasks.count != 0 then
 			(
 				Tasks.btn_get.enabled = true
 				Tasks.btn_get.text = "Restore"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_d
 			)
 
 			else
 			(
 				Tasks.btn_clear.text = "Delete"
+				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_b
 			)
         )
 		else
@@ -1296,6 +1425,8 @@ struct UI
 			Tasks.btn_clear.enabled = false
 			Tasks.btn_get.text = "Get"
 			Tasks.btn_clear.text = "Clear"
+			Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
+			Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 		)
 	),
 
@@ -1303,27 +1434,7 @@ struct UI
 		-- Обновляет интерфейс исходя из текущих данных
 		FillData()
 		FillAddList()
-		
-        -- try MD_Data.ActiveCategory = Categories.selection catch()
-        -- try MD_Data.ActiveSubCategory = SubCategories.selection catch()
-
 		TasksRltUpdate()
-		-- if MD_Data.ValidTasks.count != 0 or MD_Data.InvalidTasks.count != 0 or MD_Data.CompletedTasks.count != 0 or MD_Data.DeletedTasks.count != 0 then
-		-- (
-		-- 	Tasks.btn_get.enabled = true
-		-- 	Tasks.btn_clear.enabled = true
-		-- )
-
-		-- if MD_Data.InvalidTasks.count != 0 then
-		-- (
-		-- 	Tasks.btn_get.text = "Send"
-		-- )
-
-		-- if MD_Data.CheckedTasks.count != 0 then
-		-- (
-		-- 	Tasks.btn_clear.enabled = true
-		-- 	Tasks.btn_clear.text = "Delete"
-		-- )
 
 		if MD_Data.ActiveTask == undefined then
 		(
@@ -1421,8 +1532,6 @@ struct UI
 		Main.sub_rlt.pos = [2, 4]
 
 		InitLists()
-
-		-- Update()
 	),
 
 	fn Close = (
@@ -1437,7 +1546,7 @@ struct UI
 		-- Определить текущую тему 3ds Max
 		get_max_ui_bg_color()
 
-		dn_max_ui_bg_color = (dotNetClass "system.Drawing.color").FromArgb 255 MAX_UI_BG_COLOR.r MAX_UI_BG_COLOR.g MAX_UI_BG_COLOR.b
+		DN_MAX_UI_CLR = (dotNetClass "system.Drawing.color").FromArgb 255 MAX_UI_BG_COLOR.r MAX_UI_BG_COLOR.g MAX_UI_BG_COLOR.b
 
 		if MAX_UI_BG_COLOR.r > 100 then
 		(
@@ -1546,10 +1655,6 @@ struct UI
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
 		-- Инициализация входных значений
-		-- try(
-		-- 	Categories.Selection = MD_Data.ActiveCategory
-		-- 	SubCategories.Selection = MD_Data.ActiveSubCategory
-		-- )catch()
 
 		try (for sr in Main.sub_rlt.rollouts do GetINISettings sr MDT_CONFIG_FILE sr.name) 
 		catch ()
@@ -1806,6 +1911,7 @@ struct Callback
 
 	fn DeleteObject ev nd = 
 	(
+		
 		if MD_Data.ActiveTask != undefined then
 		(
 			try SuperClassOf MD_Data.ActiveTask.Mesh != GeometryClass catch
@@ -1887,7 +1993,16 @@ struct Callback
 	(
 		try (
 			if MD_Data.ActiveTask == MD_Data.InWorkTask then
-			MD_Data.CreateWorkLayer() --??????????
+
+			MD_Data.CreateWorkLayer()
+			MD_Data.ActiveTaskIndex = undefined
+		)catch()
+	),
+
+	fn MatChange ev nd =
+	(
+		try (
+			print MD_Data.ActiveTask.Material.materialList.count
 		)catch()
 	),
 
@@ -1900,6 +2015,8 @@ struct Callback
 		added:UpdateUI \
 		deleted:DeleteObject \
 		layerChanged:LayerChange \
-		selectionChanged:UpdateUI
+		selectionChanged:UpdateUI \
+		subobjectSelectionChanged:UpdateUI \
+		materialOtherEvent:MatChange
 	)
 )

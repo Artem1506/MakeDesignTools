@@ -492,3 +492,20 @@ fn SaveSelectedObjects nodes max_file_path =
     saveNodes nodes max_file_path saveAsVersion:max_ver quiet:true
     select cur_sel_state
 )
+
+fn SetMatID obj id =
+(
+	-- Назначает material ID на выбранные полигоны
+	--> Array
+
+	if classof obj == Editable_Poly then
+	(
+		local sel_faces = polyop.getFaceSelection obj
+		polyop.setFaceMatID obj sel_faces id
+	)
+	else if classof obj == Editable_Mesh then
+	(
+		local sel_faces = getFaceSelection obj
+		try(for i in sel_faces do setFaceMatID obj i id; update obj)catch()
+	)
+)

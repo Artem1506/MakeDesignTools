@@ -76,7 +76,7 @@ CLR_LINK = color 100 190 255
 CLR_BBOX_MAIN = color 60 150 255
 CLR_BBOX_ADD = color 255 100 50
 DEFAULT_LAYER = LayerManager.getLayer 0
-dn_max_ui_bg_color = undefined
+DN_MAX_UI_CLR = undefined
 progress_dlg_title = ""
 mdt_temp_layer = "_mdt_temp_"
 TRANS_POSTFIX = "trans"
@@ -93,7 +93,7 @@ dlg_configure
 dlg_check_tasks
 dlg_pivot_params
 dlg_load_work
-dlg_validation
+dlg_export
 dlg_progress
 
 global rlt_make_design

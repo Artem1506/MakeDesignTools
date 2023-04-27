@@ -4,7 +4,7 @@ rollout dlg_load_work "Saved Works"
    dotNetControl 'lv_files' "System.Windows.Forms.ListView" width:220 height:346 align:#left offset:[-4, 2] across:2
    dotNetControl 'img_prew' "System.Windows.Forms.PictureBox" width:SAVED_PREVIEW_SIZE height:SAVED_PREVIEW_SIZE align:#left offset:[-78, 2] across:2
    button 'btn_load' "Load" width:111 height:CTRL_HEIGHT_2 align:#left offset:[-6, -37] acreoss:2 enabled:true
-   button 'btn_clear' "Clear" width:111 height:CTRL_HEIGHT_2 align:#left offset:[107, -37] enabled:false
+   button 'btn_delete' "Delete" width:111 height:CTRL_HEIGHT_2 align:#left offset:[107, -37] enabled:false
 
    on dlg_load_work open do
    (
@@ -23,9 +23,10 @@ rollout dlg_load_work "Saved Works"
       -- Загрузить в сцену объекты из выбранного файл
       -- При этом все объекты на текущем рабочем слое будут удалены
       try(
-         MD_Data.ActiveTask.LoadWork \
+         local load_result = MD_Data.ActiveTask.LoadWork \
          MD_Data.ActiveTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
-         destroyDialog dlg_load_work
+         
+         if load_result then destroyDialog dlg_load_work
       )catch()
    )
 
@@ -45,11 +46,11 @@ rollout dlg_load_work "Saved Works"
 
        -- Вкл/Выкл кнопки "Clear"
        if self.CheckedItems.Count > 0 then
-       btn_clear.enabled = true
-       else btn_clear.enabled = false
+       btn_delete.enabled = true
+       else btn_delete.enabled = false
    )
 
-   on btn_clear pressed do
+   on btn_delete pressed do
    (
       -- Удалить отмеченные файлы
       MD_UI.Dialogs.DeleteSavedFiles()

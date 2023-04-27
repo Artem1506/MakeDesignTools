@@ -1,18 +1,17 @@
 
 rollout rlt_tools_catalog "Tools"
 (
-    button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:""
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_02
-    button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    button 'btn_assign_mat_id' "Assign Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
     button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
     button 'btn_save_work' "Save Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5,V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_05
     button 'btn_load_work' "Load Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06
-    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:""
-    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:""
+    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
+    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
-    button 'btn_valid' "Validation" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, 4] enabled:false tooltip:MD_Tooltips.tools_cat_09
-    button 'btn_export' "Export Task" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_10
+    button 'btn_vis_switch' "Show All Objects" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:""
+    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, 4] enabled:false tooltip:MD_Tooltips.tools_cat_10
     
     on rlt_tools_catalog open do
     (
@@ -21,8 +20,13 @@ rollout rlt_tools_catalog "Tools"
     
     on rlt_tools_catalog close do
     (
-  
+        SetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name
     )  
+
+    on btn_assign_mat_id pressed do
+    (
+        MD_Data.AssignMatID()
+    )
 
     on btn_vis_switch pressed do
     (
@@ -42,24 +46,6 @@ rollout rlt_tools_catalog "Tools"
         MD_UI.ToolsRltUpdate()
         MD_BBox.Update()
     )
-
-    -- on btn_main_mesh_icon pressed do
-    -- (
-    --     MD_Data.ActiveTask.ActiveMesh = 1
-    --     try select MD_Data.ActiveTask.Mesh catch()
-
-    --     MD_UI.ToolsRltUpdate()
-    --     MD_BBox.Update()
-    -- )
-
-    -- on btn_add_mesh_icon pressed do
-    -- (
-    --     MD_Data.ActiveTask.ActiveMesh = 2
-    --     try select MD_Data.ActiveTask.AddMesh catch()
-
-    --     MD_UI.ToolsRltUpdate()
-    --     MD_BBox.Update()
-    -- )
 
     on btn_mesh_switch pressed do
     (
@@ -113,15 +99,10 @@ rollout rlt_tools_catalog "Tools"
         )
     )
 
-    on btn_valid pressed do
-    (
-        try(destroyDialog MD_UI.Dialogs.Validation)catch()
-        CreateDialog MD_UI.Dialogs.Validation style:#(#style_sysmenu, #style_titlebar)
-    )
-
     on btn_export pressed do
     (
-        MD_Data.ExportTask()
+        try(destroyDialog MD_UI.Dialogs.Export)catch()
+        CreateDialog MD_UI.Dialogs.Export style:#(#style_sysmenu, #style_titlebar)
     )
 
     on btn_attach_to_task pressed do

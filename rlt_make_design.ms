@@ -17,11 +17,13 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try(destroyDialog dlg_check_tasks)catch()
         try(destroyDialog dlg_pivot_params)catch()
         try(destroyDialog dlg_load_work)catch()
-        try(destroyDialog dlg_validation)catch()
+        try(destroyDialog dlg_export)catch()
 
         for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
+
         try MD_Callbacks.Destruct() catch()
         try MD_BBox.Remove() catch()
+        try MD_Data.ClearWorkLayer() catch()
         try MD_Data.DeleteWorkLayer() catch()
     )
 )
