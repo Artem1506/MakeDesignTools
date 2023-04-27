@@ -5,6 +5,7 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
 
     on rlt_make_design open do
     (
+        -- Установить расположение главного роллаута
         try(
             dialog_pos = execute (getINISetting MDT_CONFIG rlt_make_design.name "pos")
             SetDialogPos rlt_make_design dialog_pos
@@ -13,17 +14,27 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
 
     on rlt_make_design close do
     (
+        -- Закрыть все диалоговый окна
         try(destroyDialog dlg_mdt_configure_path)catch()
         try(destroyDialog dlg_check_tasks)catch()
         try(destroyDialog dlg_pivot_params)catch()
         try(destroyDialog dlg_load_work)catch()
         try(destroyDialog dlg_export)catch()
 
+        -- Запись текущего состояния интерфейса
         for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
 
+        -- Очистить рабочую сцену
         try MD_Callbacks.Destruct() catch()
         try MD_BBox.Remove() catch()
         try MD_Data.ClearWorkLayer() catch()
         try MD_Data.DeleteWorkLayer() catch()
+
+        -- Сделать открытыми все слои
+        for i = 0 to LayerManager.count - 1 do
+        (
+            lr = LayerManager.getLayer i
+            lr.on = true
+        )
     )
 )

@@ -37,17 +37,20 @@
         select cur_selection
 
         MD_Data.SwitchVisibleLayers()
-        
-        -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-        -- try(
-        --     MD_Data.SwitchVisibleLayers()
-        --     if MD_Data.WorkLayerNodes.count == 0 then
-        --     (
-        --         MD_Data.ActiveTask.LoadWork \
-        --         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-        --         MD_Data.SwitchVisibleLayers()
-        --     )
-        -- ) catch()
+
+         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+        if MD_UI.Settings.ckbx_load_last.checked then
+        (
+            try(
+                MD_Data.SwitchVisibleLayers()
+                if MD_Data.WorkLayerNodes.count == 0 then
+                (
+                    MD_Data.ActiveTask.LoadWork \
+                    MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                    MD_Data.SwitchVisibleLayers()
+                )
+            ) catch()            
+        )
     )
     else
     (

@@ -47,8 +47,26 @@ rollout rlt_tools_catalog "Tools"
         MD_BBox.Update()
     )
 
+    on btn_add_mesh_icon pressed do
+    (
+        case MD_Data.ActiveTask.ActiveMesh of
+        (
+            1:(
+                MD_Data.ActiveTask.ActiveMesh = 2
+                try select MD_Data.ActiveTask.AddMesh catch()
+            )
+            2:(
+                MD_Data.ActiveTask.ActiveMesh = 1
+                try select MD_Data.ActiveTask.Mesh catch()
+            )
+        )
+        MD_UI.ToolsRltUpdate()
+        MD_BBox.Update()
+    )
+
     on btn_mesh_switch pressed do
     (
+        clearSelection()
         case MD_Data.ActiveTask.ActiveMesh of
         (
             1:(
@@ -73,6 +91,7 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_set_pivot rightclick do
     (
+        MD_BBox.ResetPivot()
         MD_BBox.ResetPivot()
     )
 
@@ -108,5 +127,6 @@ rollout rlt_tools_catalog "Tools"
     on btn_attach_to_task pressed do
     (
         MD_Data.AttachSelectedToWorkLayer()
+        MD_Data.SwitchVisibleLayers()
     )
 )

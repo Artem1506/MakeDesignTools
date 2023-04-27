@@ -14,7 +14,7 @@ struct UI_Tooltips
 	settings_02 = "ON - При экспорте объекта его пивот автоматически выравняется с пивотом габаритного контейнера.\nOFF - Будет использовано текущее положение пивота.",
 	settings_03 = "Каждый раз при сохранении промежуточного этапа работы создаётся превью.\nON - Автоматически будет подобран ракурс так, чтобы охватить все объекты на сцене.\nOFF - Будет использован текущий ракурс.",
 	settings_04 = "Максимальное количество сохранений промежуточных этапов работы.\nПри достижении этого числа, ранее сохранённые файлы будут удаляться по мере добавления новых.",
-	settings_05 = "ON - При установке задания в состояние \"In_Work\" будет проверяться наличие ранее сохранённых этапов работы.\nИ если они есть, будет автоматически загружено последнее сохранение. ",
+	settings_05 = "При наличии ранее сохранённых рабочих файлов в текущем задании, после запуска утилиты будет автоматически загружено последнее сохранение.",
 	settings_06 = "Включить подсказки. (Требуется перезагрузка)",
 	-- Tasks
 	tasks_01 = "Проверить наличие доступных заданий.",
@@ -146,8 +146,11 @@ struct Task
 		local cur_sel_objs = (selection as array)
 		local load_result = true
 	
-		MD_Data.WorkLayerNodes = GetAllLayerNodes Article
-		MD_Data.ActiveTask.ActiveMesh = 1
+		clearSelection()
+
+		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+		MD_Data.WorkLayer.current = true
+		-- MD_Data.ActiveTask.ActiveMesh = 1
 
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
@@ -159,9 +162,20 @@ struct Task
 		(
 			with redraw off
 			(
-				try(delete MD_Data.WorkLayerNodes; gc())catch()
+				try (delete MD_Data.WorkLayerNodes; gc()) catch()
 				mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
-				MD_Data.AttachObjectsToWorkState()
+				
+				for obj in getLastMergedNodes() do
+				(
+					if obj.name == MD_Data.InWorkTask.Article then
+					(
+						MD_Data.InWorkTask.Mesh = obj
+					)
+					if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
+					(
+						MD_Data.InWorkTask.AddMesh = obj
+					)
+				)
 
 				try(select cur_sel_objs)catch()
 			)
@@ -416,6 +430,7 @@ struct GlobalData
 				(
 					MD_Data.SetAddMesh obj
 					WorkLayer.addNode obj
+					obj.Ishidden = true
 				)
 			)
 		)catch()
@@ -438,7 +453,11 @@ struct GlobalData
                 (
                     lr = LayerManager.getLayer i
                     if lr != WorkLayer and lr != MD_BBox.Layer then
-                    lr.on = true
+					(
+						lr.on = true
+						DEFAULT_LAYER.current = true						
+					)
+					else lr.on = false
                 ) 
                 VisibleLayrs = false
                 MD_UI.ToolsCatalog.btn_vis_switch.text = "Isolate Task Layer"
@@ -449,9 +468,14 @@ struct GlobalData
                     lr = LayerManager.getLayer i
                     if lr != WorkLayer and lr != MD_BBox.Layer then
                     lr.on = false
+					else 
+					(
+						lr.on = true
+						lr.current = true
+					)
                 ) 
                 VisibleLayrs = true
-                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show All Objects"
+                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
             )
         )
 		completeRedraw()
@@ -1229,6 +1253,7 @@ struct UI
 						(
 							ToolsCatalog.btn_main_mesh.enabled = true				
 							ToolsCatalog.btn_add_mesh.enabled = true				
+							ToolsCatalog.btn_add_mesh.enabled = true				
 						)
 
 						-- Доп. меш
@@ -1241,13 +1266,6 @@ struct UI
 							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
 							ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
 						)
-
-						-- if MD_Data.ActiveTask.Mesh != undefined and MD_Data.ActiveTask.AddMesh != undefined then
-						-- (
-							-- ToolsCatalog.btn_export.enabled = true
-						-- 	-- local valid = (MD_Data.validation())[1]
-						-- 	-- if valid then ToolsCatalog.btn_export.enabled = true
-						-- )
 					)
 					-- Если задание НЕ имеет поле трансформации
 					else
@@ -1258,11 +1276,6 @@ struct UI
 						(
 							ToolsCatalog.btn_main_mesh.enabled = true							
 						)
-
-						-- if MD_Data.ActiveTask.Mesh != undefined then
-						-- (
-						-- 	ToolsCatalog.btn_export.enabled = true
-						-- )
 					)
 					
 					-- Сохранить работу
@@ -1277,7 +1290,12 @@ struct UI
 
 					-- Добавить к рабочему слою
 					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 					(
+						local obj_outside = false
+
+						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+						if obj_outside then
 						local obj_outside = false
 
 						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
@@ -1300,6 +1318,7 @@ struct UI
 						ToolsCatalog.btn_assign_mat_id.enabled = true
 					)
 				)
+
 				free MD_Data.WorkLayerNodes
 				free objs
 			)
@@ -1804,6 +1823,30 @@ struct BoundingBox
 		)catch()
 	),
 
+	fn SetPivotPos =
+	(
+		try(
+			bb_x = [bb.min.x, bb.center.x, bb.max.x]
+			bb_y = [bb.min.y, bb.center.y, bb.max.y]
+			bb_z = [bb.min.z, bb.center.z, bb.max.z]
+
+			pivot_pos = [bb_x[MD_UI.Dialogs.PivotParams.lst_x.selection], \
+			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
+			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
+			
+			pp.pos = pivot_pos			
+		)catch()
+	),
+
+	fn ResetPivot =
+	(
+		try(
+			pivot_pos = [0.0, 0.0, 0.0]
+			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			write_pivot_data()
+		)catch()
+	),
+
 	fn Update =
 	(
 		case MD_Data.ActiveSection of
@@ -1935,14 +1978,14 @@ struct Callback
 			if MD_Data.ActiveTask.Mesh.Layer != MD_Data.WorkLayer then
 			(
 				MD_Data.ActiveTask.Mesh.Material = undefined
-				MD_Data.ActiveTask.Mesh.Name = uniqueName "Object"
+				-- MD_Data.ActiveTask.Mesh.Name = uniqueName "Object"
 				MD_Data.ActiveTask.Mesh = undefined
 				MD_Data.ActiveTask.ActiveMesh = 1
 			)
 			if MD_Data.ActiveTask.AddMesh.Layer != MD_Data.WorkLayer then
 			(
 				MD_Data.ActiveTask.AddMesh.Material = undefined
-				MD_Data.ActiveTask.AddMesh.Name = uniqueName "Object"
+				-- MD_Data.ActiveTask.AddMesh.Name = uniqueName "Object"
 				MD_Data.ActiveTask.AddMesh = undefined
 				obj.IsHidden = False
 				MD_Data.ActiveTask.ActiveMesh = 1
@@ -1955,7 +1998,11 @@ struct Callback
 			if obj.Layer != MD_Data.WorkLayer then
 			(
 				obj.Material = undefined
-				if (findString obj.Name MD_Data.WorkLayer.Name) != undefined then obj.Name = uniqueName "Object"
+				if (findString obj.Name MD_Data.WorkLayer.Name) != undefined then 
+				(
+					obj.Name = uniqueName "Object"
+					obj.IsHidden = False
+				)
 				obj = undefined
 			)
 		)
