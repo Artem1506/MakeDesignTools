@@ -1229,6 +1229,7 @@ struct UI
 						(
 							ToolsCatalog.btn_main_mesh.enabled = true				
 							ToolsCatalog.btn_add_mesh.enabled = true				
+							ToolsCatalog.btn_add_mesh.enabled = true				
 						)
 
 						-- Доп. меш
@@ -1277,7 +1278,12 @@ struct UI
 
 					-- Добавить к рабочему слою
 					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 					(
+						local obj_outside = false
+
+						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+						if obj_outside then
 						local obj_outside = false
 
 						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
@@ -1778,6 +1784,30 @@ struct BoundingBox
 			ReadDataFile MD_Data.ActiveTask.File
 			pivot_pos = data["pivot"]
 		)
+	),
+
+	fn SetPivotPos =
+	(
+		try(
+			bb_x = [bb.min.x, bb.center.x, bb.max.x]
+			bb_y = [bb.min.y, bb.center.y, bb.max.y]
+			bb_z = [bb.min.z, bb.center.z, bb.max.z]
+
+			pivot_pos = [bb_x[MD_UI.Dialogs.PivotParams.lst_x.selection], \
+			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
+			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
+			
+			pp.pos = pivot_pos			
+		)catch()
+	),
+
+	fn ResetPivot =
+	(
+		try(
+			pivot_pos = [0.0, 0.0, 0.0]
+			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			write_pivot_data()
+		)catch()
 	),
 
 	fn SetPivotPos =

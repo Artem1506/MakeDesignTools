@@ -47,7 +47,7 @@ rollout rlt_tools_catalog "Tools"
         MD_BBox.Update()
     )
 
-    on btn_mesh_switch pressed do
+    on btn_add_mesh_icon pressed do
     (
         case MD_Data.ActiveTask.ActiveMesh of
         (
@@ -64,6 +64,23 @@ rollout rlt_tools_catalog "Tools"
         MD_BBox.Update()
     )
 
+    -- on btn_mesh_switch pressed do
+    -- (
+    --     case MD_Data.ActiveTask.ActiveMesh of
+    --     (
+    --         1:(
+    --             MD_Data.ActiveTask.ActiveMesh = 2
+    --             select MD_Data.ActiveTask.AddMesh
+    --         )
+    --         2:(
+    --             MD_Data.ActiveTask.ActiveMesh = 1
+    --             select MD_Data.ActiveTask.Mesh
+    --         )
+    --     )
+    --     MD_UI.ToolsRltUpdate()
+    --     MD_BBox.Update()
+    -- )
+
     on btn_set_pivot pressed do
     (
         try destroyDialog MD_UI.Dialogs.PivotParams catch()
@@ -73,6 +90,7 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_set_pivot rightclick do
     (
+        MD_BBox.ResetPivot()
         MD_BBox.ResetPivot()
     )
 
