@@ -13,7 +13,7 @@
         include "dlg_pivot_params.ms"
         include "dlg_load_work.ms"
         include "dlg_export.ms"
-        include "dlg_progress.ms"
+        include "dlg_request.ms"
         include "rlt_settings.ms"
         include "rlt_info_catalog.ms"
         include "rlt_info_projects.ms"
@@ -29,6 +29,7 @@
         MD_UI = UI()
         MD_BBox = BoundingBox()
         MD_Callbacks = Callback()
+        MD_Client = HTTPClient()
 
         try MD_UI.FillAddList() catch()
         try MD_Callbacks.Add() catch()
@@ -38,19 +39,36 @@
 
         MD_Data.SwitchVisibleLayers()
 
-         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-        if MD_UI.Settings.ckbx_load_last.checked then
-        (
-            try(
-                MD_Data.SwitchVisibleLayers()
-                if MD_Data.WorkLayerNodes.count == 0 then
-                (
-                    MD_Data.ActiveTask.LoadWork \
-                    MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+        -- Попытаться выбрать последнее активное задание
+		if MD_Data.Tasks.Count != 0 then
+		(
+            local exist_task_index
+
+            try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
+
+            try MD_Data.ActiveTaskIndex = exist_task_index 
+			catch(print "1")
+
+			try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
+			catch(print "2")
+            
+            MD_Data.Update()
+            MD_UI.Update()
+
+            -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+            if MD_UI.Settings.ckbx_load_last.checked then
+            (
+                try(
                     MD_Data.SwitchVisibleLayers()
-                )
-            ) catch()            
-        )
+                    if MD_Data.WorkLayerNodes.count == 0 then
+                    (
+                        MD_Data.ActiveTask.LoadWork \
+                        MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                        MD_Data.SwitchVisibleLayers()
+                    )
+                ) catch()            
+            )
+		)
     )
     else
     (

@@ -1,11 +1,15 @@
 
 struct LogSys
 (
-	fn Info msg_text = (format "MDT_INFO: %\n" msg_text),
-	fn Warning msg_text = (format "MDT_WARNING: %\n" msg_text),
-	fn Error msg_text = (format "MDT_ERROR: %\n" msg_text)
+	source = "",
+
+	fn Info msg_text = (format "%_INFO: % | %\n" source (GetTimeStamp()) msg_text),
+	fn Warning msg_text = (format "%_WARNING: % | %\n" source (GetTimeStamp()) msg_text),
+	fn Error msg_text = (format "%_ERROR: % | %\n" source (GetTimeStamp()) msg_text)
 )
-MD_Log = LogSys()
+
+MD_Log = LogSys source:"MD"
+Client_Log = LogSys source:"HTTP_CLIENT"
 
 struct UI_Tooltips
 (
@@ -20,8 +24,9 @@ struct UI_Tooltips
 	tasks_01 = "Проверить наличие доступных заданий.",
 	tasks_02_a = "Загрузить отмеченные задания и сохранить в локальную базу.",
 	tasks_02_b = "Автоматическая разослать сообщения об ошибках.\nСообщения будут оправлены адресно для каждого отмеченного задания.",
-	tasks_02_c = "Обновить отмеченные задания в случае их изменений на удалённом сервере.",
+	tasks_02_c = "Сделать бэкап отмеченных заданий.",
 	tasks_02_d = "Восстановить удалённые задания.",
+	tasks_02_e = "Обновить отмеченные задания в случае их изменений на удалённом сервере.",
 	tasks_03_a = "Очистить текущий список заданий.",
 	tasks_03_b = "Удалить отмеченные задания. При этом, если задание уже было в работе и имеются сохранённые этапы работы, то оно будет помещено в собственную корзину локальной базы. В дальнейшем это задание можно будет либо восстановить, либо полностью удалить.",
 	tasks_04_a = "Взять выбранное задание в работу. При этом будет создан рабочий слой и все выбранные в данный момент обекты будут добавлены в него.",
@@ -53,6 +58,7 @@ struct UI_Tooltips
 	val_exp_05 = "Количество Material ID должно соответствовать количеству элементов в списке матералов.",
 	val_exp_06 = "Объект(ы) должны иметь минимум два канала UV развёртки."
 )
+
 MD_Tooltips = UI_Tooltips()
 
 struct TaskMaterial
@@ -138,7 +144,8 @@ struct Task
 		)
 		Material = mat
         append MatLib mat
-        try saveTempMaterialLibrary MatLib (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) catch()
+		if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
+        saveTempMaterialLibrary MatLib (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat"))
 	),
 
 	fn LoadWork saved_file quiet_mode:true =
@@ -268,7 +275,8 @@ struct Task
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
 
 				-- Создать материал
-				try CreateMaterial() catch()
+				if not DoesFileExist (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) then
+				CreateMaterial()
             )
         )
 	),
@@ -282,7 +290,7 @@ struct GlobalData
 	SubCategories = #(),
 	WorkLayer = undefined,
 	-- Tasks lists
-	ValidTasks = #(),
+	TempArticlesList = #(),
 	InvalidTasks = #(),
 	CompletedTasks = #(),
 	DeletedTasks = #(),
@@ -291,16 +299,18 @@ struct GlobalData
 	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
 	main_categ_ids = #(), -- #(#("01-01-001", ...), ...)
 	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
-	sub_categ_lib_dirs = #(), -- #(#()) Пути к категориям в локальной базе
+	sub_categ_lib_dirs = #(), -- #(#("D:\MakeDesignLib\Catalog\06-02-013", ...), ...) Пути к категориям в локальной базе
 	ActiveSection = 1, --> [int] Активная категория
 	ActiveCategory = undefined, --> [int] Активная подкатегория
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.ListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
 	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.ListAdd
+	active_catalog_dir = undefined, --> [str] "01-01-001"
+	active_catalog_article = undefined, --> [str] "01-01-001"
 	ActiveList = 1, --> [int] Активный список
 	InWorkTask = undefined, --> [task] Задание, находящееся в данный момент в рабочем состоянии
-	InWorkTaskFile = undefined, --> [string] Задание, находящееся в данный момент в рабочем состоянии
+	InWorkTaskFile = undefined, --> [str] Задание, находящееся в данный момент в рабочем состоянии
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 	WorkLayerNodes = #(),
 	TempLayerNodes = #(),
@@ -730,6 +740,7 @@ struct GlobalData
 		(
 			1:(
 				ActiveTaskAddIndex = undefined
+				TempArticlesList = #()
 
 				try (GetTasksInActiveCategory()) catch()
 
@@ -759,19 +770,7 @@ struct GlobalData
 				(
 					ActiveTask = undefined
 					ActiveTaskIndex = undefined
-
-					-- try SwitchWorkLayer() catch()
 				)
-				-- ##############################################
-				-- out_str = ""
-				-- out_str += "\nGLOBAL DATA:\n\n"
-				-- for pr in (getPropNames this) do
-				-- (
-				-- 	if classOf (getProperty this pr) != MAXScriptFunction then
-				-- 	out_str += "\t" + ((pr as string) + " : " + (getProperty this pr) as string) + "\n"	
-				-- )
-				-- print out_str
-				-- ##############################################
 			)
 			2:(
 
@@ -779,88 +778,89 @@ struct GlobalData
 		)
 	),
 
-	fn request args info_output:undefined waiting_txt:"Waiting" add_text:"" =
+	fn DeleteEmptyTask task =
 	(
-		-- local dots = #("", ".", "..", "...", "....")
-		-- local last_update_datetime = getFileModDate requests_config_file
-		local i = 0
-		local response_data = #()
+		-- Удаляет задания из локальной базы
+		-- Если задание емеет ранее сохранённые рабочие файлы или выполненные файлы, 
+		-- то папка с заданием помещается в собственную мусорную корзину лок. базы.
 
-		local process = dotNetObject "System.Diagnostics.Process"
-		process.StartInfo.RedirectStandardOutput = true
-		process.StartInfo.RedirectStandardError = true
-
-		local dn_timer = dotNetObject "System.Windows.Forms.Timer"
-		dn_timer.Interval = 200
-
-		-- HiddenDOSCommand "TaskKill /IM md_requests.exe /f"
-		-- dos_cmd = ("start \"\" \"" + HTTP_CLIENT + "\"")
-		-- dos_cmd = "start \"d:\Scripts\MakeDesignTools\http_client\md_requests.exe\""
-		-- HiddenDOSCommand dos_cmd donotwait:true prompt:unsupplied ExitCode:&variable
-		-- print variable
-
-		shellLaunch HTTP_CLIENT args
-		-- pushPrompt ""
+		local task_dir = pathConfig.appendPath sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory] task.Article
+		local done_files = getFiles (task_dir + "/*.*")
+		local result = false
 	
-		while proc_final != true do 
+		if (doesFileExist task.File) == true then
 		(
-			dn_timer.Start()
-		-- 	msg = waiting_txt + dots[((mod i 5) + 1)]
-		-- 	if (classof info_output == LabelControl) then info_output.text = msg
-		-- 	else PushPrompt msg
-			
-		-- 	sleep .5
-			proc = process.GetProcessesByName("md_requests")
-	
-			if proc.count == 0 then 
+			if done_files.count != 0 or task.SavedWorks.count != 0 then
 			(
-				print "!!!!!!!!"
-		-- 		try(
-		-- 			pushPrompt ""
-		-- 			msg = ""
-					
-		-- 			cb = (FilterString (getclipboardText()) separ)
-		-- 			for i = 1 to cb.count do
-		-- 			(
-		-- 				append response_data cb[i]
-		-- 			)
-		-- 			try(msg = response_data[2] + " " + add_text)catch()
+				-- Проверка существует ли папка корзины
+				if not (doesDirectoryExist MD_LIB_TRASH_DIR) then
+				(
+					-- Создать папку корзины
+					make_dir_cmd = "mkdir -p " + MD_LIB_TRASH_DIR
+					HiddenDOSCommand make_dir_cmd donotwait:true
 	
-		-- 			if (classof info_output == LabelControl) then info_output.text = msg
-		-- 			else (DisplayTempPrompt msg 5000)
-					proc_final = true
-					dn_timer.Stop()
-		-- 		)catch()
-		-- 		-- )catch(messageBox "Something went wrong!" title:"ERROR!" icon:#critical)
+					-- Сделать папку скрытой
+					add_hide_attrib_cmd = "attrib +h " + MD_LIB_TRASH_DIR
+					HiddenDOSCommand add_hide_attrib_cmd donotwait:true 
+				)
+
+				local trash_dirs = getDirectories (MD_LIB_TRASH_DIR + "/*.*")
+				local task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR task.Article)
+				local exists = #()
+
+				-- Сущетвует ли в корзине папка с таким же заданием?
+				for dir in trash_dirs do
+				(
+					f = findString dir task.Article
+					if f != undefined then 
+					append exists dir
+				)
+				-- Если существует, то удаляемая папка с занием будет переименована
+				if exists.count != 0 then
+				(
+					copy_name = task.Article + "_" + ((formattedPrint (exists.count + 1) format:"01d") as string)
+					task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR copy_name)
+				)
+	
+				-- Скопировать папку с заданием в корзину
+				dosCommand ("xcopy " + task_dir + " " + task_in_trash_dir + " /S /E /I /Y /R /C")
 			)
-			i += 1
 		)
-		response_data
+
+		-- Если задание находится в работе
+		if task.State == STATES[2] then this.ExitWorkState()
+
+		-- Удалить папку с заданием
+		dosCommand ("rmdir " + task_dir + " /S /Q")
+		if not doesDirectoryExist task_dir then result = true
+
+		result
 	),
 
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
-		Categories = #()
-		SubCategories = #()
-		ValidTasks = #()
-		InvalidTasks = #()
-		CompletedTasks = #()
-		DeletedTasks = #()
+		-- Categories = #()
+		-- SubCategories = #()
+		-- TempArticlesList = #()
+		-- InvalidTasks = #()
+		-- CompletedTasks = #()
+		-- DeletedTasks = #()
 
-		users = #()
-		main_categs = #()
-		main_categ_ids = #()
-		sub_categs = #()
-		sub_categ_lib_dirs = #()
+		-- users = #()
+		-- main_categs = #()
+		-- main_categ_ids = #()
+		-- sub_categs = #()
+		-- sub_categ_lib_dirs = #()
 
-		proj_main_categs = #()
-		proj_main_categ_ids = #()
-		proj_sub_categs = #()
-		proj_sub_categ_ids = #()
+		-- proj_main_categs = #()
+		-- proj_main_categ_ids = #()
+		-- proj_sub_categs = #()
+		-- proj_sub_categ_ids = #()
 
 		try (
 			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
 			MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
+			MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
 		)
 		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
 
@@ -869,6 +869,12 @@ struct GlobalData
 			ReadDataFile MD_LIB_COMMON_DATA_FILE
 			InWorkTaskFile = data["in_work_task"]
 			InWorkTask = Task file:InWorkTaskFile
+		)
+		else 
+		(
+			data = PY_BUILTINS.dict()
+			data["in_work_task"] = undefined
+			WriteDataFile MD_LIB_COMMON_DATA_FILE
 		)
 
 		-- Инициализация списков категорий
@@ -944,7 +950,7 @@ struct UI_Dialogs
 	PivotParams = dlg_pivot_params,
 	LoadWork = dlg_load_work,
 	Export = dlg_export,
-	Progress = dlg_progress,
+	Request = dlg_request,
 
 	fn UpdatePreview =
 	(
@@ -1179,9 +1185,9 @@ struct UI
 
 				try (
 					local size_txt = ""
-					size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as string) + "    ")
-					size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as string) + "    ")
-					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as string))
+					size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
+					size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
+					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
 					InfoCatalogSize.text = size_txt
 				) catch()
 
@@ -1199,7 +1205,7 @@ struct UI
 			)
 		)
 	),
-
+	
 	fn ToolsRltUpdate =
 	(
 		case Sections.Selection of
@@ -1400,60 +1406,103 @@ struct UI
 
 	fn TasksRltUpdate =
 	(
-        if MD_Data.CheckedTasks.Count > 0 then
-        (
-			Tasks.btn_clear.enabled = true
+		Tasks.btn_get.enabled = false
+		Tasks.btn_clear.enabled = false
+		Tasks.btn_get.text = "Get"
+		Tasks.btn_clear.text = "Clear"
+		Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
+		Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
+		Tasks.btn_work_state.enabled = true
+		if MD_Data.ActiveTask == MD_Data.InWorkTask then
+		Tasks.btn_exit_work_state.enabled = true
+		else Tasks.btn_exit_work_state.enabled = false
 
-			if MD_Data.ValidTasks.count != 0 then
+		if MD_Data.TempArticlesList.count != 0 then
+		(
+			Tasks.btn_work_state.enabled = false
+			Tasks.btn_exit_work_state.enabled = false
+
+			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
+			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+
+			case MD_Client.ActiveCheckParam of
+			(
+				1:(
+					Tasks.btn_get.text = "Get"
+					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a						
+				)
+				2:(
+					Tasks.btn_get.text = "Send"
+					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_b
+				)
+				3:(
+					Tasks.btn_get.text = "Backup"
+					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_c
+				)
+				4:
+				(
+					Tasks.btn_get.text = "Restore"
+					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_d
+				)
+			)
+
+			if MD_Data.CheckedTasks.Count > 0 then
 			(
 				Tasks.btn_get.enabled = true
-				Tasks.btn_get.text = "Get"
-				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
+				Tasks.btn_clear.enabled = true
 			)
-
-			else if MD_Data.InvalidTasks.count != 0 then
-			(
-				Tasks.btn_get.enabled = true
-				Tasks.btn_get.text = "Send"
-				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_b
-			)
-
-			else if MD_Data.CompletedTasks.count != 0 then
-			(
-				Tasks.btn_get.enabled = true
-				Tasks.btn_get.text = "Backup"
-				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_c
-			)
-
-			else if MD_Data.DeletedTasks.count != 0 then
-			(
-				Tasks.btn_get.enabled = true
-				Tasks.btn_get.text = "Restore"
-				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_d
-			)
-
-			else
-			(
-				Tasks.btn_clear.text = "Delete"
-				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_b
-			)
-        )
+		)
 		else
 		(
-			Tasks.btn_get.enabled = false
-			Tasks.btn_clear.enabled = false
-			Tasks.btn_get.text = "Get"
-			Tasks.btn_clear.text = "Clear"
-			Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
-			Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
+			if MD_Data.CheckedTasks.Count > 0 then
+			(
+				Tasks.btn_get.enabled = true
+				Tasks.btn_get.text = "Update"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_e
+				Tasks.btn_clear.enabled = true
+				Tasks.btn_clear.text = "Delete"
+				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_b
+
+				Tasks.btn_work_state.enabled = false
+				Tasks.btn_exit_work_state.enabled = false
+			)
 		)
+	),
+
+	fn FillTempData =
+	(
+		local main_items = #()
+
+		for i in MD_Data.TempArticlesList do
+		(
+			dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" i
+			dn_list_item.checked = true
+			case MD_Client.ActiveCheckParam of
+			(
+				1:(dn_list_item.ForeColor = DN_CLR_TEMP)
+				2:(dn_list_item.ForeColor = DN_CLR_BAD)
+				3:(dn_list_item.ForeColor = DN_CLR_DONE)
+				4:(dn_list_item.ForeColor = DN_CLR_TEMP)
+			)
+			
+			append main_items dn_list_item
+		)
+
+		ListMain.Items.Clear()
+		ListMain.Items.AddRange main_items
+		ListMain.Update()
+
+		ListAdd.Items.Clear()
+		ListAdd.Update()
 	),
 
 	fn Update = (
 		-- Обновляет интерфейс исходя из текущих данных
 		FillData()
 		FillAddList()
-		TasksRltUpdate()
+
+		Tasks.btn_get.enabled = false
+		Tasks.btn_clear.enabled = false
 
 		if MD_Data.ActiveTask == undefined then
 		(
@@ -1495,7 +1544,6 @@ struct UI
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
 			
 			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
-
 		)
 
 		if SubCategories.Items.Count != 0 then
@@ -1656,8 +1704,6 @@ struct UI
 	),
 
 	fn Init = (
-
-		local exist_task_index = undefined
 		local exist_categ_index = undefined
 		local exist_sub_categ_index = undefined
 
@@ -1680,7 +1726,6 @@ struct UI
 
 		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_basic_catalog_selection")) catch()
 		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lst_sub_catalog_selection")) catch()
-		try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE Tasks.Name "lv_main_selection") + 1) catch()
 		
 		try (
 			if exist_categ_index > 0 then Categories.Selection = MD_Data.ActiveCategory = exist_categ_index
@@ -1698,12 +1743,6 @@ struct UI
 
 		MD_Data.ActiveSection = Sections.Selection
 
-		try MD_Data.ActiveTaskIndex = exist_task_index 
-		catch()
-
-		try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
-		catch()
-		
 		SwitchRollouts()
 		MD_Data.Update()
 		Update()
@@ -2067,3 +2106,80 @@ struct Callback
 		materialOtherEvent:MatChange
 	)
 )
+
+struct HTTPClient
+(
+	response_status,
+	response_msg,
+	response_data,
+	ActiveCheckParam = 1,
+	request_dlg_title,
+
+	fn ExistTasksFilter =
+	(
+		-- Фильтрует список артикулов для загрузки в локальную базу
+		local filter_articles = #()
+		local categ_lib_dirs = GetDirectories (MD_Data.sub_categ_lib_dirs[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory] + "/*")
+		local exist_articles = #()
+
+		-- Список артиклей существующих заданий
+		for dir in categ_lib_dirs do 
+		(
+		   local categ = pathConfig.stripPathToLeaf (trimRight dir "\\/")
+		   append exist_articles categ
+		)
+		
+		-- Перебор списка из ответа от http-client
+		for rd in response_data do 
+		(
+			local resp = FilterString rd SEPAR_2
+			-- resp[1] = артикул
+			-- resp[2] = дата создания
+			-- resp[3] = сообщение
+			-- resp[4] = ID пользователя
+	
+			-- Проверить существует ли задание в локальной базе
+			local f = findItem exist_articles resp[1]
+			
+			if f == 0 then (append filter_articles resp[1])
+			else 
+			(
+				local exist_task_file = pathConfig.AppendPath categ_lib_dirs[f] TASK_INNER_DIRS[1]
+				exist_task_file = pathConfig.AppendPath exist_task_file TASK_FILE_NAME
+
+				-- Проверка даты создания задания
+				if doesFileExist exist_task_file then
+				(
+					ReadDataFile exist_task_file
+					local date = FilterString data["date_create"] " "
+					if date[2] != resp[2] then append filter_articles resp[1]               
+				)
+			)
+		)
+
+		return filter_articles
+	),
+
+    fn Request request args title =
+    (
+        request_dlg_title = title
+		shellLaunch HTTP_CLIENT (request + " " + args)
+		CreateDialog MD_UI.Dialogs.Request modal:true
+    ),
+
+	fn Log msg =
+	(
+		if MD_Client.response_status == "200" then
+        (
+            msg = "Код ответа: " + MD_Client.response_status + " | " + msg
+            Client_Log.Info msg
+        )
+        
+        if MD_Client.response_status == "401" or MD_Client.response_status == "400" then
+        (
+            msg = "Код ответа: " + MD_Client.response_status + " | " + MD_Client.response_msg
+            Client_Log.Error msg
+        )
+	)
+)
+

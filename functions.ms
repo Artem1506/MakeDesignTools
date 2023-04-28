@@ -177,6 +177,53 @@ fn GetUserEnvVar var =
     return result
 )
 
+fn GetTimeStamp format:#all seconds:true =
+(
+	-- #all
+	-- #time
+	-- #date
+
+	::time_stamp = ""
+
+	py_code = ""
+	py_code += "import pymxs" + "\n"
+	py_code += "from datetime import datetime" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
+	py_code += "now = datetime.now()" + "\n"
+
+	case format of
+	(
+		#all:(
+			case seconds of
+			(
+				true:(py_code += "rt.time_stamp = now.strftime(\"%d/%m/%Y %H:%M:%S\")")
+				false:(py_code += "rt.time_stamp = now.strftime(\"%d/%m/%Y %H:%M\")")
+			)
+		)
+		#time:(
+			case seconds of
+			(
+				true:(py_code += "rt.time_stamp = now.strftime(\"%H:%M:%S\")")
+				false:(py_code += "rt.time_stamp = now.strftime(\"%H:%M\")")
+			)
+		)
+		#date:(py_code += "rt.time_stamp = now.strftime(\"%d/%m/%Y\")")
+	)
+
+	python.Execute py_code
+
+	-- Вариант с Maxscript
+
+	-- time_stamp = getLocalTime()
+	-- time_stamp = (formattedprint time_stamp[4] format:#02d) + "/" + \
+	-- (formattedprint time_stamp[2] format:#02d) + "/" + \
+	-- (formattedprint time_stamp[1] format:#02d) + " " + \
+	-- (formattedprint time_stamp[5] format:#02d) + ":" + \
+	-- (formattedprint time_stamp[6] format:#02d)
+
+	return time_stamp
+)
+
 fn ConvertValueToSystemUnits input_units val = 
 (
     -- Возращает изменённое входное значение, исходя из текущих системных единиц измерения

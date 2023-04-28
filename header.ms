@@ -3,6 +3,8 @@
 global MD_LIB_DIR = ""
 global MAX_UI_BG_COLOR = ""
 global PY_BUILTINS = Python.Import "builtins"
+global data = PY_BUILTINS.dict()
+global data_file = ""
 
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
@@ -77,7 +79,6 @@ CLR_BBOX_MAIN = color 60 150 255
 CLR_BBOX_ADD = color 255 100 50
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
-progress_dlg_title = ""
 mdt_temp_layer = "_mdt_temp_"
 TRANS_POSTFIX = "trans"
 
@@ -94,7 +95,7 @@ dlg_check_tasks
 dlg_pivot_params
 dlg_load_work
 dlg_export
-dlg_progress
+dlg_request
 
 global rlt_make_design
 rlt_settings
@@ -112,5 +113,6 @@ MD_Data
 MD_UI
 MD_BBox
 MD_Callbacks
+MD_Client
 
 global CheckExistTaskLayer

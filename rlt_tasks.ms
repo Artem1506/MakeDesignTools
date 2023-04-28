@@ -119,34 +119,116 @@ rollout rlt_tasks "Tasks"
 
     on btn_get pressed do 
     (
-        -- case btn_get.text of
-        -- (
-        --     "Get":()
-        --     "Send":()
-        --     "Update":()
-        -- )
+        local args = ""
+        local msg = ""
+
+        case btn_get.text of
+        (
+            "Send":( 
+                -- Отправить сообщения об ошибках
+
+                local article = ""
+                local msg = ""
+                local user_id = ""
+
+                for i in MD_Data.CheckedTasks do
+                (
+                    local split = FilterString MD_Client.response_data[i] SEPAR_2
+                    article = split[1]
+                    msg = split[3]
+                    user_id = split[4]
+
+                    args += user_id + SEPAR_2
+                )
+                args = trimRight args SEPAR_2
+                args += SEPAR_1
+
+                for i in MD_Data.CheckedTasks do
+                (
+                    args += (article + " | " + msg + SEPAR_2)
+                )
+                args = "\"" + (trimRight args SEPAR_2) + "\""
+
+                MD_Client.Request "send_message" args "Sending Messages"
+                msg = "Отправлено сообщений: " + MD_Client.response_msg as string
+                MD_Client.Log msg
+            )
+            "Update":(
+                -- Обновить отмеченные задания
+
+                for i in MD_Data.CheckedTasks do
+                (
+                    args += MD_Data.Tasks[i].Article + SEPAR_1
+                )
+                args = trimRight args SEPAR_1
+                lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+                MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+                args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
+
+                MD_Client.Request "download_tasks" args "Updating Tasks"
+                msg = "Обновлено заданий: " + MD_Client.response_msg + " из " + MD_Data.CheckedTasks.count as string
+                MD_Client.Log msg
+            )
+            default:(
+                -- Скачать задания в локальную базу
+
+                for i in MD_Data.CheckedTasks do
+                (
+                    args += MD_Data.TempArticlesList[i] + SEPAR_1
+                )
+                args = trimRight args SEPAR_1
+                lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+                args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
+
+                MD_Client.Request "download_tasks" args "Downloading Tasks"
+                msg = "Скачано заданий: " + MD_Data.CheckedTasks.count as string
+                MD_Client.Log msg
+            )
+        )
+        -- Обновить
+        MD_Data.TempArticlesList = #()
+        MD_Data.Update()
+        MD_UI.Update()
+        MD_BBox.Update()
     )
     
     on btn_clear pressed do 
     (
-        -- case btn_clear.text of
-        -- (
-        --     "Clear":()
-        --     "Delete":
-        --         (
-        --             if (queryBox "You want to delete these tasks?" title:"WARNING" icon:#warning) then
-        --             (
+        case btn_clear.text of
+        (
+            "Clear":(
+                MD_Data.TempArticlesList = #()
+                MD_UI.Update()
+            )
+            "Delete":
+                (
+                    if (queryBox "Дейсвительно удалить отмеченные задания?" title:"Внимание!" icon:#warning) then
+                    (
+                        
+                        local del_task_dirs = 0
+                        for i in MD_Data.CheckedTasks do
+                        (
+                            del = MD_Data.DeleteEmptyTask MD_Data.Tasks[i]
+                            del_task_dirs += 1
+                        )
+                        if del_task_dirs > 0 then MD_Log.Info ("Удаленно заданий: " + del_task_dirs as string)
+                        MD_Data.Update()
+                        MD_UI.Update()
+                        MD_BBox.Update()
+                    )
+                )
+        )
+    )
+ 
+    on lv_main GiveFeedback  self args do
+    (
 
-        --             )
-        --         )
-        -- )
     )
 
-    on lv_main ItemChecked self args do 
-    (
+    on lv_main ItemChecked self args do
+    (   
         -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
-        MD_Data.CheckedTasks = 
-        for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
+        MD_Data.CheckedTasks = for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
 
         -- Отметить все элементы списка если нажат control
         if keyboard.controlPressed == true then
@@ -164,7 +246,7 @@ rollout rlt_tasks "Tasks"
 
     on lv_main ItemSelectionChanged self arg do 
     (
-
+        
     )
 
     on lv_main Click self arg do
@@ -172,59 +254,42 @@ rollout rlt_tasks "Tasks"
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = 0
 
-        if (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1) then
+        -- Если временный список заданий пуст
+        if MD_Data.TempArticlesList.count == 0 then
         (
-            MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
-            MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
-            MD_Data.ActiveTaskAddIndex = undefined
-
-            MD_Data.SwitchWorkLayer()
-
-            if MD_Data.ActiveTask.State == STATES[2] then
+            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1)) then
             (
-                MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-                MD_Data.ActiveTask.ActiveMesh = 1
+                MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
+                MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
+                MD_Data.ActiveTaskAddIndex = undefined
 
-                for obj in MD_Data.WorkLayerNodes do
+                MD_Data.SwitchWorkLayer()
+
+                if MD_Data.ActiveTask.State == STATES[2] then
                 (
-                    if obj.name == MD_Data.ActiveTask.Article then
+                    MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+                    MD_Data.ActiveTask.ActiveMesh = 1
+
+                    for obj in MD_Data.WorkLayerNodes do
                     (
-                        MD_Data.ActiveTask.Mesh = obj
+                        if obj.name == MD_Data.ActiveTask.Article then
+                        (
+                            MD_Data.ActiveTask.Mesh = obj
+                        )
+                        if obj.name == (MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX) then
+                        (
+                            MD_Data.ActiveTask.AddMesh = obj
+                            MD_Data.ActiveTask.AddMesh.isHidden = true
+                        )
+                        
                     )
-                    if obj.name == (MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX) then
-                    (
-                        MD_Data.ActiveTask.AddMesh = obj
-                        MD_Data.ActiveTask.AddMesh.isHidden = true
-                    )
-                    
                 )
-            )
-
-            -- try MD_Data.AttachObjectsToWorkState() catch(print "ass")
-            MD_UI.Update()
-            MD_BBox.Update()
-
-            -- MD_Data.WorkLayerNodes.count
-
-            -- MD_Data.SwitchWorkLayer()
-            -- -- try MD_Data.AttachObjectsToWorkState() catch()
-            -- MD_UI.Update()
-            -- MD_BBox.Update()
-            -- MD_UI.CatalogPreviewRltUpdate()
-
-            -- -- if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
-            -- -- (
-            -- --     if MD_Data.WorkLayerNodes.count == 0 and MD_Data.ActiveTask.SavedWorks.count != 0 then
-            -- --     (
-            -- --         MD_Data.ActiveTask.LoadWork \
-            -- --         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-            -- --         MD_Data.SwitchVisibleLayers()
-            -- --     )            
-            -- -- )
-       
-            -- try print MD_Data.ActiveTask.Mesh catch()       
-            -- try print MD_Data.ActiveTask.AddMesh catch()       
-        )  
+                MD_UI.TasksRltUpdate()
+                MD_UI.Update()
+                try MD_UI.CatalogPreviewRltUpdate() catch()
+                MD_BBox.Update()     
+            )             
+        )
     )
 
     on lv_add Click self arg do
@@ -261,14 +326,22 @@ rollout rlt_tasks "Tasks"
                     dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
                     dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
 
-                    -- Удалить все объекты с рабочего слоя
-                    try MD_Data.ClearWorkLayer() catch()
-                    if queryBox dlg_msg title:"Сообщение" then (
-                        -- Загрузить последнюю сохранённую работу
-                        
-                        try MD_Data.ActiveTask.LoadWork \
-                            MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true catch()
-                    )     
+                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                    if MD_UI.Settings.ckbx_load_last.checked then
+                    (
+                        if MD_Data.WorkLayerNodes.count != 0 then
+                        (
+                            if queryBox dlg_msg title:"Сообщение" then 
+                            (
+                                -- Удалить все объекты с рабочего слоя
+                                try MD_Data.ClearWorkLayer() catch()
+                            )
+                        )
+                        -- Загрузить последнюю работу
+                        MD_Data.ActiveTask.LoadWork \
+                        MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                        MD_Data.SwitchVisibleLayers()
+                    )
                 )
             )
             "Update Work State":(
