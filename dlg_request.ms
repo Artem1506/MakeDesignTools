@@ -17,6 +17,8 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 		process.StartInfo.RedirectStandardError = true
 
         MD_Client.response_data = #()
+
+        if MD_Client.dialog_mode == false then dlg_request.visible = false
     )
 
     on clock tick do

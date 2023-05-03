@@ -2129,6 +2129,7 @@ struct HTTPClient
 	response_data,
 	ActiveCheckParam = 1,
 	request_dlg_title,
+	dialog_mode = True,
 
 	fn ExistTasksFilter =
 	(
@@ -2175,11 +2176,16 @@ struct HTTPClient
 		return filter_articles
 	),
 
-    fn Request request args title =
+    fn Request request args title dialog:True =
     (
-        request_dlg_title = title
-		shellLaunch HTTP_CLIENT (request + " " + args)
-		CreateDialog MD_UI.Dialogs.Request modal:true
+		if DoesFileExist HTTP_CLIENT then
+		(
+			this.dialog_mode = dialog
+			request_dlg_title = title
+			shellLaunch HTTP_CLIENT (request + " " + args)
+			CreateDialog MD_UI.Dialogs.Request modal:true
+		)
+		else MD_Log.Error "Не удалось обнаружить http-клиент."
     ),
 
 	fn Log msg =
