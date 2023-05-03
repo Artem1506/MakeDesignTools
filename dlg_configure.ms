@@ -1,5 +1,7 @@
 rollout dlg_configure "Configure" width:400 height:164
 (
+    local login, password
+
     Label 'lbl_6' "Directory: " width:62 offset:[8, 20] align:#left across:3
     Label 'lbl_md_lib_dir' "" width:224 offset:[-58, 20] align:#left
     Button 'btn_md_lib_dir' "Browse" width:64 height:CTRL_HEIGHT_1 offset:[0, 16] align:#right
@@ -11,7 +13,7 @@ rollout dlg_configure "Configure" width:400 height:164
     editText 'etxt_pass' "" width:160 height:20 offset:[-160, 0] align:#right
 
     button 'btn_test' "Test Request" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:false
-    button 'btn_get_struct' "Get database structure" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:false
+    button 'btn_get_struct' "Get Data" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:false
 
     Label 'lbl_info' "" width:388 offset:[-4, 12] align:#left
 
@@ -19,12 +21,21 @@ rollout dlg_configure "Configure" width:400 height:164
     groupBox 'gbx_2' " Remote Base " width:388 height:82 pos:[6, 56] align:#left
 
     on dlg_configure open do
-    (   
-        try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
-        catch ()
+    (  
+        -- Инициализация пути к локальной базе 
+        try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
         
         lbl_md_lib_dir.text = MD_LIB_DIR
         lbl_md_lib_dir.tooltip = MD_LIB_DIR
+
+        -- Инициализация логина и пароля
+        try(
+            login = getINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" forceUTF16:false
+            password = getINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" forceUTF16:false
+            etxt_log.text = login
+            etxt_pass.text = password
+            if login != "" and password != "" then btn_test.enabled = true
+        )catch(btn_test.enabled = false)
     )
 
     on dlg_configure close do
@@ -61,27 +72,48 @@ rollout dlg_configure "Configure" width:400 height:164
         )
     )
 
-    on etxt_log entered arg do
-    (
-       
-    )
-
     on etxt_log changed arg do (if arg != "" and etxt_pass.text != "" then btn_test.enabled = true else btn_test.enabled = false)
 
     on etxt_pass changed arg do (if arg != "" and etxt_log.text != "" then btn_test.enabled = true else btn_test.enabled = false)
 
+    on etxt_log entered arg do
+    (
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" arg forceUTF16:false)catch()
+    )
+
     on etxt_pass entered arg do
     (
-        
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" arg forceUTF16:false)catch()
     )
 
     on btn_test pressed do
     (
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
 
+        MD_Client.Request "test_request" "" "Test Request"
+        MD_Client.Log MD_Client.response_msg
+
+        if MD_Client.response_status == "200" then 
+        (
+            btn_get_struct.enabled = true
+            lbl_info.text = "INFO: Success!"
+        )
+        else lbl_info.text = "ERROR: Unsuccess!"
     )
 
     on btn_get_struct pressed do 
     (
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
 
+        MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
+        if MD_Client.response_status == "200" then MD_Client.Log "Загружены данные о пользователях."
+
+        MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Structure Data"
+        if MD_Client.response_status == "200" then MD_Client.Log "Загружены данные о каталоге объектов."
+
+        MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Structure Data"
+        if MD_Client.response_status == "200" then MD_Client.Log "Загружены данные о проектах."
     )
 )

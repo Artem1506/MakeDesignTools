@@ -47,10 +47,10 @@
             try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
 
             try MD_Data.ActiveTaskIndex = exist_task_index 
-			catch(print "1")
+			catch()
 
 			try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
-			catch(print "2")
+			catch()
             
             MD_Data.Update()
             MD_UI.Update()

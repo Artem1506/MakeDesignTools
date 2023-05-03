@@ -263,7 +263,7 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
                 MD_Data.ActiveTaskAddIndex = undefined
 
-                MD_Data.SwitchWorkLayer()
+                
 
                 if MD_Data.ActiveTask.State == STATES[2] then
                 (
@@ -285,11 +285,12 @@ rollout rlt_tasks "Tasks"
                     )
                 )
                 MD_UI.TasksRltUpdate()
+                MD_UI.CatalogPreviewRltUpdate()
                 MD_UI.Update()
-                try MD_UI.CatalogPreviewRltUpdate() catch()
                 MD_BBox.Update()     
             )             
         )
+        MD_Data.SwitchWorkLayer()
     )
 
     on lv_add Click self arg do
@@ -301,8 +302,8 @@ rollout rlt_tasks "Tasks"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
-            try MD_UI.CatalogPreviewRltUpdate() catch()
-            try MD_UI.ToolsRltUpdate() catch()
+            MD_UI.CatalogPreviewRltUpdate()
+            MD_UI.ToolsRltUpdate()
         )
     )
 

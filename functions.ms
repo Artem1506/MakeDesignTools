@@ -105,7 +105,7 @@ fn WriteDataFile data_file =
     py_code += "WriteDataFile(rt.data, rt.data_file)"
 
     try (python.Execute py_code)
-	catch (MD_Log.Error "Не удалось записать данные в файл")
+	catch ()
 )
 
 fn hex_to_rgb hex_value =

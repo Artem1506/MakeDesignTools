@@ -449,7 +449,11 @@ struct GlobalData
 	fn SwitchWorkLayer =
 	(
 		try (
-			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then WorkLayer.on = true
+			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then 
+			(
+				WorkLayer.on = true
+				WorkLayer.current = true
+			)
 			else WorkLayer.on = false			
 		)catch()
 	),
@@ -839,30 +843,12 @@ struct GlobalData
 
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
-		-- Categories = #()
-		-- SubCategories = #()
-		-- TempArticlesList = #()
-		-- InvalidTasks = #()
-		-- CompletedTasks = #()
-		-- DeletedTasks = #()
-
-		-- users = #()
-		-- main_categs = #()
-		-- main_categ_ids = #()
-		-- sub_categs = #()
-		-- sub_categ_lib_dirs = #()
-
-		-- proj_main_categs = #()
-		-- proj_main_categ_ids = #()
-		-- proj_sub_categs = #()
-		-- proj_sub_categ_ids = #()
-
 		try (
 			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
 			MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
 			MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
 		)
-		catch (MD_Log.Warning "Путь к локальной базе MakeDesign не определён.")
+		catch (MD_Log.Error "Не указан путь к локальной базе MakeDesign.")
 
 		if DoesFileExist MD_LIB_COMMON_DATA_FILE then
 		(
@@ -921,6 +907,7 @@ struct GlobalData
 				arr_tasks = #()
 				arr_idss = #()
 			)
+			else MD_Log.Error "Отсутствуют данные о каталоге объектов."
 			
 			-- Импорт данных пользователей
 			if DoesFileExist MD_USERS_DATA_FILE then
@@ -937,6 +924,7 @@ struct GlobalData
 				append users titles
 				append users us_ids				
 			)
+			else MD_Log.Error "Отсутствуют данные о пользователях."
 		)
 	),
 
@@ -1066,6 +1054,8 @@ struct UI
 	InfoCatalogWeb = rlt_info_catalog.hpl_site,
 	InfoCatalogSize = rlt_info_catalog.lbl_size_txt,
 	EMPTY_PREVIEW = undefined,
+	size_txt,
+	size_add_txt,
 
 	fn InitLists = (
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
@@ -1184,12 +1174,21 @@ struct UI
 				catch()
 
 				try (
-					local size_txt = ""
+					size_txt = ""
 					size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
 					size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
 					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
-					InfoCatalogSize.text = size_txt
+					
 				) catch()
+
+				try (
+					size_add_txt = ""
+					size_add_txt += ("W: " + (MD_Data.ActiveTask.SizeTrans[1] as float) as string + "    ")
+					size_add_txt += ("D: " + (MD_Data.ActiveTask.SizeTrans[2] as float) as string + "    ")
+					size_add_txt += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
+				) catch()
+
+				InfoCatalogSize.text = size_txt
 
 				free main_items
 			)
@@ -1208,130 +1207,133 @@ struct UI
 	
 	fn ToolsRltUpdate =
 	(
-		case Sections.Selection of
+		try
 		(
-			1:(
-				ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-				ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-				ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+			case Sections.Selection of
+			(
+				1:(
+					ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+					ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+					ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
-				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
-				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+					for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
+					for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 
-				local objs = #()
+					local objs = #()
 
-				if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
-				(
-					ToolsCatalog.btn_vis_switch.enabled = true
-
-					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-
-					objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
-
-					-- Пивот
-					ToolsCatalog.btn_set_pivot.enabled = true
-
-					-- Основной меш
-					if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
+					if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 					(
-						ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-						try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
-					)
-					else
-					(
-						ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-						ToolsCatalog.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
-					)
+						ToolsCatalog.btn_vis_switch.enabled = true
 
-					-- Если задание имеет поле трансформации
-					if MD_Data.ActiveTask.SizeTrans != undefined then 
-					(
+						MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 
-						ToolsCatalog.btn_mesh_switch.enabled = true
-						if MD_Data.ActiveTask.ActiveMesh == 2 then
+						objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
+
+						-- Пивот
+						ToolsCatalog.btn_set_pivot.enabled = true
+
+						-- Основной меш
+						if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
 						(
-							ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"						
+							ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+							try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
 						)
-
-						if (selection.count == 1 and \
-							SuperClassOf selection[1] == GeometryClass and \
-							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+						else
 						(
-							ToolsCatalog.btn_main_mesh.enabled = true				
-							ToolsCatalog.btn_add_mesh.enabled = true				
-							ToolsCatalog.btn_add_mesh.enabled = true				
+							ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+							ToolsCatalog.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
 						)
 
-						-- Доп. меш
-						if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
+						-- Если задание имеет поле трансформации
+						if MD_Data.ActiveTask.SizeTrans != undefined then 
 						(
-							ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-							try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
+
+							ToolsCatalog.btn_mesh_switch.enabled = true
+							if MD_Data.ActiveTask.ActiveMesh == 2 then
+							(
+								ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"						
+							)
+
+							if (selection.count == 1 and \
+								SuperClassOf selection[1] == GeometryClass and \
+								findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+							(
+								ToolsCatalog.btn_main_mesh.enabled = true				
+								ToolsCatalog.btn_add_mesh.enabled = true				
+								ToolsCatalog.btn_add_mesh.enabled = true				
+							)
+
+							-- Доп. меш
+							if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
+							(
+								ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
+								try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
+							)
+							else(
+								ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+								ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
+							)
 						)
-						else(
-							ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-							ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
-						)
-					)
-					-- Если задание НЕ имеет поле трансформации
-					else
-					(
-						if (selection.count == 1 and \
-							SuperClassOf selection[1] == GeometryClass and \
-							findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+						-- Если задание НЕ имеет поле трансформации
+						else
 						(
-							ToolsCatalog.btn_main_mesh.enabled = true							
+							if (selection.count == 1 and \
+								SuperClassOf selection[1] == GeometryClass and \
+								findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+							(
+								ToolsCatalog.btn_main_mesh.enabled = true							
+							)
+						)
+						
+						-- Сохранить работу
+
+						if (MD_Data.WorkLayer != undefined \
+							and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count) \
+							and MD_Data.WorkLayerNodes.count != 0) then
+						(
+							ToolsCatalog.btn_save_work.enabled = true
+							ToolsCatalog.btn_export.enabled = true
+						)
+
+						-- Добавить к рабочему слою
+						if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+						if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+						(
+							local obj_outside = false
+
+							for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+							if obj_outside then
+							local obj_outside = false
+
+							for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+							if obj_outside then
+							ToolsCatalog.btn_attach_to_task.enabled = true
+						)
+
+						-- Загрузить работу
+						if MD_Data.ActiveTask.SavedWorks.count != 0 then
+						(
+							ToolsCatalog.btn_load_work.enabled = true
+						)
+
+						-- Material ID и текстуры
+						if MD_Data.ActiveList == 2 then
+						(
+							ToolsCatalog.btn_assign_texts.enabled = true
+
+							if subobjectLevel == 4 then
+							ToolsCatalog.btn_assign_mat_id.enabled = true
 						)
 					)
-					
-					-- Сохранить работу
 
-					if (MD_Data.WorkLayer != undefined \
-						and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count) \
-						and MD_Data.WorkLayerNodes.count != 0) then
-					(
-						ToolsCatalog.btn_save_work.enabled = true
-						ToolsCatalog.btn_export.enabled = true
-					)
-
-					-- Добавить к рабочему слою
-					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
-					if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
-					(
-						local obj_outside = false
-
-						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-						if obj_outside then
-						local obj_outside = false
-
-						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-						if obj_outside then
-						ToolsCatalog.btn_attach_to_task.enabled = true
-					)
-
-					-- Загрузить работу
-					if MD_Data.ActiveTask.SavedWorks.count != 0 then
-					(
-						ToolsCatalog.btn_load_work.enabled = true
-					)
-
-					-- Material ID и текстуры
-					if MD_Data.ActiveList == 2 then
-					(
-						ToolsCatalog.btn_assign_texts.enabled = true
-
-						if subobjectLevel == 4 then
-						ToolsCatalog.btn_assign_mat_id.enabled = true
-					)
+					free MD_Data.WorkLayerNodes
+					free objs
 				)
-
-				free MD_Data.WorkLayerNodes
-				free objs
+				2:(
+					
+				)
 			)
-			2:(
-				
-			)
-		)
+		)catch()
 	),
 
 	fn FillAddList =
@@ -1375,33 +1377,46 @@ struct UI
 
 	fn CatalogPreviewRltUpdate =
 	(
-		case MD_Data.ActiveList of
-		(
-			1:(
-				InfoCatalog.lbl_size.visible = true
-				InfoCatalog.lbl_size_txt.visible = true
-				InfoCatalog.lbl_site.visible = true
-				InfoCatalog.hpl_site.visible = true
-				InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite
-				InfoCatalog.hpl_site.address = MD_Data.ActiveTask.WebSite
-			)
-			2:(
-				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-				InfoCatalog.lbl_size.visible = false
-				InfoCatalog.lbl_size_txt.visible = false
-
-				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
-				(
+		try (
+			case MD_Data.ActiveList of
+			(
+				1:(
+					InfoCatalog.lbl_size.visible = true
+					InfoCatalog.lbl_size_txt.visible = true
+					InfoCatalog.lbl_site.visible = true
 					InfoCatalog.hpl_site.visible = true
-					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
-					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite			
+					InfoCatalog.hpl_site.text = ""
+					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.WebSite
+
+					case MD_Data.ActiveTask.ActiveMesh of
+					(
+						1:(
+							InfoCatalog.lbl_size_txt.text = size_txt
+						)
+						2:(
+							InfoCatalog.lbl_size_txt.text = size_add_txt
+						)
+					)
+					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite
 				)
-				else 
-				(
-					InfoCatalog.hpl_site.visible = false
+				2:(
+					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
+					InfoCatalog.lbl_size.visible = false
+					InfoCatalog.lbl_size_txt.visible = false
+
+					if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
+					(
+						InfoCatalog.hpl_site.visible = true
+						InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
+						InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite			
+					)
+					else 
+					(
+						InfoCatalog.hpl_site.visible = false
+					)
 				)
 			)
-		)
+		)catch()
 	),
 
 	fn TasksRltUpdate =
@@ -1988,7 +2003,7 @@ struct Callback
 
 	fn UpdateUI ev nd = 
 	(
-		try MD_UI.ToolsRltUpdate() catch()
+		MD_UI.ToolsRltUpdate()
 	),
 
 	fn DeleteObject ev nd = 
@@ -2077,12 +2092,12 @@ struct Callback
 
 	fn WorkLayerState =
 	(
-		try (
-			if MD_Data.ActiveTask == MD_Data.InWorkTask then
-
+		if MD_Data.ActiveTask == MD_Data.InWorkTask then
+		(
 			MD_Data.CreateWorkLayer()
-			MD_Data.ActiveTaskIndex = undefined
-		)catch()
+			MD_Data.Update()
+			MD_UI.Update()
+		)
 	),
 
 	fn MatChange ev nd =
@@ -2175,9 +2190,15 @@ struct HTTPClient
             Client_Log.Info msg
         )
         
-        if MD_Client.response_status == "401" or MD_Client.response_status == "400" then
+        if MD_Client.response_status == "401" then
         (
-            msg = "Код ответа: " + MD_Client.response_status + " | " + MD_Client.response_msg
+            msg = "Код ответа: " + MD_Client.response_status + " | Проблемы с авторизацией."
+            Client_Log.Error msg
+        )
+
+		if MD_Client.response_status == "400" then
+		(
+            msg = "Код ответа: " + MD_Client.response_status + " | Что-то пошло не так. Возможно, проблемы на сервере."
             Client_Log.Error msg
         )
 	)

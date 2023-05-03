@@ -67,6 +67,7 @@ rollout rlt_tools_catalog "Tools"
     on btn_mesh_switch pressed do
     (
         clearSelection()
+
         case MD_Data.ActiveTask.ActiveMesh of
         (
             1:(
@@ -80,6 +81,7 @@ rollout rlt_tools_catalog "Tools"
         )
         MD_UI.ToolsRltUpdate()
         MD_BBox.Update()
+        MD_UI.CatalogPreviewRltUpdate()
     )
 
     on btn_set_pivot pressed do
