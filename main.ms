@@ -23,7 +23,7 @@
         include "rlt_about.ms"
         include "rlt_make_design.ms"
         
-        local cur_selection = selection as array
+        clearSelection()
 
         MD_Data = GlobalData()
         MD_UI = UI()
@@ -31,40 +31,40 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
-        try MD_UI.FillAddList() catch()
         try MD_Callbacks.Add() catch()
         try MD_BBox.Update() catch()
-
-        select cur_selection
-
-        MD_Data.SwitchVisibleLayers()
 
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
 		(
-            local exist_task_index
+            local exist_task_index = undefined
 
             try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
 
-            try MD_Data.ActiveTaskIndex = exist_task_index 
-			catch()
-
-			try MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
-			catch()
+            if exist_task_index != undefined and exist_task_index > 0 then
+            (
+                MD_Data.ActiveTaskIndex = exist_task_index
+                MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
+            )
             
             MD_Data.Update()
             MD_UI.Update()
+
+            -- переключить видимость слоёв
+            if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State == STATES[2] then
+            (
+                MD_Data.ShowLayers mode:#work_only
+            )
 
             -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
             if MD_UI.Settings.ckbx_load_last.checked then
             (
                 try(
-                    MD_Data.SwitchVisibleLayers()
                     if MD_Data.WorkLayerNodes.count == 0 then
                     (
                         MD_Data.ActiveTask.LoadWork \
                         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-                        MD_Data.SwitchVisibleLayers()
+                        MD_Data.ShowLayers()
                     )
                 ) catch()            
             )

@@ -15,7 +15,7 @@ rollout dlg_configure "Configure" width:400 height:164
     editText 'etxt_pass' "" width:160 height:20 offset:[-160, 0] align:#right
 
     button 'btn_test' "Authorization Test" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:true
-    button 'btn_get_struct' "GET DATA" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:true
+    button 'btn_get_struct' "Get MakeDesign Data" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:true
 
     Label 'lbl_info' "" width:388 offset:[-4, 12] align:#left across:3
     Label 'lbl_connect' "" width:388 offset:[168, 12] align:#left
@@ -25,6 +25,12 @@ rollout dlg_configure "Configure" width:400 height:164
 
     on dlg_configure open do
     (
+        -- Установит положение диалога
+        try(
+            dialog_pos = execute (GetINISetting MDT_CONFIG_FILE dlg_configure.name "pos")
+            SetDialogPos dlg_configure dialog_pos
+        )catch()
+
         -- Инициализация пути к локальной базе 
         try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
         
@@ -39,21 +45,33 @@ rollout dlg_configure "Configure" width:400 height:164
             etxt_pass.text = password
         )catch()
 
-        MD_Client.Request "test_request" "" "Authorization Test" dialog:false
-        MD_Client.Log MD_Client.response_msg
+        -- -- Тестовый запрос для проверки связи
+        -- MD_Client.Request "test_request" "" "Authorization Test" dialog:false
+        -- MD_Client.Log MD_Client.response_msg
 
-        if MD_Client.response_status == "200" then 
-        (
-            lbl_connect.text = "Authorization: OK"
-            connection = true
-        )
-        else lbl_connect.text = "Authorization: NO"
+        -- if MD_Client.response_status == "200" then 
+        -- (
+        --     lbl_info.text = "INFO: " + MD_Client.response_msg
+        --     connection = true
+        -- )
+        -- else lbl_info.text = "ERROR: " + MD_Client.response_msg
     )
 
     on dlg_configure close do
     (
+        MD_Callbacks.Destruct()
         MD_Data.Init()
+        MD_Data.Update()
         MD_UI.Update()
+        MD_UI.TasksRltUpdate()
+        try MD_Data.UpdateWorkState() catch()
+        MD_Data.VisibleLayers = false
+        try MD_Data.ShowLayers mode:#work_only catch()
+        try MD_BBox.Update() catch()
+        MD_Callbacks.Add()
+
+        -- Сохранить положение диалога
+        SetINISetting MDT_CONFIG_FILE dlg_configure.name "pos" ((GetDialogPos dlg_configure) as string)
     )
 
     on btn_md_lib_dir pressed do
@@ -103,10 +121,10 @@ rollout dlg_configure "Configure" width:400 height:164
 
         if MD_Client.response_status == "200" then 
         (
-            lbl_connect.text = "Authorization: OK"
+            lbl_info.text = "INFO: " + MD_Client.response_msg
             connection = true
         )
-        else lbl_connect.text = "Authorization: NO"
+        else lbl_info.text = "ERROR: " + MD_Client.response_msg
     )
 
     on btn_get_struct pressed do 

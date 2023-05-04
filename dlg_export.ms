@@ -43,6 +43,8 @@ rollout dlg_export "Validation And Export" width:300  height:210
             dialog_pos = execute (GetINISetting MDT_CONFIG_FILE dlg_export.name "pos")
             SetDialogPos dlg_export dialog_pos
         )catch()
+
+        MD_Callbacks.Add()
     )
 
     on dlg_export close do

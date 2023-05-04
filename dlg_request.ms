@@ -41,7 +41,7 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
         (
             MD_Data.TempArticlesList = #()
 
-            resp = (FilterString (getclipboardText()) SEPAR_1)
+            try resp = (FilterString (getclipboardText()) SEPAR_1) catch()
             
             try MD_Client.response_status = resp[1] catch()
             try MD_Client.response_msg = resp[2] catch()

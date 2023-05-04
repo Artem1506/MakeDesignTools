@@ -263,8 +263,6 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
                 MD_Data.ActiveTaskAddIndex = undefined
 
-                
-
                 if MD_Data.ActiveTask.State == STATES[2] then
                 (
                     MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
@@ -283,13 +281,19 @@ rollout rlt_tasks "Tasks"
                         )
                         
                     )
+                    MD_Data.ShowLayers mode:#work_only
                 )
+                else MD_Data.ShowLayers mode:#scene_only
+                
                 MD_UI.TasksRltUpdate()
                 MD_UI.CatalogPreviewRltUpdate()
                 MD_UI.Update()
-                MD_BBox.Update()     
-            )             
+                MD_BBox.Update()
+
+                -- print MD_Data.ActiveTask.Materials
+            )
         )
+        
         MD_Data.SwitchWorkLayer()
     )
 
@@ -318,7 +322,8 @@ rollout rlt_tasks "Tasks"
         case btn_work_state.text of
         (
             "Set Work State":(
-
+                
+                try ClearTrashLayers() catch()
                 MD_Data.CreateWorkState()
 
                 -- Если имеются ранее сохранённые рабочие файлы
@@ -341,14 +346,17 @@ rollout rlt_tasks "Tasks"
                         -- Загрузить последнюю работу
                         MD_Data.ActiveTask.LoadWork \
                         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-                        MD_Data.SwitchVisibleLayers()
                     )
                 )
+                MD_Data.VisibleLayers = false
+                MD_Data.ShowLayers mode:#work_only
             )
             "Update Work State":(
 
                 -- Создать рабочее состояние
                 MD_Data.UpdateWorkState()
+                MD_Data.VisibleLayers = false
+                MD_Data.ShowLayers mode:#work_only
             )
         )
         MD_UI.ToolsRltUpdate()

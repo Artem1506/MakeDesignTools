@@ -9,7 +9,7 @@ rollout rlt_info_catalog "Info"
 
     on rlt_info_catalog open do 
     (
-
+        rlt_info_catalog.height = 280
     )
 
     on img_prev lbuttondblclk point_click args do 

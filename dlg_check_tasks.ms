@@ -42,5 +42,7 @@ rollout dlg_check_tasks "Parameters" width:200 height:150
         MD_Client.Request "get_catalog_branch_ids" args "Available Tasks Checkings" 
         msg = "Доступно заданий: " + (MD_Data.TempArticlesList.count as string) + " из " + MD_Client.response_msg
         MD_Client.Log msg
+
+        if MD_Data.TempArticlesList.count == 0 then MD_UI.Update()
     )
 )

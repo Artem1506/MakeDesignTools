@@ -1,16 +1,17 @@
 
 rollout rlt_tools_catalog "Tools"
 (
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:""
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_02
     button 'btn_assign_mat_id' "Assign Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
     button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
-    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5,V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_05
-    button 'btn_load_work' "Load Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06
+    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[13,V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
+    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_2 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[47, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
+    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[36, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
     button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
     button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
-    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:""
     button 'btn_export' "Validation And Export" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, 4] enabled:false tooltip:MD_Tooltips.tools_cat_10
     
     on rlt_tools_catalog open do
@@ -30,7 +31,19 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_vis_switch pressed do
     (
-        MD_Data.SwitchVisibleLayers()
+        MD_Data.CreateWorkLayer()
+        case btn_vis_switch.text of
+        (
+            "Show Scene Objects":(
+                MD_Data.ShowLayers mode:#all
+                btn_vis_switch.text = "Isolate Task Layer"
+            )
+            "Isolate Task Layer":(
+                MD_Data.ShowLayers mode:#work_only
+                btn_vis_switch.text = "Show Scene Objects"
+            )
+        )
+        
     )
 
     on btn_main_mesh pressed do
@@ -100,28 +113,31 @@ rollout rlt_tools_catalog "Tools"
     on btn_save_work pressed do
     (
         MD_UI.SaveWork()
+        MD_UI.ToolsRltUpdate()
     )
 
     on btn_load_work pressed do
     (
+        MD_Data.CreateWorkLayer()
         MD_Data.ActiveTask.LoadWork \
         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:false
         MD_UI.ToolsRltUpdate()
     )
 
-    on btn_load_work rightClick do
+    on btn_work_list pressed do
     (
         try destroyDialog MD_UI.Dialogs.LoadWork catch()
 
         if MD_Data.ActiveTask.SavedWorks.count != 0 then
         (
-           createDialog MD_UI.Dialogs.LoadWork 628 398 modal:false
+           createDialog MD_UI.Dialogs.LoadWork 628 398 modal:true
            MD_UI.ToolsRltUpdate()
         )
     )
 
     on btn_export pressed do
     (
+        MD_Callbacks.Add()
         try(destroyDialog MD_UI.Dialogs.Export)catch()
         CreateDialog MD_UI.Dialogs.Export style:#(#style_sysmenu, #style_titlebar)
     )
@@ -129,6 +145,6 @@ rollout rlt_tools_catalog "Tools"
     on btn_attach_to_task pressed do
     (
         MD_Data.AttachSelectedToWorkLayer()
-        MD_Data.SwitchVisibleLayers()
+        MD_Data.ShowLayers mode:#work_only
     )
 )

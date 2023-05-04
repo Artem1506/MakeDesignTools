@@ -38,7 +38,8 @@ struct UI_Tooltips
 	tools_cat_03 = "Назначить Material ID на выделенные полигоны, соответствующий порядковому номеру, выбранного в данный момент, элемента в списке материалов",
 	tools_cat_04 = "Назначить текстуры на выбранный материал.",
 	tools_cat_05 = "Сохранить текущее состояние работы. Будут сохранены только те объекты, которые находятся на рабочем слое.",
-	tools_cat_06 = "ЛКМ - Загрузить последнее сохранение.\nПКМ - Открыть диалоговое окно, где можно увидеть все ранее сделанные сохранения.",
+	tools_cat_06_a = "Загрузить последнее сохранение.",
+	tools_cat_06_b = "Открыть диалоговое окно со списком ранее сделанных сохранений.",
 	tools_cat_07_a = "Указать выделенный в данный момент объект в качеств основного.\nОбъект будет переименован в соответствии с артикулом задания.",
 	tools_cat_07_b = "Указать выделенный в данный момент объект в качестве дополнительного. Необходимо только если активное задание имеет значение в поле \"Trans\".\nОбъект будет переименован в соответствии с артикулом задания.",
 	tools_cat_07_c = "Для переключения состояния нажмите кнопку ещё раз.",
@@ -145,52 +146,68 @@ struct Task
 		Material = mat
         append MatLib mat
 		if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
-        saveTempMaterialLibrary MatLib (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat"))
+        saveTempMaterialLibrary MatLib MatLibFile
+	),
+
+	fn LoadMaterial =
+	(
+		try
+		(
+			Material = (loadTempMaterialLibrary MatLibFile)[1]
+		)
+		catch()
 	),
 
 	fn LoadWork saved_file quiet_mode:true =
 	(
 		local cur_sel_objs = (selection as array)
-		local load_result = true
-	
+		local merged_objs = undefined
+		local load_result = false
+
+		MD_Callbacks.Destruct()
+
 		clearSelection()
 
 		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 		MD_Data.WorkLayer.current = true
-		-- MD_Data.ActiveTask.ActiveMesh = 1
-
+		
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
-			load_result = (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены!" \
-			title:"Внимание!" icon:#information)
-		)
-		
-		if load_result then
-		(
-			with redraw off
+			if (queryBox "Очистить рабочий слой перед загрузкой?" title:"Внимание!" icon:#question) then
 			(
-				try (delete MD_Data.WorkLayerNodes; gc()) catch()
-				mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
-				
-				for obj in getLastMergedNodes() do
-				(
-					if obj.name == MD_Data.InWorkTask.Article then
-					(
-						MD_Data.InWorkTask.Mesh = obj
-					)
-					if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
-					(
-						MD_Data.InWorkTask.AddMesh = obj
-					)
-				)
+				delete MD_Data.WorkLayerNodes
+				gc()
 
-				try(select cur_sel_objs)catch()
 			)
-
-			try (select MD_Data.ActiveTask.Mesh) catch()
-
-			completeRedraw()				
 		)
+	
+		-- mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
+		mergeMAXFile saved_file #mergeDups #useMergedMtlDups #neverReparent
+
+		merged_objs = getLastMergedNodes()
+
+		if merged_objs.count != 0 then
+		(
+			for obj in merged_objs do
+			(
+				if obj.name == MD_Data.InWorkTask.Article then
+				(
+					MD_Data.InWorkTask.Mesh = obj
+				)
+				if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
+				(
+					MD_Data.InWorkTask.AddMesh = obj
+				)
+			)
+			try (select MD_Data.ActiveTask.Mesh) catch()
+			load_result = true		
+		)
+		else try (select cur_sel_objs) catch()
+		
+		completeRedraw()
+
+		MD_Callbacks.Add()
+
 		return load_result
 	),
 	
@@ -214,6 +231,7 @@ struct Task
             (
 				local task_file_dir = getFilenamePath File
 				InWorkDir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
+				MatLibFile = (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat"))
 				local ref_file_name = data["ref_photo_name"]
 				local ref_file_type = getFilenameType ref_file_name
 				local task_dir_files = GetFiles (task_file_dir + "/*.*")
@@ -274,9 +292,9 @@ struct Task
 				)
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
 
-				-- Создать материал
-				if not DoesFileExist (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) then
-				CreateMaterial()
+				-- -- Создать материал
+				-- if not DoesFileExist (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) then
+				-- CreateMaterial()
             )
         )
 	),
@@ -319,7 +337,7 @@ struct GlobalData
 	proj_main_categ_ids = #(),
 	proj_sub_categs = #(),
 	proj_sub_categ_ids = #(),
-	VisibleLayrs = false,
+	VisibleLayers = false,
 
 	Users = #(),
 
@@ -329,7 +347,8 @@ struct GlobalData
 			if subobjectLevel == 4 then
 			(
 				SetMatID $ ActiveTaskAddIndex
-				DisplayTempPrompt ("OK") 5000
+				$.Material = MD_Data.InWorkTask.Material
+				CompleteRedraw()
 			)
 		)catch()
 	),
@@ -454,44 +473,55 @@ struct GlobalData
 				WorkLayer.on = true
 				WorkLayer.current = true
 			)
-			else WorkLayer.on = false			
+			else WorkLayer.on = False
+			
+			CompleteRedraw()
 		)catch()
 	),
 
-    fn SwitchVisibleLayers =
+    fn ShowLayers mode:#work_only =
     (
-        case VisibleLayrs of
-        (
-            true:(
-                for i = 0 to LayerManager.count - 1 do
-                (
-                    lr = LayerManager.getLayer i
-                    if lr != WorkLayer and lr != MD_BBox.Layer then
+		-- #all
+		-- #scene_only
+		-- #work_only
+		try(
+			case mode of
+			(
+				#scene_only:(
+					for i = 0 to LayerManager.count - 1 do
 					(
-						lr.on = true
-						DEFAULT_LAYER.current = true						
+						lr = LayerManager.getLayer i
+						if lr != WorkLayer and lr != MD_BBox.Layer then
+						(
+							lr.on = true
+							DEFAULT_LAYER.current = true						
+						)
+						else lr.on = false
 					)
-					else lr.on = false
-                ) 
-                VisibleLayrs = false
-                MD_UI.ToolsCatalog.btn_vis_switch.text = "Isolate Task Layer"
-            )
-            false:(
-                for i = 0 to LayerManager.count - 1 do
-                (
-                    lr = LayerManager.getLayer i
-                    if lr != WorkLayer and lr != MD_BBox.Layer then
-                    lr.on = false
-					else 
+				)
+				#work_only:(
+					for i = 0 to LayerManager.count - 1 do
 					(
-						lr.on = true
-						lr.current = true
+						lr = LayerManager.getLayer i
+						if lr != WorkLayer and lr != MD_BBox.Layer then
+						lr.on = false
+						else 
+						(
+							lr.on = true
+							lr.current = true
+						)
 					)
-                ) 
-                VisibleLayrs = true
-                MD_UI.ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
-            )
-        )
+				)
+				#all:(
+					for i = 0 to LayerManager.count - 1 do
+					(
+						lr = LayerManager.getLayer i
+						lr.on = true
+					)
+				)
+			)			
+		)catch()
+
 		completeRedraw()
     ),
 
@@ -594,6 +624,28 @@ struct GlobalData
 
 		-- Создать рабочую папку
 		MakeDir MD_Data.ActiveTask.InWorkDir
+
+		-- Создать материал
+		if DoesFileExist (pathConfig.appendPath InWorkTask.InWorkDir (TASK_MAT_NAME + ".mat")) then
+		(
+			InWorkTask.LoadMaterial()
+			
+		)else InWorkTask.CreateMaterial()
+	),
+
+	fn ClearTrashLayers =
+	(
+		local split_str = undefined
+
+		for i = 0 to LayerManager.count - 1 do
+		(
+			lr = LayerManager.getLayer i
+			if lr != this.WorkLayer then
+			(
+				split_str = filterString lr.name "-"
+				if split_str.count == 4 then (try LayerManager.deleteLayerByName lr.name catch())					
+			)
+		)
 	),
 
 	fn UpdateWorkState =
@@ -614,6 +666,8 @@ struct GlobalData
 		MD_UI.ToolsRltUpdate()
 		MakeDir MD_Data.ActiveTask.InWorkDir
 		MD_Callbacks.Add()
+
+		try ClearTrashLayers() catch()
 	),
 
 	fn GetTasksInActiveCategory =
@@ -636,24 +690,24 @@ struct GlobalData
 	(
 		if (SuperClassOf obj == GeometryClass) then
 		(
-			if MD_Data.ActiveTask.Mesh == obj then
+			if this.InWorkTask.Mesh == obj then
 			(
-				MD_Data.ActiveTask.Mesh.Material = undefined
-				MD_Data.ActiveTask.Mesh.Name = uniqueName "Object"
-				MD_Data.ActiveTask.Mesh = undefined
-				-- MD_Data.ActiveTask.ActiveMesh = 1
+				this.InWorkTask.Mesh.Material = undefined
+				this.InWorkTask.Mesh.Name = uniqueName "Object"
+				this.InWorkTask.Mesh = undefined
+				-- this.ActiveTask.ActiveMesh = 1
 			)
 			else
 			(
 				obj.IsHidden = false
-				MD_Data.ActiveTask.Mesh = obj
-				MD_Data.ActiveTask.Mesh.Name = MD_Data.ActiveTask.Article
-				-- MD_Data.ActiveTask.ActiveMesh = 1
-				MD_Data.ActiveTask.Mesh.Material = MD_Data.ActiveTask.Material
+				this.InWorkTask.Mesh = obj
+				this.InWorkTask.Mesh.Name = this.InWorkTask.Article
+				-- this.ActiveTask.ActiveMesh = 1
+				this.InWorkTask.Mesh.Material = this.InWorkTask.Material
 			)	
 
-			if MD_Data.ActiveTask.Mesh == MD_Data.ActiveTask.AddMesh then
-			MD_Data.ActiveTask.AddMesh = undefined
+			if this.InWorkTask.Mesh == this.InWorkTask.AddMesh then
+			this.InWorkTask.AddMesh = undefined
 			CompleteRedraw()
 		)
 	),
@@ -662,23 +716,23 @@ struct GlobalData
 	(
 		if (SuperClassOf obj == GeometryClass) then
 		(
-			if MD_Data.ActiveTask.AddMesh == obj then
+			if this.InWorkTask.AddMesh == obj then
 			(
-				MD_Data.ActiveTask.AddMesh.Material = undefined
-				MD_Data.ActiveTask.AddMesh.Name = uniqueName "Object"
-				MD_Data.ActiveTask.AddMesh = undefined
+				this.InWorkTask.AddMesh.Material = undefined
+				this.InWorkTask.AddMesh.Name = uniqueName "Object"
+				this.InWorkTask.AddMesh = undefined
 				obj.IsHidden = False
 			)
 			else
 			(
-				MD_Data.ActiveTask.AddMesh = obj
-				MD_Data.ActiveTask.AddMesh.Name = MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX
+				this.InWorkTask.AddMesh = obj
+				this.InWorkTask.AddMesh.Name = this.InWorkTask.Article + "_" + TRANS_POSTFIX
 				obj.IsHidden = True
-				MD_Data.ActiveTask.AddMesh.Material = MD_Data.ActiveTask.Material
+				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material
 			)
 
-			if MD_Data.ActiveTask.AddMesh == MD_Data.ActiveTask.Mesh then
-			MD_Data.ActiveTask.Mesh = undefined
+			if this.InWorkTask.AddMesh == this.InWorkTask.Mesh then
+			this.InWorkTask.Mesh = undefined
 			clearSelection()
 			CompleteRedraw()
 		)
@@ -843,6 +897,15 @@ struct GlobalData
 
 	fn Init = (
 		-- Инициализирует исходные глобальные данные
+
+		MD_LIB_DIR = ""
+		MD_LIB_COMMON_DATA_FILE = ""
+		MD_LIB_TRASH_DIR = ""
+		Tasks = #()
+		sub_categs = #()
+		main_categ_id = #()
+		sub_categ_lib_dirs = #()
+
 		try (
 			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
 			MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
@@ -1031,6 +1094,8 @@ struct UI_Dialogs
 		LoadWork.img_prew.Margin = LoadWork.img_prew.Padding = DN_Lib.Pad 0 0 0 0
 		LoadWork.img_prew.SizeMode = LoadWork.img_prew.SizeMode.CenterImage
 		try LoadWork.img_prew.Image = MD_Data.ActiveTask.SavedWorksPreviews[1] catch()
+
+		LoadWork.lv_files.focus()
 	)
 )
 
@@ -1215,6 +1280,7 @@ struct UI
 					ToolsCatalog.btn_main_mesh.text = "Main Mesh"
 					ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
 					ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+					ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
 
 					for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 					for ctrl in ToolsProjects.Controls do ctrl.enabled = false
@@ -1224,7 +1290,7 @@ struct UI
 					if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 					(
 						ToolsCatalog.btn_vis_switch.enabled = true
-
+						
 						MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
 
 						objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
@@ -1286,17 +1352,13 @@ struct UI
 						)
 						
 						-- Сохранить работу
-
-						if (MD_Data.WorkLayer != undefined \
-							and ((objects.count - MD_Data.TempLayerNodes.count) == MD_Data.WorkLayerNodes.count) \
-							and MD_Data.WorkLayerNodes.count != 0) then
+						if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
 						(
 							ToolsCatalog.btn_save_work.enabled = true
 							ToolsCatalog.btn_export.enabled = true
 						)
 
 						-- Добавить к рабочему слою
-						if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 						if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 						(
 							local obj_outside = false
@@ -1314,6 +1376,7 @@ struct UI
 						if MD_Data.ActiveTask.SavedWorks.count != 0 then
 						(
 							ToolsCatalog.btn_load_work.enabled = true
+							ToolsCatalog.btn_work_list.enabled = true
 						)
 
 						-- Material ID и текстуры
@@ -1349,8 +1412,8 @@ struct UI
 					(
 						dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
 						dn_list_item.ForeColor = DN_CLR_DEFAULT
-
 						dn_list_item.SubItems.add mat.material
+
 						try dn_list_item.SubItems.add mat.texture_d catch()
 						try dn_list_item.SubItems.add mat.texture_m catch()
 						try dn_list_item.SubItems.add mat.texture_n catch()
@@ -1367,6 +1430,7 @@ struct UI
 				ListAdd.Items.AddRange add_items
 				ListAdd.Update()
 
+				add_items = #()
 				free add_items
 			)
 			2:(
@@ -1398,22 +1462,28 @@ struct UI
 						)
 					)
 					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite
+					InfoCatalog.title = "Info"
+					InfoCatalog.height = 280
 				)
 				2:(
 					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
 					InfoCatalog.lbl_size.visible = false
 					InfoCatalog.lbl_size_txt.visible = false
+					InfoCatalog.lbl_site.visible = false
+					InfoCatalog.hpl_site.visible = false
+
+					-- Если будет указан сайт материала
 
 					if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
 					(
+						InfoCatalog.lbl_site.visible = true
 						InfoCatalog.hpl_site.visible = true
 						InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
-						InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite			
+						InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
 					)
-					else 
-					(
-						InfoCatalog.hpl_site.visible = false
-					)
+
+					InfoCatalog.title = "Info (Materials)"
+					InfoCatalog.height = 280
 				)
 			)
 		)catch()
@@ -1654,13 +1724,12 @@ struct UI
 		if MD_Data.WorkLayerNodes.count != 0 then
 		(
 			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
-			(       
-				local msg = "Сохранение возможно только если все объекты на сцене привязаны к рабочему слою задания.\n"
-				msg += "Необходимо выбрать все объекты на сцене и использовать команду \"Attach To Task\" перед сохранением."
+			(
+				msg = "Будут сохранены только объекты находящиеся на рабочем слое!"
 				messageBox msg title:"Warning!" icon:#warning
 			)
-			else
-			(
+			-- else
+			-- (
 				local index
 		
 				if MD_Data.ActiveTask.SavedWorks.count == 0 then
@@ -1710,7 +1779,7 @@ struct UI
 
 				DisplayTempPrompt "Работа была сохранена." 5000
 				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
-			)
+			-- )
 		)
 		else
 		(
@@ -1864,7 +1933,9 @@ struct BoundingBox
 			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
 			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
 			
-			pp.pos = pivot_pos			
+			pp.pos = pivot_pos
+
+			completeRedraw()
 		)catch()
 	),
 
@@ -1874,21 +1945,6 @@ struct BoundingBox
 			pivot_pos = [0.0, 0.0, 0.0]
 			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
 			write_pivot_data()
-		)catch()
-	),
-
-	fn SetPivotPos =
-	(
-		try(
-			bb_x = [bb.min.x, bb.center.x, bb.max.x]
-			bb_y = [bb.min.y, bb.center.y, bb.max.y]
-			bb_z = [bb.min.z, bb.center.z, bb.max.z]
-
-			pivot_pos = [bb_x[MD_UI.Dialogs.PivotParams.lst_x.selection], \
-			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
-			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
-			
-			pp.pos = pivot_pos			
 		)catch()
 	),
 
@@ -2090,14 +2146,38 @@ struct Callback
 		)
 	),
 
-	fn WorkLayerState =
+	fn RemoveFromTempLayer =
 	(
+		try(
+			local obj = (callbacks.notificationParam())[1]
+
+			if obj.Layer == MD_BBox.Layer then
+			(
+				try(
+					MD_Data.WorkLayer.addNode obj
+					MD_Data.WorkLayer.Current = true
+				)
+				catch(
+					DEFAULT_LAYER.addNode obj
+					DEFAULT_LAYER.Current = true
+				)
+			)			
+		) catch()
+	),
+
+	fn UpdateState =
+	(
+		Destruct()
+
 		if MD_Data.ActiveTask == MD_Data.InWorkTask then
 		(
-			MD_Data.CreateWorkLayer()
 			MD_Data.Update()
 			MD_UI.Update()
+			MD_Data.CreateWorkLayer()
+			MD_Data.ShowLayers mode:#work_only
 		)
+
+		this.Add()
 	),
 
 	fn MatChange ev nd =
@@ -2109,8 +2189,11 @@ struct Callback
 
 	fn Add =
 	(
+		Destruct()
+
 		callbacks.addScript #layerDeleted CheckExistTaskLayer id:#md_callbacks
-		callbacks.addScript #filePreOpen WorkLayerState id:#md_callbacks
+		callbacks.addScript #filePostOpen UpdateState id:#md_callbacks
+		callbacks.addScript #nodeLayerChanged RemoveFromTempLayer id:#md_callbacks
 
 		ToolsUIUpdate = NodeEventCallback mouseUp:false delay:500 \
 		added:UpdateUI \
@@ -2178,18 +2261,22 @@ struct HTTPClient
 
     fn Request request args title dialog:True =
     (
+		response_status = undefined
+		response_msg = undefined
+		response_data = undefined
+
 		if DoesFileExist HTTP_CLIENT then
 		(
-			response_status = undefined
-			response_msg = undefined
-			response_data = undefined
-
 			this.dialog_mode = dialog
 			request_dlg_title = title
 			shellLaunch HTTP_CLIENT (request + " " + args)
 			CreateDialog MD_UI.Dialogs.Request modal:true
 		)
-		else MD_Log.Error "Не удалось обнаружить http-клиент."
+		else 
+		(
+			response_msg = "Не удалось обнаружить http-клиент."
+			MD_Log.Error response_msg
+		)
     ),
 
 	fn Log msg =
@@ -2202,13 +2289,15 @@ struct HTTPClient
         
         if MD_Client.response_status == "401" then
         (
-            msg = "Код ответа: " + MD_Client.response_status + " | Проблемы с авторизацией."
+			response_msg = "Проблемы с авторизацией."
+            msg = "Код ответа: " + MD_Client.response_status + " | " + response_msg
             Client_Log.Error msg
         )
 
 		if MD_Client.response_status == "400" then
 		(
-            msg = "Код ответа: " + MD_Client.response_status + " | Что-то пошло не так. Возможно, проблемы на сервере."
+			response_msg = "Что-то пошло не так. Возможно, проблемы на сервере."
+            msg = "Код ответа: " + MD_Client.response_status + " | " + response_msg
             Client_Log.Error msg
         )
 	)

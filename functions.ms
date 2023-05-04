@@ -388,6 +388,8 @@ fn ViewportSnapshot save_file size auto_frame:true =
         local view_is_max = not (viewport.NumViews > 1)
         local bg_is_solid = viewport.IsSolidBackgroundColorMode()
         local tm = (matrix3 [0,0,1] [1,0,0] [0,1,0] [0.0,0.0,0.0])
+		-- С небольшим наклоном
+        -- local tm = (matrix3 [0,-0.258819,0.965926] [1,0,0] [0,0.965926,0.258819] [0,0,0])
     
         DisableSceneRedraw()
         -- viewport.setLayout #layout_1

@@ -8,7 +8,7 @@ global data_file = ""
 
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
-MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
+MD_LIB_TRASH_DIR = ""
 ICONS_DIR = pathConfig.appendPath MAIN_DIR "icons"
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "http_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
@@ -47,7 +47,7 @@ MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
 ADD_LIST_COLUMNS_1 = #("Parts", "Material", "D", "M", "N", "ARD")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
-SAVED_WORKS_LIST_COLUMNS = #("File Name", "Saved Date")
+SAVED_WORKS_LIST_COLUMNS = #("File Name", "Save Date")
 TASK_PARAMS_LIST = #("New Valid Only", "New Invalid Only", "Completed", "Deleted")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
