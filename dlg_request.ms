@@ -9,6 +9,7 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 
     label 'lbl_01' "Waiting " align:#left offset:[30, 37] across:2
     label 'lbl_02' "." align:#left offset:[-90, 37]
+
     timer clock "Clock" interval:250
 
     on dlg_request open do
@@ -18,7 +19,18 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 
         MD_Client.response_data = #()
 
-        if MD_Client.dialog_mode == false then dlg_request.visible = false
+        if MD_Client.dialog_mode == false then 
+        (
+            dlg_request.visible = false
+            dlg_request.height = 0
+            dlg_request.height = 0
+        )
+        else
+        (
+            dlg_request.visible = true
+            dlg_request.height = 350
+            dlg_request.height = 100
+        )
     )
 
     on clock tick do

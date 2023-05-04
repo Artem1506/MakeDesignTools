@@ -2180,6 +2180,10 @@ struct HTTPClient
     (
 		if DoesFileExist HTTP_CLIENT then
 		(
+			response_status = undefined
+			response_msg = undefined
+			response_data = undefined
+
 			this.dialog_mode = dialog
 			request_dlg_title = title
 			shellLaunch HTTP_CLIENT (request + " " + args)

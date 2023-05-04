@@ -14,10 +14,11 @@ rollout dlg_configure "Configure" width:400 height:164
     Label 'lbl_9' "Password:" width:48 offset:[-136, 2] align:#right across:2
     editText 'etxt_pass' "" width:160 height:20 offset:[-160, 0] align:#right
 
-    -- button 'btn_test' "Test Connection" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:false
-    button 'btn_get_struct' "Get Data" width:150 height:48 offset:[-2, -52] align:#right enabled:true
+    button 'btn_test' "Authorization Test" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:true
+    button 'btn_get_struct' "GET DATA" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:true
 
-    Label 'lbl_info' "Connection:" width:388 offset:[-4, 12] align:#left
+    Label 'lbl_info' "" width:388 offset:[-4, 12] align:#left across:3
+    Label 'lbl_connect' "" width:388 offset:[168, 12] align:#left
 
     groupBox 'gbx_1' " Local Base " width:388 height:50 pos:[6, 4] align:#left
     groupBox 'gbx_2' " Remote Base " width:388 height:82 pos:[6, 56] align:#left
@@ -37,6 +38,16 @@ rollout dlg_configure "Configure" width:400 height:164
             etxt_log.text = login
             etxt_pass.text = password
         )catch()
+
+        MD_Client.Request "test_request" "" "Authorization Test" dialog:false
+        MD_Client.Log MD_Client.response_msg
+
+        if MD_Client.response_status == "200" then 
+        (
+            lbl_connect.text = "Authorization: OK"
+            connection = true
+        )
+        else lbl_connect.text = "Authorization: NO"
     )
 
     on dlg_configure close do
@@ -48,7 +59,6 @@ rollout dlg_configure "Configure" width:400 height:164
     on btn_md_lib_dir pressed do
     (
         -- Вызов диалогового окна для выбора директории локальной базы
-
         local dir = getSavePath caption:"Set MakeDesign data folder..." initialDir:MD_LIB_DIR
 
         if (dir == undefined) then 
@@ -73,66 +83,103 @@ rollout dlg_configure "Configure" width:400 height:164
         )
     )
 
---     on etxt_log changed arg do (if arg != "" and etxt_pass.text != "" then btn_test.enabled = true else btn_test.enabled = false)
-
---     on etxt_pass changed arg do (if arg != "" and etxt_log.text != "" then btn_test.enabled = true else btn_test.enabled = false)
-
     on etxt_log entered arg do
     (
         try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" arg forceUTF16:false)catch()
-        -- btn_get_struct.enabled = false
     )
 
     on etxt_pass entered arg do
     (
         try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" arg forceUTF16:false)catch()
-        -- btn_get_struct.enabled = false
     )
 
-    -- on btn_test pressed do
-    -- (
-        -- try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
-        -- try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
-
-        -- MD_Client.Request "test_request" "" "Test Connection"
-        -- MD_Client.Log MD_Client.response_msg
-
-        -- if MD_Client.response_status == "200" then 
-        -- (
-        --     btn_get_struct.enabled = true
-        --     lbl_info.text = "INFO: Connection successful"
-        -- )
-        -- else lbl_info.text = "ERROR: Connection failed!"
-    -- )
-
-    on btn_get_struct pressed do 
+    on btn_test pressed do
     (
-        MD_Client.Request "test_request" "" "Test Connection" dialog:false
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
+
+        MD_Client.Request "test_request" "" "Authorization Test"
         MD_Client.Log MD_Client.response_msg
 
         if MD_Client.response_status == "200" then 
         (
-            lbl_info.text = "INFO: Connection successful"
+            lbl_connect.text = "Authorization: OK"
             connection = true
         )
-        else lbl_info.text = "ERROR: Connection failed!"
+        else lbl_connect.text = "Authorization: NO"
+    )
 
+    on btn_get_struct pressed do 
+    (
         if connection then
         (
             try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
             try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
 
+            lbl_connect.text = ""
+
             MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
-            if MD_Client.response_status == "200" then (MD_Client.Log "Загружены данные о пользователях."; result_sum += 1)
+
+            if MD_Client.response_status == "200" then 
+            (
+                msg = "Загружены данные о пользователях."
+                MD_Client.Log msg
+                lbl_info.text = "INFO: " + msg
+                result_sum += 1
+            )
+            else
+            (
+                msg = "Не удалось загрузить данные о пользователях."
+                MD_Client.Log msg
+                lbl_info.text = "ERROR: " + msg
+            )
 
             MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Data"
-            if MD_Client.response_status == "200" then (MD_Client.Log "Загружены данные о каталоге объектов."; result_sum += 1)
+
+            if MD_Client.response_status == "200" then 
+            (
+                msg = "Загружены данные о каталоге объектов."
+                MD_Client.Log msg
+                lbl_info.text = "INFO: " + msg
+                result_sum += 1
+            )
+            else
+            (
+                msg = "Не удалось загрузить данные о каталоге объектов."
+                MD_Client.Log msg
+                lbl_info.text = "ERROR: " + msg
+            )
 
             MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Data"
-            if MD_Client.response_status == "200" then (MD_Client.Log "Загружены данные о проектах."; result_sum += 1)
 
-            if result_sum == 3 then lbl_info.text = "INFO: OK"
-            else lbl_info.text = "ERROR: Failed"            
+            if MD_Client.response_status == "200" then 
+            (
+                msg = "Загружены данные о проектах."
+                MD_Client.Log msg
+                lbl_info.text = "INFO: " + msg
+                result_sum += 1
+            )
+            else
+            (
+                msg = "Не удалось загрузить данные о проектах."
+                MD_Client.Log msg
+                lbl_info.text = "ERROR: " + msg
+            )
+
+            if result_sum == 3 then 
+            (
+                msg = "Успешно! Все данные загружены."
+                MD_Client.Log msg
+                lbl_info.text = "INFO: " + msg
+            )
+            else if result_sum > 0 then
+            (
+                lbl_info.text = "WARNING: Не удалось загрузить некоторые данные."
+            ) 
+            else
+            (
+                lbl_info.text = "ERROR: Данные не были загружены."
+            )     
         )
     )
 )
