@@ -7,7 +7,7 @@ rollout rlt_tools_catalog "Tools"
     button 'btn_assign_mat_id' "Assign Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
     button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
     button 'btn_save_work' "Save Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[13,V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
-    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_2 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[47, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
+    button 'btn_load_work' "Load Last Work" width:(CTRL_WIDTH_2 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[47, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
     button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[36, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
     button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
     button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
@@ -112,14 +112,14 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_save_work pressed do
     (
-        MD_UI.SaveWork()
+        MD_Data.InWorkTask.SaveWork()
         MD_UI.ToolsRltUpdate()
     )
 
     on btn_load_work pressed do
     (
         MD_Data.CreateWorkLayer()
-        MD_Data.ActiveTask.LoadWork \
+        MD_Data.InWorkTask.LoadWork \
         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:false
         MD_UI.ToolsRltUpdate()
     )

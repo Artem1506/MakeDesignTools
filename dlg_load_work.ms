@@ -41,7 +41,7 @@ rollout dlg_load_work "Saved Works"
    (
       -- Загрузить в сцену объекты из выбранного файл
       try(
-         local load_result = MD_Data.ActiveTask.LoadWork \
+         local load_result = MD_Data.InWorkTask.LoadWork \
          MD_Data.ActiveTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
          
          if load_result then destroyDialog dlg_load_work

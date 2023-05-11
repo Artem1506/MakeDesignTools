@@ -3,6 +3,7 @@ rollout dlg_configure "Configure" width:400 height:164
     local login, password
     local result_sum = 0
     local connection = false
+    local cur_md_lib
 
     Label 'lbl_6' "Directory: " width:62 offset:[8, 20] align:#left across:3
     Label 'lbl_md_lib_dir' "" width:224 offset:[-58, 20] align:#left
@@ -45,6 +46,9 @@ rollout dlg_configure "Configure" width:400 height:164
             etxt_pass.text = password
         )catch()
 
+        -- Текущая директория локальной базы
+        cur_md_lib = lbl_md_lib_dir.text
+
         -- -- Тестовый запрос для проверки связи
         -- MD_Client.Request "test_request" "" "Authorization Test" dialog:false
         -- MD_Client.Log MD_Client.response_msg
@@ -59,16 +63,20 @@ rollout dlg_configure "Configure" width:400 height:164
 
     on dlg_configure close do
     (
-        MD_Callbacks.Destruct()
-        MD_Data.Init()
-        MD_Data.Update()
-        MD_UI.Update()
-        MD_UI.TasksRltUpdate()
-        try MD_Data.UpdateWorkState() catch()
-        MD_Data.VisibleLayers = false
-        try MD_Data.ShowLayers mode:#work_only catch()
-        try MD_BBox.Update() catch()
-        MD_Callbacks.Add()
+        -- Если текущая директория локальной базы отличаются
+        if cur_md_lib != lbl_md_lib_dir.text then
+        (
+            MD_Callbacks.Destruct()
+            MD_Data.Init()
+            MD_Data.Update()
+            MD_UI.Update()
+            MD_UI.TasksRltUpdate()
+            try MD_Data.UpdateWorkState() catch()
+            MD_Data.VisibleLayers = false
+            try MD_Data.ShowLayers mode:#work_only catch()
+            try MD_BBox.Update() catch()
+            MD_Callbacks.Add()     
+        )
 
         -- Сохранить положение диалога
         SetINISetting MDT_CONFIG_FILE dlg_configure.name "pos" ((GetDialogPos dlg_configure) as string)

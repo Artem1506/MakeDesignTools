@@ -23,6 +23,7 @@
         include "rlt_about.ms"
         include "rlt_make_design.ms"
         
+        
         clearSelection()
 
         MD_Data = GlobalData()
@@ -32,8 +33,7 @@
         MD_Client = HTTPClient()
 
         try MD_Callbacks.Add() catch()
-        try MD_BBox.Update() catch()
-
+        
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
 		(
@@ -46,9 +46,9 @@
                 MD_Data.ActiveTaskIndex = exist_task_index
                 MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
             )
-            
-            MD_Data.Update()
-            MD_UI.Update()
+
+            WithoutRedraw MD_Data.Update
+            WithoutRedraw MD_UI.Update               
 
             -- переключить видимость слоёв
             if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State == STATES[2] then
@@ -62,13 +62,14 @@
                 try(
                     if MD_Data.WorkLayerNodes.count == 0 then
                     (
-                        MD_Data.ActiveTask.LoadWork \
+                        MD_Data.InWorkTask.LoadWork \
                         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
                         MD_Data.ShowLayers()
                     )
                 ) catch()            
             )
 		)
+        WithoutRedraw MD_BBox.Update
     )
     else
     (

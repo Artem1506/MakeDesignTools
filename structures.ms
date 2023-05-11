@@ -14,7 +14,10 @@ Client_Log = LogSys source:"HTTP_CLIENT"
 struct UI_Tooltips
 (
     -- Settings
-	settings_01 = "ON - Показать габариты объекта. (Только если задание находится в состоянии \"In_Work\")",
+	settings_01_a = "ON - Показать габариты объекта. (Только если задание находится в состоянии \"In_Work\")",
+	settings_01_b = "Цвет габаритного контейнера основного меша.",
+	settings_01_c = "Цвет габаритного контейнера доп. меша.",
+	settings_01_d = "Сбросить цвета до дефолтных значений.",
 	settings_02 = "ON - При экспорте объекта его пивот автоматически выравняется с пивотом габаритного контейнера.\nOFF - Будет использовано текущее положение пивота.",
 	settings_03 = "Каждый раз при сохранении промежуточного этапа работы создаётся превью.\nON - Автоматически будет подобран ракурс так, чтобы охватить все объекты на сцене.\nOFF - Будет использован текущий ракурс.",
 	settings_04 = "Максимальное количество сохранений промежуточных этапов работы.\nПри достижении этого числа, ранее сохранённые файлы будут удаляться по мере добавления новых.",
@@ -210,7 +213,80 @@ struct Task
 
 		return load_result
 	),
-	
+
+	fn SaveWork =
+	(
+		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+		local save = true
+		local file_path
+		local prev_file
+
+		if MD_Data.WorkLayerNodes.count != 0 then
+		(
+			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
+			(
+				msg = "Будут сохранены только объекты находящиеся на рабочем слое!"
+				messageBox msg title:"Warning!" icon:#warning
+			)
+			-- else
+			-- (
+				local index
+		
+				if MD_Data.ActiveTask.SavedWorks.count == 0 then
+					index = formattedPrint 1 format:#02d
+				else
+				(
+					if MD_Data.ActiveTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
+					(
+						local last_file = MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count]
+						local last_file_index = (filterString (getFilenameFile last_file) "_")[2] as integer
+						local first_max_file = MD_Data.ActiveTask.SavedWorks[1]
+						local first_prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[1] ".max") + ".jpg"
+		
+						index = formattedPrint (last_file_index + 1) format:#02d
+		
+						deleteFile first_max_file
+						deleteFile first_prev_file
+					)
+					else
+					(
+						local max_index = 0
+		
+						for f in MD_Data.ActiveTask.SavedWorks do
+						(
+							local f_index = (filterString (getFilenameFile f) "_")[2] as integer
+							if f_index > max_index then max_index = f_index
+						)
+		
+						index = formattedPrint (max_index + 1) format:#02d
+					)
+
+				)
+
+				local file_name = (SAVED_FILE_NAME + "_" + index)
+
+				-- Сохранить рабочий файл .max
+				file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
+				save_nodes MD_Data.WorkLayerNodes file_path
+
+				-- Сохранить скриншот сцены .jpg
+				prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
+
+				ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
+
+				MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
+				sort MD_Data.ActiveTask.SavedWorks
+
+				DisplayTempPrompt "Работа была сохранена." 5000
+				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
+			-- )
+		)
+		else
+		(
+			messageBox "Рабочий слой не содержит объектов!" title:"Сообщение"
+		)
+	),
+
 	fn Update =
 	(
 		if MD_Data.ActiveTask != undefined then
@@ -507,8 +583,12 @@ struct GlobalData
 						lr.on = false
 						else 
 						(
-							lr.on = true
-							lr.current = true
+							if lr == MD_BBox.Layer then lr.on = MD_UI.Settings.ckbx_show_bb.checked
+							else
+							(
+								lr.on = true
+								lr.current = true								
+							)
 						)
 					)
 				)
@@ -788,6 +868,13 @@ struct GlobalData
 	fn ClearWorkLayer =
 	(
 		WorkLayerNodes = GetAllLayerNodes WorkLayer.Name
+
+		if WorkLayerNodes.count != 0 then
+		(
+			if (queryBox "Сохранить работу перед удалением?" title:"Внимание!" icon:#question) then
+			InWorkTask.SaveWork()
+		)
+
 		delete WorkLayerNodes
 		gc()
 	),
@@ -1713,79 +1800,6 @@ struct UI
 			DN_CLR_OK = (dotNetClass "system.Drawing.color").FromArgb 255 55 200 55
 		)
 	),
-	
-	fn SaveWork =
-	(
-		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-		local save = true
-		local file_path
-		local prev_file
-
-		if MD_Data.WorkLayerNodes.count != 0 then
-		(
-			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
-			(
-				msg = "Будут сохранены только объекты находящиеся на рабочем слое!"
-				messageBox msg title:"Warning!" icon:#warning
-			)
-			-- else
-			-- (
-				local index
-		
-				if MD_Data.ActiveTask.SavedWorks.count == 0 then
-					index = formattedPrint 1 format:#02d
-				else
-				(
-					if MD_Data.ActiveTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
-					(
-						local last_file = MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count]
-						local last_file_index = (filterString (getFilenameFile last_file) "_")[2] as integer
-						local first_max_file = MD_Data.ActiveTask.SavedWorks[1]
-						local first_prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[1] ".max") + ".jpg"
-		
-						index = formattedPrint (last_file_index + 1) format:#02d
-		
-						deleteFile first_max_file
-						deleteFile first_prev_file
-					)
-					else
-					(
-						local max_index = 0
-		
-						for f in MD_Data.ActiveTask.SavedWorks do
-						(
-							local f_index = (filterString (getFilenameFile f) "_")[2] as integer
-							if f_index > max_index then max_index = f_index
-						)
-		
-						index = formattedPrint (max_index + 1) format:#02d
-					)
-
-				)
-
-				local file_name = (SAVED_FILE_NAME + "_" + index)
-
-				-- Сохранить рабочий файл .max
-				file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
-				save_nodes MD_Data.WorkLayerNodes file_path
-
-				-- Сохранить скриншот сцены .jpg
-				prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
-
-				ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
-
-				MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
-				sort MD_Data.ActiveTask.SavedWorks
-
-				DisplayTempPrompt "Работа была сохранена." 5000
-				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
-			-- )
-		)
-		else
-		(
-			messageBox "Рабочий слой не содержит объектов!" title:"Сообщение"
-		)
-	),
 
 	fn Init = (
 		local exist_categ_index = undefined
@@ -1843,8 +1857,8 @@ struct BoundingBox
 	bb = undefined,
 	arrow = undefined,
 	pp = undefined,
-	clr_main = (color 90 150 255),
-	clr_add = (color 255 100 50),
+	clr_main = MD_UI.Settings.clr_bb_main.color,
+	clr_add = MD_UI.Settings.clr_bb_add.color,
 	arrow_offset = ConvertValueToSystemUnits #cm 10.0,
 	arrow_rad = ConvertValueToSystemUnits #cm 20.0,
 
@@ -1880,7 +1894,7 @@ struct BoundingBox
 		pp.drawontop = on
 		pp.showFrozenInGray = off
 		pp.isFrozen = on
-		pp.wireColor = (color 14 255 2)
+		pp.wireColor = CLR_BBOX_PIVOT
 		pp.ishidden = on
 
 		Layer.addnode bb
@@ -1899,8 +1913,7 @@ struct BoundingBox
 		LayerManager.newLayerFromName mdt_temp_layer
 		Layer = LayerManager.getLayerFromName mdt_temp_layer
 		Layer.lock = on
-		if MD_UI.Settings.ckbx_show_bb.checked == true then Layer.ishidden  = off
-		else Layer.ishidden  = on
+		Layer.ishidden = MD_UI.Settings.ckbx_show_bb.checked
 	),
 
 	fn write_pivot_data =
@@ -1963,7 +1976,7 @@ struct BoundingBox
 		(
 			1:(
 				local arrow_offset = ConvertValueToSystemUnits #cm 10.0
-
+				
 				try read_pivot_data() catch()
 				try pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] catch(
 					Remove()
@@ -2022,6 +2035,7 @@ struct BoundingBox
 					
 					arrow_rad = ConvertValueToSystemUnits #cm 20.0
 				)
+				this.Layer.on = MD_UI.Settings.ckbx_show_bb.checked
 
 				bb.length = bbox_size[1]
 				bb.width = bbox_size[2]
@@ -2029,12 +2043,6 @@ struct BoundingBox
 				arrow.radius = arrow_rad
 				arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
 
-				try (
-					if MD_UI.Settings.ckbx_show_bb.checked then Layer.on = true
-					else Layer.on = false
-				)catch()
-
-				completeRedraw()
 			)
 			2:(
 				bb.isHidden = true
@@ -2042,6 +2050,25 @@ struct BoundingBox
 				pp.isHidden = true
 			)
 		)
+	),
+
+	fn ChangeColor =
+	(
+		clr_main = MD_UI.Settings.clr_bb_main.color
+		clr_add = MD_UI.Settings.clr_bb_add.color
+
+		case MD_Data.ActiveTask.ActiveMesh of
+		(
+			1:(
+				bb.wireColor = clr_main
+				arrow.wireColor = clr_main
+			)
+			2:(
+				bb.wireColor = clr_add
+				arrow.wireColor = clr_add
+			)
+		)
+		completeRedraw()
 	),
 
 	fn Init =

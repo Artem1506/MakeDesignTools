@@ -77,6 +77,7 @@ DN_CLR_BG = DN_Lib.dnColor  30 30 30 255
 CLR_LINK = color 100 190 255
 CLR_BBOX_MAIN = color 60 150 255
 CLR_BBOX_ADD = color 255 100 50
+CLR_BBOX_PIVOT = color 14 255 2
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
 mdt_temp_layer = "_mdt_temp_"

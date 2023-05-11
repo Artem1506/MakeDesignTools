@@ -38,7 +38,7 @@ rollout rlt_tasks "Tasks"
         MD_Data.SwitchWorkLayer()
         MD_Data.Update()
         MD_UI.Update()
-        try MD_BBox.Update() catch()
+       WithoutRedraw MD_BBox.Update
     )
 
     on rlt_tasks open do
@@ -68,7 +68,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
             MD_UI.Update()
-            MD_BBox.Update()
+            WithoutRedraw MD_BBox.Update
         )
     )
 
@@ -86,7 +86,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
             MD_UI.Update()
-            MD_BBox.Update()
+            WithoutRedraw MD_BBox.Update
         )
     )
 
@@ -102,7 +102,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
             MD_UI.Update()
-            MD_BBox.Update()
+            WithoutRedraw MD_BBox.Update
         )
     )
 
@@ -189,7 +189,7 @@ rollout rlt_tasks "Tasks"
         MD_Data.TempArticlesList = #()
         MD_Data.Update()
         MD_UI.Update()
-        MD_BBox.Update()
+        WithoutRedraw MD_BBox.Update
     )
     
     on btn_clear pressed do 
@@ -214,15 +214,10 @@ rollout rlt_tasks "Tasks"
                         if del_task_dirs > 0 then MD_Log.Info ("Удаленно заданий: " + del_task_dirs as string)
                         MD_Data.Update()
                         MD_UI.Update()
-                        MD_BBox.Update()
+                        WithoutRedraw MD_BBox.Update
                     )
                 )
         )
-    )
- 
-    on lv_main GiveFeedback  self args do
-    (
-
     )
 
     on lv_main ItemChecked self args do
@@ -288,13 +283,11 @@ rollout rlt_tasks "Tasks"
                 MD_UI.TasksRltUpdate()
                 MD_UI.CatalogPreviewRltUpdate()
                 MD_UI.Update()
-                MD_BBox.Update()
-
-                -- print MD_Data.ActiveTask.Materials
+                WithoutRedraw MD_BBox.Update
             )
         )
-        
-        MD_Data.SwitchWorkLayer()
+
+        WithoutRedraw MD_Data.SwitchWorkLayer
     )
 
     on lv_add Click self arg do
@@ -344,7 +337,7 @@ rollout rlt_tasks "Tasks"
                             )
                         )
                         -- Загрузить последнюю работу
-                        MD_Data.ActiveTask.LoadWork \
+                        MD_Data.InWorkTask.LoadWork \
                         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
                     )
                 )

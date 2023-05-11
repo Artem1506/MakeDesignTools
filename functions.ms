@@ -13,6 +13,7 @@ fn GetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 		(
 			case (classof ctrl) of
 			(
+				colorpickerControl:(ctrl.color = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_color")))
 				CheckBoxControl:(ctrl.checked = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_checked")))
 				CheckButtonControl:(ctrl.checked = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_checked")))
 				SpinnerControl:(ctrl.value = execute (getINISetting ini_file_path ini_tag (ctrl.name + "_value")))
@@ -50,6 +51,7 @@ fn SetINISettings roll ini_file_path ini_tag onlyRollState:false include_list:#(
 		(
 			case (classof ctrl) of
 			(
+				colorpickerControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_color") (ctrl.color as string))
 				CheckBoxControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_checked") (ctrl.checked as string))
 				CheckButtonControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_checked") (ctrl.checked as string))
 				SpinnerControl:(setINISetting ini_file_path ini_tag (ctrl.name + "_value") (ctrl.value as string))
@@ -556,5 +558,36 @@ fn SetMatID obj id =
 	(
 		local sel_faces = getFaceSelection obj
 		try(for i in sel_faces do setFaceMatID obj i id; update obj)catch()
+	)
+)
+
+fn WithoutRedraw foo params:#() =
+(
+	-- Функция-декоратор, блокируящая перерисовку экрана
+	-- Можно передать параметры ввиде массива строк
+	try
+	(
+		disableSceneRedraw()
+
+		if params.count == 0 then foo()
+		else
+		(
+			local cmd = foo as string
+			cmd = trimRight cmd "()"
+			
+			for prm in params do
+			(
+				cmd += " "
+				cmd += prm as string
+			)
+			execute cmd
+		)
+		
+		enableSceneRedraw()
+		completeRedraw()			
+	)
+	catch(
+		enableSceneRedraw()
+		completeRedraw()
 	)
 )
