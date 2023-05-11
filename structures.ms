@@ -389,6 +389,7 @@ struct GlobalData
 	CompletedTasks = #(),
 	DeletedTasks = #(),
 	Tasks = #(), -- Задания для выбранной в данный момент подкатегории
+	SortTasks = #(), -- Отсортированные задания для выбранной в данный момент подкатегории
 	-- Catalog
 	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
 	main_categ_ids = #(), -- #(#("01-01-001", ...), ...)
@@ -1208,6 +1209,7 @@ struct UI
 	EMPTY_PREVIEW = undefined,
 	size_txt,
 	size_add_txt,
+	Sort = False,
 
 	fn InitLists = (
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
@@ -1256,15 +1258,21 @@ struct UI
 		(
 			1:(
 				-- Заполнить данными список заданий панели Tasks
+				local task_list = #()
 				local main_items = #()
 				local item_index = 0
 				local cur_sel = undefined
 
 				-- Индекс выделенного элемента в стике
 				if ListMain.SelectedItems.Count != 0 then cur_sel = ListMain.SelectedItems.Item[0].Index
+				
+				-- Проверка сортировки
+				if this.Sort then task_list = MD_Data.SortTasks
+				else task_list = MD_Data.Tasks
 
-				for task in MD_Data.Tasks do
+				for task in task_list do
 				(
+					
 					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 					dn_list_item.Checked = false
 					dn_list_item.ForeColor = DN_CLR_DEFAULT

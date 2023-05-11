@@ -252,19 +252,35 @@ rollout rlt_tasks "Tasks"
             )
             4:(
                 local sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text
-                local main_items = #()
+                -- local main_items = #()
+                MD_Data.SortTasks = #()
+                -- free MD_Data.SortTasks
 
-                for i = 0 to self.Items.Count - 1 do
+                if NOT MD_UI.Sort then 
                 (
+                    for i = 0 to self.Items.Count - 1 do
+                    (
 
-                    if self.Items.Item[i].SubItems.Item[4].text == sel_user then
-                    append main_items self.Items.Item[i]
-                    -- print self.SelectedItems.Item[0].Tag
+                        if self.Items.Item[i].SubItems.Item[4].text == sel_user then
+                        (
+                            -- append main_items self.Items.Item[i]
+                            append MD_Data.SortTasks MD_Data.Tasks[self.Items.Item[i].Tag]
+                        )
+                    )
+
+                    -- self.Items.Clear()
+                    -- self.Items.AddRange main_items
+                    -- self.Update()
+
+                    MD_UI.Sort = true                    
                 )
+                else MD_UI.Sort = false
 
-                self.Items.Clear()
-				self.Items.AddRange main_items
-				self.Update()
+                MD_UI.TasksRltUpdate()
+                MD_UI.CatalogPreviewRltUpdate()
+                MD_UI.Update()
+
+                try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
             )
         )
     )
@@ -277,10 +293,15 @@ rollout rlt_tasks "Tasks"
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
-            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) then
+            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) or self.Items.count == 1 then
             (
                 MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag
-                MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
+
+                -- Проверка сортировки
+				if MD_UI.Sort then MD_Data.ActiveTask = MD_Data.SortTasks[self.SelectedItems.Item[0].Tag]
+				else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
+
+                -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
                 MD_Data.ActiveTaskAddIndex = undefined
 
                 if MD_Data.ActiveTask.State == STATES[2] then
