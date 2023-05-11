@@ -239,9 +239,34 @@ rollout rlt_tasks "Tasks"
         try MD_UI.TasksRltUpdate() catch()
     )
 
-    on lv_main ItemSelectionChanged self arg do 
+    on lv_main ColumnClick self arg do 
     (
-        
+        case arg.column of
+        (
+            0:(
+                for i = 0 to self.Items.count-1 do 
+                (
+                    if self.Items.Item[i].Checked == true then self.Items.Item[i].Checked = false
+                    else self.Items.Item[i].Checked = true
+                )
+            )
+            4:(
+                local sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text
+                local main_items = #()
+
+                for i = 0 to self.Items.Count - 1 do
+                (
+
+                    if self.Items.Item[i].SubItems.Item[4].text == sel_user then
+                    append main_items self.Items.Item[i]
+                    -- print self.SelectedItems.Item[0].Tag
+                )
+
+                self.Items.Clear()
+				self.Items.AddRange main_items
+				self.Update()
+            )
+        )
     )
 
     on lv_main Click self arg do
@@ -252,10 +277,10 @@ rollout rlt_tasks "Tasks"
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
-            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Index + 1)) then
+            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) then
             (
-                MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Index + 1
-                MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Index + 1]
+                MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag
+                MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
                 MD_Data.ActiveTaskAddIndex = undefined
 
                 if MD_Data.ActiveTask.State == STATES[2] then

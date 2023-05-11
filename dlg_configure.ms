@@ -48,36 +48,10 @@ rollout dlg_configure "Configure" width:400 height:164
 
         -- Текущая директория локальной базы
         cur_md_lib = lbl_md_lib_dir.text
-
-        -- -- Тестовый запрос для проверки связи
-        -- MD_Client.Request "test_request" "" "Authorization Test" dialog:false
-        -- MD_Client.Log MD_Client.response_msg
-
-        -- if MD_Client.response_status == "200" then 
-        -- (
-        --     lbl_info.text = "INFO: " + MD_Client.response_msg
-        --     connection = true
-        -- )
-        -- else lbl_info.text = "ERROR: " + MD_Client.response_msg
     )
 
     on dlg_configure close do
     (
-        -- Если текущая директория локальной базы отличаются
-        if cur_md_lib != lbl_md_lib_dir.text then
-        (
-            MD_Callbacks.Destruct()
-            MD_Data.Init()
-            MD_Data.Update()
-            MD_UI.Update()
-            MD_UI.TasksRltUpdate()
-            try MD_Data.UpdateWorkState() catch()
-            MD_Data.VisibleLayers = false
-            try MD_Data.ShowLayers mode:#work_only catch()
-            try MD_BBox.Update() catch()
-            MD_Callbacks.Add()     
-        )
-
         -- Сохранить положение диалога
         SetINISetting MDT_CONFIG_FILE dlg_configure.name "pos" ((GetDialogPos dlg_configure) as string)
     )
@@ -92,18 +66,65 @@ rollout dlg_configure "Configure" width:400 height:164
             SetUserEnvVar "MD_LIB_DIR" ""
             lbl_md_lib_dir.text = ""
             lbl_md_lib_dir.tooltip = lbl_md_lib_dir.text
-            MD_Log.Warning "Путь к локальной базе MakeDesign не определён."
+            MD_Log.Error "Путь к локальной базе MakeDesign не определён."
         )
         else
         (
             result = SetUserEnvVar "MD_LIB_DIR" dir
 
-            if result == "" then (MD_Log.Error "Не удалось сохранить путь к локальной базе MakeDesign.")
+            if result == "" then (MD_Log.Error "Путь к локальной базе MakeDesign не определён.")
             else 
             (
                 MD_LIB_DIR = dir
                 lbl_md_lib_dir.text = dir
                 lbl_md_lib_dir.tooltip = dir
+
+                MD_Callbacks.Destruct()
+                try MD_Data.ClearWorkLayer() catch()
+                try MD_Data.DeleteWorkLayer() catch()
+                MD_Data.Init()
+                MD_Data.Update()
+                MD_Callbacks.Add()
+                MD_UI.Update()
+                MD_UI.TasksRltUpdate()
+
+                -- Попытаться выбрать последнее активное задание
+                if MD_Data.Tasks.Count != 0 then
+                (
+                    local exist_task_index = undefined
+
+                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
+
+                    if exist_task_index != undefined and exist_task_index > 0 then
+                    (
+                        MD_Data.ActiveTaskIndex = exist_task_index
+                        MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
+                    )
+
+                    WithoutRedraw MD_Data.Update
+                    WithoutRedraw MD_UI.Update               
+
+                    -- переключить видимость слоёв
+                    if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State == STATES[2] then
+                    (
+                        MD_Data.ShowLayers mode:#work_only
+                    )
+
+                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                    if MD_UI.Settings.ckbx_load_last.checked then
+                    (
+                        try(
+                            if MD_Data.WorkLayerNodes.count == 0 then
+                            (
+                                MD_Data.InWorkTask.LoadWork \
+                                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                                MD_Data.ShowLayers()
+                            )
+                        ) catch()            
+                    )
+                )
+                WithoutRedraw MD_BBox.Update
+
                 MD_Log.Info ("Путь к локальной базе MakeDesign = " + result)
             )
         )

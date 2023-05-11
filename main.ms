@@ -23,7 +23,6 @@
         include "rlt_about.ms"
         include "rlt_make_design.ms"
         
-        
         clearSelection()
 
         MD_Data = GlobalData()

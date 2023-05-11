@@ -1268,7 +1268,7 @@ struct UI
 					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 					dn_list_item.Checked = false
 					dn_list_item.ForeColor = DN_CLR_DEFAULT
-
+					
 					-- State
 					if task.State == STATES[2] then 
 					(
@@ -1300,6 +1300,7 @@ struct UI
 					append main_items dn_list_item
 
 					item_index += 1
+					dn_list_item.tag = item_index
 				)
 
 				-- Заполнить основной список панели Tasks (задания)
