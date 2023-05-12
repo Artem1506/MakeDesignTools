@@ -45,14 +45,14 @@ rollout rlt_settings "Settings"
     (
     )
 
-    on clr_bb_main changed arg do MD_BBox.ChangeColor()
+    on clr_bb_main changed arg do try MD_BBox.ChangeColor() catch()
 
-    on clr_bb_add changed arg do MD_BBox.ChangeColor()
+    on clr_bb_add changed arg do try MD_BBox.ChangeColor() catch()
 
     on btn_clr_reset pressed do 
     (
         clr_bb_main.color = CLR_BBOX_MAIN
         clr_bb_add.color = CLR_BBOX_ADD
-        MD_BBox.ChangeColor()
+        try MD_BBox.ChangeColor() catch()
     )
 )

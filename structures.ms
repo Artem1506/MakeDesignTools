@@ -1,4 +1,29 @@
 
+fn FullUpdate =
+(
+	-- Обновить данные
+	MD_UI.Sort = false
+	MD_Data.ActiveList = 1
+	try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+	if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
+
+	-- Обновить интерфейс
+	MD_UI.FillMainList()
+	MD_UI.FillAddList()
+	MD_UI.UpdateCatalogTasksRlt()
+	MD_UI.UpdateCatalogInfoRlt()
+	MD_UI.UpdateCatalogToolsRlt()
+
+	-- Обновить габаритный контейнер
+	WithoutRedraw MD_BBox.Update
+
+	-- Обновить рабочий слой, если он есть
+	WithoutRedraw MD_Data.SwitchWorkLayer
+
+	-- Попытаться выбрать первый элемент в списке
+	if MD_Data.ActiveTaskIndex == undefined then try MD_UI.ListMain.Items.Item[0].selected = true catch()
+)
+
 struct LogSys
 (
 	source = "",
@@ -609,8 +634,8 @@ struct GlobalData
 	fn CreateWorkLayer =
 	(
 		try (
-			LayerManager.newLayerFromName ActiveTask.Article
-			WorkLayer = LayerManager.getLayerFromName ActiveTask.Article
+			LayerManager.newLayerFromName InWorkTask.Article
+			WorkLayer = LayerManager.getLayerFromName InWorkTask.Article
 			WorkLayer.on
 			WorkLayer.current = true
 		)catch()
@@ -664,8 +689,7 @@ struct GlobalData
 		catch (MD_Log.Error "[ExitWorkState] Не удалось сохранить данные в файл.")
 
 		ActiveTask.Update()
-        try MD_UI.Update() catch()
-        try MD_BBox.Update() catch()
+		FullUpdate()
         try MD_Callbacks.Destruct() catch()
 	),
 
@@ -699,7 +723,7 @@ struct GlobalData
 		-- Обновить
 		SwitchWorkLayer()
 		ActiveTask.Update()
-        try MD_UI.Update() catch()
+        FullUpdate()
         try MD_BBox.Update() catch()
         try MD_Callbacks.Add() catch()
 
@@ -744,7 +768,7 @@ struct GlobalData
 		)
 		catch ()
 		SwitchWorkLayer()
-		MD_UI.ToolsRltUpdate()
+		MD_UI.UpdateCatalogToolsRlt()
 		MakeDir MD_Data.ActiveTask.InWorkDir
 		MD_Callbacks.Add()
 
@@ -872,7 +896,7 @@ struct GlobalData
 
 		if WorkLayerNodes.count != 0 then
 		(
-			if (queryBox "Сохранить работу перед удалением?" title:"Внимание!" icon:#question) then
+			if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nСохранить работу перед удалением?" title:"Внимание!" icon:#question) then
 			InWorkTask.SaveWork()
 		)
 
@@ -1090,6 +1114,7 @@ struct UI_Dialogs
 	LoadWork = dlg_load_work,
 	Export = dlg_export,
 	Request = dlg_request,
+	LoadTextures = dlg_load_textures,
 
 	fn UpdatePreview =
 	(
@@ -1207,11 +1232,12 @@ struct UI
 	InfoCatalogWeb = rlt_info_catalog.hpl_site,
 	InfoCatalogSize = rlt_info_catalog.lbl_size_txt,
 	EMPTY_PREVIEW = undefined,
-	size_txt,
-	size_add_txt,
+	size_txt = "",
+	size_add_txt = "",
 	Sort = False,
 
-	fn InitLists = (
+	fn InitLists = 
+	(
 		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
 
 		-- Устанавливает параметры для контрола листвью
@@ -1252,7 +1278,7 @@ struct UI
 		setFocus ListMain
 	),
 
-	fn FillData =
+	fn FillMainList =
 	(
 		case MD_Data.ActiveSection of
 		(
@@ -1272,13 +1298,12 @@ struct UI
 
 				for task in task_list do
 				(
-					
 					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 					dn_list_item.Checked = false
 					dn_list_item.ForeColor = DN_CLR_DEFAULT
 					
 					-- State
-					if task.State == STATES[2] then 
+					if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
 					(
 						dn_list_item.SubItems.add task.State
 						if task.Article == MD_Data.ActiveTask.Article then
@@ -1308,7 +1333,7 @@ struct UI
 					append main_items dn_list_item
 
 					item_index += 1
-					dn_list_item.tag = item_index
+					try dn_list_item.tag = item_index catch()
 				)
 
 				-- Заполнить основной список панели Tasks (задания)
@@ -1316,42 +1341,10 @@ struct UI
 				ListMain.Items.AddRange main_items
 				ListMain.Update()
 
-				-- Заполнить данными панель Info
-				Categories.Items = MD_Data.main_categs
-				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
-				catch(SubCategories.Items = #())
-
-				try (
-					if MD_Data.ActiveTask.RefBitmap != undefined then
-					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.RefBitmap
-				) 
-				catch()
-				
-				try (
-					InfoCatalogWeb.text = ""
-					InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
-					InfoCatalogWeb.address = MD_Data.ActiveTask.Website
-				)
-				catch()
-
-				try (
-					size_txt = ""
-					size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
-					size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
-					size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
-					
-				) catch()
-
-				try (
-					size_add_txt = ""
-					size_add_txt += ("W: " + (MD_Data.ActiveTask.SizeTrans[1] as float) as string + "    ")
-					size_add_txt += ("D: " + (MD_Data.ActiveTask.SizeTrans[2] as float) as string + "    ")
-					size_add_txt += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
-				) catch()
-
-				InfoCatalogSize.text = size_txt
-
+				main_items = #()
 				free main_items
+				task_list = #()
+				free task_list
 			)
 			2:(
 				Categories.Items = MD_Data.proj_main_categs
@@ -1359,145 +1352,150 @@ struct UI
 				try SubCategories.Items = MD_Data.proj_sub_categs[Categories.Selection] catch()
 				ListMain.Items.Clear()
 				ListMain.Update()
+			)
+		)
+	),
 
-				ListAdd.Items.Clear()
-				ListAdd.Update()
+	fn FillCategoriesLists =
+	(
+		case MD_Data.ActiveSection of
+		(
+			1:(
+				-- Заполнить данными панель Info
+				Categories.Items = MD_Data.main_categs
+				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
+				catch(SubCategories.Items = #())
+			)
+			2:(
+
 			)
 		)
 	),
 	
-	fn ToolsRltUpdate =
+	fn UpdateCatalogToolsRlt =
 	(
 		try
 		(
-			case Sections.Selection of
+			ToolsCatalog.btn_main_mesh.text = "Main Mesh"
+			ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+			ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+			ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
+
+			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
+			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+
+			local objs = #()
+
+			if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
 			(
-				1:(
+				ToolsCatalog.btn_vis_switch.enabled = true
+				
+				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+
+				objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
+
+				-- Пивот
+				ToolsCatalog.btn_set_pivot.enabled = true
+
+				-- Основной меш
+				if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
+				(
+					ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+					try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
+				)
+				else
+				(
 					ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-					ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-					ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
-					ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
+					ToolsCatalog.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
+				)
 
-					for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
-					for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+				-- Если задание имеет поле трансформации
+				if MD_Data.ActiveTask.SizeTrans != undefined then 
+				(
 
-					local objs = #()
-
-					if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
+					ToolsCatalog.btn_mesh_switch.enabled = true
+					if MD_Data.ActiveTask.ActiveMesh == 2 then
 					(
-						ToolsCatalog.btn_vis_switch.enabled = true
-						
-						MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-
-						objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
-
-						-- Пивот
-						ToolsCatalog.btn_set_pivot.enabled = true
-
-						-- Основной меш
-						if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
-						(
-							ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-							try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
-						)
-						else
-						(
-							ToolsCatalog.btn_main_mesh.text = "Main Mesh"
-							ToolsCatalog.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
-						)
-
-						-- Если задание имеет поле трансформации
-						if MD_Data.ActiveTask.SizeTrans != undefined then 
-						(
-
-							ToolsCatalog.btn_mesh_switch.enabled = true
-							if MD_Data.ActiveTask.ActiveMesh == 2 then
-							(
-								ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"						
-							)
-
-							if (selection.count == 1 and \
-								SuperClassOf selection[1] == GeometryClass and \
-								findItem MD_Data.WorkLayerNodes selection[1] != 0) then
-							(
-								ToolsCatalog.btn_main_mesh.enabled = true				
-								ToolsCatalog.btn_add_mesh.enabled = true				
-								ToolsCatalog.btn_add_mesh.enabled = true				
-							)
-
-							-- Доп. меш
-							if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
-							(
-								ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-								try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
-							)
-							else(
-								ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-								ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
-							)
-						)
-						-- Если задание НЕ имеет поле трансформации
-						else
-						(
-							if (selection.count == 1 and \
-								SuperClassOf selection[1] == GeometryClass and \
-								findItem MD_Data.WorkLayerNodes selection[1] != 0) then
-							(
-								ToolsCatalog.btn_main_mesh.enabled = true							
-							)
-						)
-						
-						-- Сохранить работу
-						if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
-						(
-							ToolsCatalog.btn_save_work.enabled = true
-							ToolsCatalog.btn_export.enabled = true
-						)
-
-						-- Добавить к рабочему слою
-						if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
-						(
-							local obj_outside = false
-
-							for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-							if obj_outside then
-							local obj_outside = false
-
-							for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-							if obj_outside then
-							ToolsCatalog.btn_attach_to_task.enabled = true
-						)
-
-						-- Загрузить работу
-						if MD_Data.ActiveTask.SavedWorks.count != 0 then
-						(
-							ToolsCatalog.btn_load_work.enabled = true
-							ToolsCatalog.btn_work_list.enabled = true
-						)
-
-						-- Material ID и текстуры
-						if MD_Data.ActiveList == 2 then
-						(
-							ToolsCatalog.btn_assign_texts.enabled = true
-
-							if subobjectLevel == 4 then
-							ToolsCatalog.btn_assign_mat_id.enabled = true
-						)
+						ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"						
 					)
 
-					free MD_Data.WorkLayerNodes
-					free objs
+					if (selection.count == 1 and \
+						SuperClassOf selection[1] == GeometryClass and \
+						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+					(
+						ToolsCatalog.btn_main_mesh.enabled = true				
+						ToolsCatalog.btn_add_mesh.enabled = true				
+						ToolsCatalog.btn_add_mesh.enabled = true				
+					)
+
+					-- Доп. меш
+					if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
+					(
+						ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
+						try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
+					)
+					else(
+						ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
+						ToolsCatalog.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
+					)
 				)
-				2:(
-					
+				-- Если задание НЕ имеет поле трансформации
+				else
+				(
+					if (selection.count == 1 and \
+						SuperClassOf selection[1] == GeometryClass and \
+						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
+					(
+						ToolsCatalog.btn_main_mesh.enabled = true							
+					)
+				)
+				
+				-- Сохранить работу
+				if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
+				(
+					ToolsCatalog.btn_save_work.enabled = true
+					ToolsCatalog.btn_export.enabled = true
+				)
+
+				-- Добавить к рабочему слою
+				if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
+				(
+					local obj_outside = false
+
+					for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+					if obj_outside then
+					local obj_outside = false
+
+					for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+					if obj_outside then
+					ToolsCatalog.btn_attach_to_task.enabled = true
+				)
+
+				-- Загрузить работу
+				if MD_Data.ActiveTask.SavedWorks.count != 0 then
+				(
+					ToolsCatalog.btn_load_work.enabled = true
+					ToolsCatalog.btn_work_list.enabled = true
+				)
+
+				-- Material ID и текстуры
+				if MD_Data.ActiveList == 2 then
+				(
+					ToolsCatalog.btn_assign_texts.enabled = true
+
+					if subobjectLevel == 4 then
+					ToolsCatalog.btn_assign_mat_id.enabled = true
 				)
 			)
+
+			free MD_Data.WorkLayerNodes
+			free objs
 		)catch()
 	),
 
 	fn FillAddList =
 	(
-		case MD_Data.ActiveSection of
+		case Sections.Selection of
 		(
 			1:(
 				local add_items = #()
@@ -1530,23 +1528,53 @@ struct UI
 				free add_items
 			)
 			2:(
-
+				ListAdd.Items.Clear()
+				ListAdd.Update()
 			)
 		)
 	),
 
-	fn CatalogPreviewRltUpdate =
+	fn UpdateCatalogInfoRlt =
 	(
-		try (
-			case MD_Data.ActiveList of
-			(
-				1:(
+		case MD_Data.ActiveList of
+		(
+			1:(
+				if MD_Data.ActiveTask != undefined then
+				(
+					try (
+						if MD_Data.ActiveTask.RefBitmap != undefined then
+						InfoCatalogPreview.bitmap = MD_Data.ActiveTask.RefBitmap
+					) 
+					catch()
+					
+					try (
+						InfoCatalogWeb.text = ""
+						InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+						InfoCatalogWeb.address = MD_Data.ActiveTask.Website
+					)
+					catch()
+
+					try (
+						size_txt = ""
+						size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
+						size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
+						size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
+						
+					) catch()
+
+					try (
+						size_add_txt = ""
+						size_add_txt += ("W: " + (MD_Data.ActiveTask.SizeTrans[1] as float) as string + "    ")
+						size_add_txt += ("D: " + (MD_Data.ActiveTask.SizeTrans[2] as float) as string + "    ")
+						size_add_txt += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
+					) catch()
+
 					InfoCatalog.lbl_size.visible = true
 					InfoCatalog.lbl_size_txt.visible = true
 					InfoCatalog.lbl_site.visible = true
 					InfoCatalog.hpl_site.visible = true
 					InfoCatalog.hpl_site.text = ""
-					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.WebSite
+					try (InfoCatalog.hpl_site.address = MD_Data.ActiveTask.WebSite) catch()
 
 					case MD_Data.ActiveTask.ActiveMesh of
 					(
@@ -1557,46 +1585,90 @@ struct UI
 							InfoCatalog.lbl_size_txt.text = size_add_txt
 						)
 					)
-					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite
+
+					try (InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
 					InfoCatalog.title = "Info"
-					InfoCatalog.height = 280
-				)
-				2:(
-					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-					InfoCatalog.lbl_size.visible = false
-					InfoCatalog.lbl_size_txt.visible = false
-					InfoCatalog.lbl_site.visible = false
-					InfoCatalog.hpl_site.visible = false
-
-					-- Если будет указан сайт материала
-
-					if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
-					(
-						InfoCatalog.lbl_site.visible = true
-						InfoCatalog.hpl_site.visible = true
-						InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
-						InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
-					)
-
-					InfoCatalog.title = "Info (Materials)"
-					InfoCatalog.height = 280
+					InfoCatalog.height = 280					
 				)
 			)
-		)catch()
+			2:(
+				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
+				InfoCatalog.lbl_size.visible = false
+				InfoCatalog.lbl_size_txt.visible = false
+				InfoCatalog.lbl_site.visible = false
+				InfoCatalog.hpl_site.visible = false
+
+				-- Если будет указан сайт материала
+
+				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
+				(
+					InfoCatalog.lbl_site.visible = true
+					InfoCatalog.hpl_site.visible = true
+					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
+					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
+				)
+
+				InfoCatalog.title = "Info (Materials)"
+				InfoCatalog.height = 280
+			)
+		)
 	),
 
-	fn TasksRltUpdate =
+	fn UpdateCatalogTasksRlt =
 	(
-		Tasks.btn_get.enabled = false
-		Tasks.btn_clear.enabled = false
-		Tasks.btn_get.text = "Get"
-		Tasks.btn_clear.text = "Clear"
-		Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
-		Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
-		Tasks.btn_work_state.enabled = true
-		if MD_Data.ActiveTask == MD_Data.InWorkTask then
-		Tasks.btn_exit_work_state.enabled = true
-		else Tasks.btn_exit_work_state.enabled = false
+		-- Tasks.btn_get.enabled = false
+		-- Tasks.btn_clear.enabled = false
+
+		if MD_Data.ActiveTask == undefined then
+		(
+			for ctrl in Tasks.Controls do ctrl.enabled = false
+			for ctrl in InfoCatalog.Controls do ctrl.enabled = false
+			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
+			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+
+			Tasks.btn_work_state.text = "Set Work State"
+			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
+			InfoCatalogWeb.text = ""
+			InfoCatalogWeb.address = ""
+			InfoCatalogSize.text = ""
+
+			Tasks.lst_sections.enabled = true
+			Tasks.lst_basic_catalog.enabled = true
+			Tasks.lst_sub_catalog.enabled = true
+			ListMain.enabled = true
+			ListAdd.enabled = true
+		)
+		else
+		(
+			Tasks.btn_work_state.enabled = true
+			if MD_Data.ActiveTask.State == STATES[1] then
+			(
+				Tasks.btn_work_state.text = "Set Work State"
+				Tasks.btn_exit_work_state.enabled = false
+
+				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
+				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
+			)
+			else if MD_Data.ActiveTask.State == STATES[2] then
+			(
+				Tasks.btn_work_state.text = "Update Work State"
+				Tasks.btn_exit_work_state.enabled = true
+
+				Tasks.btn_get.enabled = false
+				Tasks.btn_clear.enabled = false
+				Tasks.btn_get.text = "Get"
+				Tasks.btn_clear.text = "Clear"
+				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
+				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
+				Tasks.btn_work_state.enabled = true
+				if MD_Data.ActiveTask == MD_Data.InWorkTask then
+				Tasks.btn_exit_work_state.enabled = true
+				else Tasks.btn_exit_work_state.enabled = false
+			)
+			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
+			
+			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
+		)
 
 		if MD_Data.TempArticlesList.count != 0 then
 		(
@@ -1648,6 +1720,23 @@ struct UI
 				Tasks.btn_exit_work_state.enabled = false
 			)
 		)
+
+		if SubCategories.Items.Count != 0 then
+		(
+			Tasks.lst_basic_catalog.enabled = true
+			Tasks.lst_sub_catalog.enabled = true
+			Tasks.btn_check.enabled = true
+		)
+
+		-- Обновить текст веб ссылки (баг макса)
+		try
+		(
+			InfoCatalogWeb.text = ""
+			InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+		)
+		catch()
+
+		ListMain.Focus()
 	),
 
 	fn FillTempData =
@@ -1675,83 +1764,6 @@ struct UI
 
 		ListAdd.Items.Clear()
 		ListAdd.Update()
-	),
-
-	fn Update = (
-		-- Обновляет интерфейс исходя из текущих данных
-		FillData()
-		FillAddList()
-
-		Tasks.btn_get.enabled = false
-		Tasks.btn_clear.enabled = false
-
-		if MD_Data.ActiveTask == undefined then
-		(
-			for ctrl in Tasks.Controls do ctrl.enabled = false
-			for ctrl in InfoCatalog.Controls do ctrl.enabled = false
-			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
-			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
-
-			Tasks.btn_work_state.text = "Set Work State"
-			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
-			InfoCatalogWeb.text = ""
-			InfoCatalogWeb.address = ""
-			InfoCatalogSize.text = ""
-
-			Tasks.lst_sections.enabled = true
-			Tasks.lst_basic_catalog.enabled = true
-			Tasks.lst_sub_catalog.enabled = true
-			ListMain.enabled = true
-			ListAdd.enabled = true
-		)
-		else
-		(
-			Tasks.btn_work_state.enabled = true
-			if MD_Data.ActiveTask.State == STATES[1] then
-			(
-				Tasks.btn_work_state.text = "Set Work State"
-				Tasks.btn_exit_work_state.enabled = false
-
-				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
-				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
-			)
-			else if MD_Data.ActiveTask.State == STATES[2] then
-			(
-				Tasks.btn_work_state.text = "Update Work State"
-				Tasks.btn_exit_work_state.enabled = true
-
-				ToolsRltUpdate()
-			)
-			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
-			
-			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
-		)
-
-		if SubCategories.Items.Count != 0 then
-		(
-			Tasks.lst_basic_catalog.enabled = true
-			Tasks.lst_sub_catalog.enabled = true
-			Tasks.btn_check.enabled = true
-		)
-
-		if Settings.ckbx_tooltips.Checked == false then
-		(
-			for ctrl in Settings.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in Tasks.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in InfoCatalog.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in ToolsCatalog.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in ToolsProjects.Controls do try(ctrl.tooltip = "")catch()
-		)
-
-		-- Обновить текст веб ссылки (баг макса)
-		try
-		(
-			InfoCatalogWeb.text = ""
-			InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
-		)
-		catch()
-
-		ListMain.Focus()
 	),
 
 	fn SwitchRollouts = (
@@ -1850,9 +1862,24 @@ struct UI
 
 		MD_Data.ActiveSection = Sections.Selection
 
+		-- Тултипы
+		if Settings.ckbx_tooltips.Checked == false then
+		(
+			for ctrl in Settings.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in Tasks.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in InfoCatalog.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in ToolsCatalog.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in ToolsProjects.Controls do try(ctrl.tooltip = "")catch()
+		)
+
 		SwitchRollouts()
 		MD_Data.Update()
-		Update()
+		FillCategoriesLists()
+		FillMainList()
+		FillAddList()
+		UpdateCatalogTasksRlt()
+		UpdateCatalogInfoRlt()
+		UpdateCatalogToolsRlt()
 	),
 	
 	on create do Init()
@@ -1895,6 +1922,9 @@ struct BoundingBox
 		bb.isSelected = arrow.isSelected = off
 		bb.renderable = arrow.renderable = off
 		bb.wireColor = arrow.wireColor = clr_main
+		arrow.render_renderable = false
+		arrow.render_useViewportSettings = false
+		arrow.render_displayRenderMesh = false
 
 		pp.centermarker = on
 		pp.Box = off
@@ -2095,7 +2125,7 @@ struct Callback
 
 	fn UpdateUI ev nd = 
 	(
-		MD_UI.ToolsRltUpdate()
+		MD_UI.UpdateCatalogToolsRlt()
 	),
 
 	fn DeleteObject ev nd = 
@@ -2176,7 +2206,7 @@ struct Callback
 				MD_Data.WorkLayer = undefined
 				MD_Data.ActiveTask.Update()
 				
-				MD_UI.Update()
+				FullUpdate()
 				try MD_BBox.Update() catch()
 			)
 		)
@@ -2208,7 +2238,7 @@ struct Callback
 		if MD_Data.ActiveTask == MD_Data.InWorkTask then
 		(
 			MD_Data.Update()
-			MD_UI.Update()
+			FullUpdate()
 			MD_Data.CreateWorkLayer()
 			MD_Data.ShowLayers mode:#work_only
 		)
@@ -2338,4 +2368,5 @@ struct HTTPClient
         )
 	)
 )
+
 

@@ -1,7 +1,7 @@
 
 rollout dlg_export "Validation And Export" width:300  height:210
 (
-    label 'lbl_one_mesh' "1 - Objects Number" width:210 align:#left offset:[6, 24] across:2 tooltip:MD_Tooltips.val_exp_01
+    label 'lbl_one_mesh' "1 - Objects Count" width:210 align:#left offset:[6, 24] across:2 tooltip:MD_Tooltips.val_exp_01
         dotnetcontrol 'lbl_one_mesh_txt' "System.Windows.Forms.Label" text:"X" width:24 offset:[-4, 24] align:#right
     label 'lbl_epoly' "2 - Object(s) Type" width:160 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_02
         dotnetcontrol 'lbl_epoly_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]

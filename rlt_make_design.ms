@@ -22,10 +22,10 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try(destroyDialog dlg_load_work)catch()
         try(destroyDialog dlg_export)catch()
         try(destroyDialog dlg_request)catch()
+        try(destroyDialog dlg_load_textures)catch()
 
-        MD_UI.Sort = false
-        MD_UI.Update()
-        
+        FullUpdate()
+
         -- Запись текущего состояния интерфейса
         for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
 

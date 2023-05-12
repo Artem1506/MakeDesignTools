@@ -12,35 +12,6 @@ rollout rlt_tasks "Tasks"
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
     
-    fn UpdateAll =
-    (
-        MD_Data.ActiveList = 1
-        MD_Data.ActiveTaskAddIndex = undefined
-
-        if MD_Data.Tasks.count != 0 then
-        (
-            MD_Data.ActiveTask = MD_Data.Tasks[1]
-            MD_Data.ActiveTaskIndex = 1
-
-            if MD_Data.ActiveTask == MD_Data.InWorkTask then
-            (
-                -- MD_Data.AttachObjectsToWorkState()
-                MD_Data.CreateWorkState()
-                MD_UI.ToolsRltUpdate()
-            )
-        )
-        else
-        (
-            MD_Data.ActiveTask = undefined
-            MD_Data.ActiveTaskIndex = undefined
-        )
-        
-        MD_Data.SwitchWorkLayer()
-        MD_Data.Update()
-        MD_UI.Update()
-       WithoutRedraw MD_BBox.Update
-    )
-
     on rlt_tasks open do
     (
         lv_main.Name = "lv_main"
@@ -59,7 +30,7 @@ rollout rlt_tasks "Tasks"
         if MD_Data.ActiveSection != arg then
         (
             MD_Data.ActiveSection = arg
-            
+            MD_Data.ActiveTaskIndex = undefined
             try MD_Callbacks.Destruct() catch()
             MD_UI.SwitchRollouts()
             MD_Data.ActiveList = 1
@@ -67,8 +38,8 @@ rollout rlt_tasks "Tasks"
 
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
-            MD_UI.Update()
-            WithoutRedraw MD_BBox.Update
+            MD_UI.FillCategoriesLists()
+            FullUpdate()
         )
     )
 
@@ -77,6 +48,7 @@ rollout rlt_tasks "Tasks"
         if MD_Data.ActiveCategory != arg then
         (
             MD_Data.ActiveCategory = arg
+            MD_Data.ActiveTaskIndex = undefined
             try lst_sub_catalog.selection = 1 catch()
             MD_Data.ActiveSubCategory = lst_sub_catalog.selection            
             try MD_Callbacks.Destruct() catch()
@@ -85,8 +57,8 @@ rollout rlt_tasks "Tasks"
 
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
-            MD_UI.Update()
-            WithoutRedraw MD_BBox.Update
+            MD_UI.FillCategoriesLists()
+            FullUpdate()
         )
     )
 
@@ -95,14 +67,14 @@ rollout rlt_tasks "Tasks"
         if MD_Data.ActiveSubCategory != arg then
         (
             MD_Data.ActiveSubCategory = arg
+            MD_Data.ActiveTaskIndex = undefined
             MD_Callbacks.Destruct()
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
             MD_Data.SwitchWorkLayer()
-            MD_UI.Update()
-            WithoutRedraw MD_BBox.Update
+            FullUpdate()
         )
     )
 
@@ -188,7 +160,11 @@ rollout rlt_tasks "Tasks"
         -- Обновить
         MD_Data.TempArticlesList = #()
         MD_Data.Update()
-        MD_UI.Update()
+        MD_UI.FillMainList()
+        MD_UI.FillAddList()
+        MD_UI.UpdateCatalogTasksRlt()
+        MD_UI.UpdateCatalogInfoRlt()
+        MD_UI.UpdateCatalogToolsRlt()
         WithoutRedraw MD_BBox.Update
     )
     
@@ -198,7 +174,6 @@ rollout rlt_tasks "Tasks"
         (
             "Clear":(
                 MD_Data.TempArticlesList = #()
-                MD_UI.Update()
             )
             "Delete":
                 (
@@ -212,12 +187,18 @@ rollout rlt_tasks "Tasks"
                             del_task_dirs += 1
                         )
                         if del_task_dirs > 0 then MD_Log.Info ("Удаленно заданий: " + del_task_dirs as string)
-                        MD_Data.Update()
-                        MD_UI.Update()
-                        WithoutRedraw MD_BBox.Update
+                        -- MD_Data.Update()
                     )
                 )
         )
+        -- MD_Data.Update()
+        MD_UI.FillMainList()
+        MD_UI.FillAddList()
+        try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+        MD_UI.UpdateCatalogTasksRlt()
+        MD_UI.UpdateCatalogInfoRlt()
+        MD_UI.UpdateCatalogToolsRlt()
+        WithoutRedraw MD_BBox.Update
     )
 
     on lv_main ItemChecked self args do
@@ -236,7 +217,7 @@ rollout rlt_tasks "Tasks"
             for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
         )
         -- Обоновить интерфейс
-        try MD_UI.TasksRltUpdate() catch()
+        try MD_UI.UpdateCatalogTasksRlt() catch()
     )
 
     on lv_main ColumnClick self arg do 
@@ -249,14 +230,15 @@ rollout rlt_tasks "Tasks"
                     if self.Items.Item[i].Checked == true then self.Items.Item[i].Checked = false
                     else self.Items.Item[i].Checked = true
                 )
+                MD_UI.UpdateCatalogToolsRlt()
             )
             4:(
-                local sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text
-                -- local main_items = #()
+                local sel_user = undefined
+                try sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text catch()
                 MD_Data.SortTasks = #()
-                -- free MD_Data.SortTasks
+                free MD_Data.SortTasks
 
-                if NOT MD_UI.Sort then 
+                if NOT MD_UI.Sort and sel_user != undefined then 
                 (
                     for i = 0 to self.Items.Count - 1 do
                     (
@@ -268,17 +250,16 @@ rollout rlt_tasks "Tasks"
                         )
                     )
 
-                    -- self.Items.Clear()
-                    -- self.Items.AddRange main_items
-                    -- self.Update()
-
                     MD_UI.Sort = true                    
                 )
                 else MD_UI.Sort = false
 
-                MD_UI.TasksRltUpdate()
-                MD_UI.CatalogPreviewRltUpdate()
-                MD_UI.Update()
+                MD_UI.FillMainList()
+                MD_UI.FillAddList()
+                try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+                MD_UI.UpdateCatalogTasksRlt()
+                MD_UI.UpdateCatalogInfoRlt()
+                MD_UI.UpdateCatalogToolsRlt()
 
                 try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
             )
@@ -325,10 +306,13 @@ rollout rlt_tasks "Tasks"
                     MD_Data.ShowLayers mode:#work_only
                 )
                 else MD_Data.ShowLayers mode:#scene_only
-                
-                MD_UI.TasksRltUpdate()
-                MD_UI.CatalogPreviewRltUpdate()
-                MD_UI.Update()
+
+                MD_UI.FillAddList()
+                try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
+                MD_UI.UpdateCatalogTasksRlt()
+                MD_UI.UpdateCatalogInfoRlt()
+                MD_UI.UpdateCatalogToolsRlt()
                 WithoutRedraw MD_BBox.Update
             )
         )
@@ -345,8 +329,8 @@ rollout rlt_tasks "Tasks"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
-            MD_UI.CatalogPreviewRltUpdate()
-            MD_UI.ToolsRltUpdate()
+            MD_UI.UpdateCatalogInfoRlt()
+            MD_UI.UpdateCatalogToolsRlt()
         )
     )
 
@@ -398,7 +382,7 @@ rollout rlt_tasks "Tasks"
                 MD_Data.ShowLayers mode:#work_only
             )
         )
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
     )
 
     on btn_exit_work_state pressed do
@@ -406,17 +390,11 @@ rollout rlt_tasks "Tasks"
         -- Взять массив объектов на рабочем слое
         MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
-        -- Если кол-во объектов на рабочем слое != 0
-        if MD_Data.WorkLayerNodes.count != 0 then
-        (
-            if queryBox "Очистить рабочий слой после удаления?" title:"Выход из рабочего сосотяния" then (
-                -- Удалить все объекты с рабочего слоя
-                MD_Data.ClearWorkLayer()
-            )            
-        )
+        MD_Data.ClearWorkLayer()
+
         -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
     )
 
     on lv_add ColumnClick s e do

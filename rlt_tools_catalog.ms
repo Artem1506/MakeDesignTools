@@ -49,14 +49,14 @@ rollout rlt_tools_catalog "Tools"
     on btn_main_mesh pressed do
     (
         MD_Data.SetMesh selection[1]
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
     )
 
     on btn_add_mesh pressed do
     (
         MD_Data.SetAddMesh selection[1]
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
     )
 
@@ -73,7 +73,7 @@ rollout rlt_tools_catalog "Tools"
                 try select MD_Data.ActiveTask.Mesh catch()
             )
         )
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
     )
 
@@ -92,9 +92,9 @@ rollout rlt_tools_catalog "Tools"
                 try select MD_Data.ActiveTask.Mesh catch()
             )
         )
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
-        MD_UI.CatalogPreviewRltUpdate()
+        MD_UI.UpdateCatalogInfoRlt()
     )
 
     on btn_set_pivot pressed do
@@ -113,7 +113,7 @@ rollout rlt_tools_catalog "Tools"
     on btn_save_work pressed do
     (
         MD_Data.InWorkTask.SaveWork()
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
     )
 
     on btn_load_work pressed do
@@ -121,7 +121,7 @@ rollout rlt_tools_catalog "Tools"
         MD_Data.CreateWorkLayer()
         MD_Data.InWorkTask.LoadWork \
         MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:false
-        MD_UI.ToolsRltUpdate()
+        MD_UI.UpdateCatalogToolsRlt()
     )
 
     on btn_work_list pressed do
@@ -131,7 +131,7 @@ rollout rlt_tools_catalog "Tools"
         if MD_Data.ActiveTask.SavedWorks.count != 0 then
         (
            createDialog MD_UI.Dialogs.LoadWork 628 398 modal:true
-           MD_UI.ToolsRltUpdate()
+           MD_UI.UpdateCatalogToolsRlt()
         )
     )
 
@@ -146,5 +146,11 @@ rollout rlt_tools_catalog "Tools"
     (
         MD_Data.AttachSelectedToWorkLayer()
         MD_Data.ShowLayers mode:#work_only
+    )
+
+    on btn_assign_texts pressed do
+    (
+        try(destroyDialog MD_UI.Dialogs.LoadTextures)catch()
+        CreateDialog MD_UI.Dialogs.LoadTextures modal:true
     )
 )

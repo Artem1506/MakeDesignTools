@@ -14,6 +14,7 @@
         include "dlg_load_work.ms"
         include "dlg_export.ms"
         include "dlg_request.ms"
+        include "dlg_load_textures.ms"
         include "rlt_settings.ms"
         include "rlt_info_catalog.ms"
         include "rlt_info_projects.ms"
@@ -38,7 +39,7 @@
 		(
             local exist_task_index = undefined
 
-            try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
+            try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name (MD_UI.ListMain.name + "_selection")) + 1) catch()
 
             if exist_task_index != undefined and exist_task_index > 0 then
             (
@@ -46,8 +47,9 @@
                 MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
             )
 
-            WithoutRedraw MD_Data.Update
-            WithoutRedraw MD_UI.Update               
+            MD_Data.Update()
+            MD_UI.FillCategoriesLists()
+            FullUpdate()               
 
             -- переключить видимость слоёв
             if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State == STATES[2] then

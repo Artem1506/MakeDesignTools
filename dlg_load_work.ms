@@ -26,7 +26,7 @@ rollout dlg_load_work "Saved Works"
    on dlg_load_work close do
    (
       -- Обновить интерфейс
-      MD_UI.ToolsRltUpdate()
+      MD_UI.UpdateCatalogToolsRlt()
       -- Сохранить положение диалога
       SetINISetting MDT_CONFIG_FILE dlg_load_work.name "pos" ((GetDialogPos dlg_load_work) as string)
    )
@@ -80,7 +80,7 @@ rollout dlg_load_work "Saved Works"
       if MD_Data.ActiveTask.SavedWorks.Count == 0 then
       (
          destroyDialog dlg_load_work
-         MD_UI.ToolsRltUpdate()
+         MD_UI.UpdateCatalogToolsRlt()
       )
    )
 )

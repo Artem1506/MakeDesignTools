@@ -58,6 +58,11 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
     on dlg_request close do
     (
         MD_UI.FillTempData()
-        MD_UI.TasksRltUpdate()
+        MD_Data.ActiveTask = undefined
+        MD_UI.UpdateCatalogTasksRlt()
+        MD_UI.UpdateCatalogInfoRlt()
+        MD_UI.UpdateCatalogToolsRlt()
+        WithoutRedraw MD_BBox.Update
+        MD_Data.SwitchWorkLayer()
     )
 )

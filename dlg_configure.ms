@@ -85,15 +85,16 @@ rollout dlg_configure "Configure" width:400 height:164
                 MD_Data.Init()
                 MD_Data.Update()
                 MD_Callbacks.Add()
-                MD_UI.Update()
-                MD_UI.TasksRltUpdate()
+                MD_Data.SwitchWorkLayer()
+                FullUpdate()
+                MD_UI.UpdateCatalogTasksRlt()
 
                 -- Попытаться выбрать последнее активное задание
                 if MD_Data.Tasks.Count != 0 then
                 (
                     local exist_task_index = undefined
 
-                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name "lv_main_selection") + 1) catch()
+                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name (MD_UI.ListMain.name + "_selection")) + 1) catch()
 
                     if exist_task_index != undefined and exist_task_index > 0 then
                     (
@@ -158,75 +159,84 @@ rollout dlg_configure "Configure" width:400 height:164
 
     on btn_get_struct pressed do 
     (
-        if connection then
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
+        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
+
+        lbl_connect.text = ""
+
+        MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
+
+        if MD_Client.response_status == "200" then 
         (
-            try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
-            try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
+            msg = "Загружены данные о пользователях."
+            MD_Client.Log msg
+            lbl_info.text = "INFO: " + msg
+            result_sum += 1
+        )
+        else
+        (
+            msg = "Не удалось загрузить данные о пользователях."
+            MD_Client.Log msg
+            lbl_info.text = "ERROR: " + msg
+        )
 
-            lbl_connect.text = ""
+        MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Data"
 
-            MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
+        if MD_Client.response_status == "200" then 
+        (
+            msg = "Загружены данные о каталоге объектов."
+            MD_Client.Log msg
+            lbl_info.text = "INFO: " + msg
+            result_sum += 1
+        )
+        else
+        (
+            msg = "Не удалось загрузить данные о каталоге объектов."
+            MD_Client.Log msg
+            lbl_info.text = "ERROR: " + msg
+        )
 
-            if MD_Client.response_status == "200" then 
-            (
-                msg = "Загружены данные о пользователях."
-                MD_Client.Log msg
-                lbl_info.text = "INFO: " + msg
-                result_sum += 1
-            )
-            else
-            (
-                msg = "Не удалось загрузить данные о пользователях."
-                MD_Client.Log msg
-                lbl_info.text = "ERROR: " + msg
-            )
+        MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Data"
 
-            MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Data"
+        if MD_Client.response_status == "200" then 
+        (
+            msg = "Загружены данные о проектах."
+            MD_Client.Log msg
+            lbl_info.text = "INFO: " + msg
+            result_sum += 1
+        )
+        else
+        (
+            msg = "Не удалось загрузить данные о проектах."
+            MD_Client.Log msg
+            lbl_info.text = "ERROR: " + msg
+        )
 
-            if MD_Client.response_status == "200" then 
-            (
-                msg = "Загружены данные о каталоге объектов."
-                MD_Client.Log msg
-                lbl_info.text = "INFO: " + msg
-                result_sum += 1
-            )
-            else
-            (
-                msg = "Не удалось загрузить данные о каталоге объектов."
-                MD_Client.Log msg
-                lbl_info.text = "ERROR: " + msg
-            )
+        if result_sum == 3 then 
+        (
+            msg = "Успешно! Все данные загружены."
+            MD_Client.Log msg
+            lbl_info.text = "INFO: " + msg
 
-            MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Data"
+            MD_Callbacks.Destruct()
+            try MD_Data.ClearWorkLayer() catch()
+            try MD_Data.DeleteWorkLayer() catch()
+            MD_Data.Init()
+            MD_Data.Update()
+            MD_Callbacks.Add()
+            MD_Data.SwitchWorkLayer()
+            FullUpdate()
+            MD_UI.UpdateCatalogTasksRlt()
 
-            if MD_Client.response_status == "200" then 
-            (
-                msg = "Загружены данные о проектах."
-                MD_Client.Log msg
-                lbl_info.text = "INFO: " + msg
-                result_sum += 1
-            )
-            else
-            (
-                msg = "Не удалось загрузить данные о проектах."
-                MD_Client.Log msg
-                lbl_info.text = "ERROR: " + msg
-            )
-
-            if result_sum == 3 then 
-            (
-                msg = "Успешно! Все данные загружены."
-                MD_Client.Log msg
-                lbl_info.text = "INFO: " + msg
-            )
-            else if result_sum > 0 then
-            (
-                lbl_info.text = "WARNING: Не удалось загрузить некоторые данные."
-            ) 
-            else
-            (
-                lbl_info.text = "ERROR: Данные не были загружены."
-            )     
+            destroyDialog dlg_configure
+        )
+        else if result_sum > 0 then
+        (
+            lbl_info.text = "WARNING: Не удалось загрузить некоторые данные."
+        ) 
+        else
+        (
+            lbl_info.text = "ERROR: Данные не были загружены."
         )
     )
 )

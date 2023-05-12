@@ -97,6 +97,7 @@ dlg_pivot_params
 dlg_load_work
 dlg_export
 dlg_request
+dlg_load_textures
 
 global rlt_make_design
 rlt_settings
