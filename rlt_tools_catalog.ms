@@ -1,19 +1,29 @@
 
 rollout rlt_tools_catalog "Tools"
 (
-    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:""
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_02
-    button 'btn_assign_mat_id' "Assign Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
-    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
-    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[13,V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
-    button 'btn_load_work' "Load Last Work" width:(CTRL_WIDTH_2 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[47, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
-    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[36, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
-    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 4] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 4] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
-    button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
+    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:46 align:#center offset:[0, -4]
+    groupBox 'grp_02' " Work State: " width:(rlt_tools_catalog.width - 8) height:96 align:#center offset:[0, 0]
+    groupBox 'grp_03' " Meshes: " width:(rlt_tools_catalog.width - 8) height:70 align:#center offset:[0, 0]
+
+    -- Common
+    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -208] enabled:false tooltip:""
+
+    -- Work State
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, 24] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, 24] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    button 'btn_assign_mat_id' "Assign Material ID" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
+    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16,V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
+    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
+    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
+
+    -- Meshes
+    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, 24] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
+    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, 24] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
+
     button 'btn_export' "Validation And Export" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, 4] enabled:false tooltip:MD_Tooltips.tools_cat_10
-    
+
     on rlt_tools_catalog open do
     (
 
@@ -21,7 +31,7 @@ rollout rlt_tools_catalog "Tools"
     
     on rlt_tools_catalog close do
     (
-        SetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name
+        -- SetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name
     )  
 
     on btn_assign_mat_id pressed do

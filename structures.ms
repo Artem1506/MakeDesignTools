@@ -1293,10 +1293,10 @@ struct UI
 				if ListMain.SelectedItems.Count != 0 then cur_sel = ListMain.SelectedItems.Item[0].Index
 				
 				-- Проверка сортировки
-				if this.Sort then task_list = MD_Data.SortTasks
-				else task_list = MD_Data.Tasks
+				-- if this.Sort then task_list = MD_Data.SortTasks
+				-- else task_list = MD_Data.Tasks
 
-				for task in task_list do
+				for task in MD_Data.Tasks do
 				(
 					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 					dn_list_item.Checked = false
