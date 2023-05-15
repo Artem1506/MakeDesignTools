@@ -160,7 +160,7 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_assign_texts pressed do
     (
-        try(destroyDialog MD_UI.Dialogs.LoadTextures)catch()
-        CreateDialog MD_UI.Dialogs.LoadTextures modal:true
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        CreateDialog MD_UI.Dialogs.LoadTextures modal:false
     )
 )

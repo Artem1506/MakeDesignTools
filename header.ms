@@ -120,3 +120,4 @@ MD_Callbacks
 MD_Client
 
 global CheckExistTaskLayer
+InitExistTextures

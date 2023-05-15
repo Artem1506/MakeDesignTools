@@ -449,7 +449,10 @@ struct GlobalData
 			if subobjectLevel == 4 then
 			(
 				SetMatID $ ActiveTaskAddIndex
+				-- MD_Data.InWorkTask.Material = (loadTempMaterialLibrary MD_Data.InWorkTask.MatLibFile)[1]
+				subobjectLevel = 0
 				$.Material = MD_Data.InWorkTask.Material
+				subobjectLevel = 4
 				CompleteRedraw()
 			)
 		)catch()
@@ -2249,7 +2252,7 @@ struct Callback
 	fn MatChange ev nd =
 	(
 		try (
-			print MD_Data.ActiveTask.Material.materialList.count
+			--print MD_Data.ActiveTask.Material.materialList.count
 		)catch()
 	),
 

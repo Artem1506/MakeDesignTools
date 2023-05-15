@@ -41,6 +41,7 @@ rollout rlt_tasks "Tasks"
             MD_UI.FillCategoriesLists()
             FullUpdate()
         )
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
     on lst_basic_catalog selected arg do
@@ -60,6 +61,7 @@ rollout rlt_tasks "Tasks"
             MD_UI.FillCategoriesLists()
             FullUpdate()
         )
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
     on lst_sub_catalog selected arg do
@@ -76,6 +78,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.SwitchWorkLayer()
             FullUpdate()
         )
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
     on lst_sub_catalog rightClick do
@@ -318,6 +321,7 @@ rollout rlt_tasks "Tasks"
         )
 
         WithoutRedraw MD_Data.SwitchWorkLayer
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
     on lv_add Click self arg do
@@ -332,6 +336,8 @@ rollout rlt_tasks "Tasks"
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogToolsRlt()
         )
+
+        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
     )
 
     on lv_add MouseDoubleClick self arg do
