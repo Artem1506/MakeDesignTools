@@ -32,8 +32,8 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
-        MD_Data.Update()
-        MD_UI.FillCategoriesLists()
+        -- MD_Data.Update()
+        -- MD_UI.FillCategoriesLists()
 
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then

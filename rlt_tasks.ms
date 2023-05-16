@@ -273,7 +273,7 @@ rollout rlt_tasks "Tasks"
     (
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = 0
-
+        subobjectLevel = 0
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
@@ -306,9 +306,16 @@ rollout rlt_tasks "Tasks"
                         )
                         
                     )
+                    WithoutRedraw MD_BBox.Update
                     MD_Data.ShowLayers mode:#work_only
                 )
-                else MD_Data.ShowLayers mode:#scene_only
+                else 
+                (
+                    WithoutRedraw MD_BBox.Update
+                    if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
+                    (MD_Data.ShowLayers mode:#work_only)
+                    else (MD_Data.ShowLayers mode:#scene_only)
+                )
 
                 MD_UI.FillAddList()
                 try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
@@ -316,11 +323,12 @@ rollout rlt_tasks "Tasks"
                 MD_UI.UpdateCatalogTasksRlt()
                 MD_UI.UpdateCatalogInfoRlt()
                 MD_UI.UpdateCatalogToolsRlt()
-                WithoutRedraw MD_BBox.Update
+                
+                -- WithoutRedraw MD_BBox.Update
             )
         )
 
-        WithoutRedraw MD_Data.SwitchWorkLayer
+        -- WithoutRedraw MD_Data.SwitchWorkLayer
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
@@ -342,7 +350,11 @@ rollout rlt_tasks "Tasks"
 
     on lv_add MouseDoubleClick self arg do
     (
-
+        try(
+            subobjectLevel = 4
+            $.selectByMaterial (self.SelectedItems.Item[0].Index + 1)
+            completeRedraw()
+        )catch()
     )
 
     on btn_work_state pressed do

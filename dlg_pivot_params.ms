@@ -1,5 +1,5 @@
 
-rollout dlg_pivot_params "Pivot settings"
+rollout dlg_pivot_params "Pivot Settings"
 (
     label 'lbl_x' "X" width:20 height:20 align:#left offset:[46, 8] across:3
     label 'lbl_y' "Y" width:20 height:20 align:#center offset:[6, 8]

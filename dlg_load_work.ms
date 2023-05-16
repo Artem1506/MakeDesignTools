@@ -6,6 +6,8 @@ rollout dlg_load_work "Saved Works"
    button 'btn_load' "Load" width:111 height:CTRL_HEIGHT_2 align:#left offset:[-6, -37] acreoss:2 enabled:true
    button 'btn_delete' "Delete" width:111 height:CTRL_HEIGHT_2 align:#left offset:[107, -37] enabled:false
 
+   fn UpdateTitle = (dlg_load_work.title = "Saved Works [" + (lv_files.Items.Count as string) + "]")
+
    on dlg_load_work open do
    (
       -- Инициализация содержимого диалогового окна
@@ -16,6 +18,7 @@ rollout dlg_load_work "Saved Works"
       -- Если диалоговое окно вызывается спараметром modal = true, почему-то ListView не отрисовывает заголовки столбцов
       lv_files.height = 346
 
+      UpdateTitle()
       -- Установит положение диалога
       try(
          dialog_pos = execute (GetINISetting MDT_CONFIG_FILE dlg_load_work.name "pos")
@@ -49,7 +52,8 @@ rollout dlg_load_work "Saved Works"
    )
 
    on lv_files ItemChecked self args do 
-   (lv_files.update()
+   (
+      lv_files.update()
        -- Отметить все элементы списка если нажат control
        if keyboard.controlPressed == true then
        (
@@ -82,5 +86,7 @@ rollout dlg_load_work "Saved Works"
          destroyDialog dlg_load_work
          MD_UI.UpdateCatalogToolsRlt()
       )
+
+      UpdateTitle()
    )
 )

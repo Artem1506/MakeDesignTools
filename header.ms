@@ -44,7 +44,7 @@ STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
 TASK_INNER_DIRS = #("Task", "InWork")
 MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
-ADD_LIST_COLUMNS_1 = #("Parts", "Material", "D", "M", "N", "ARD")
+ADD_LIST_COLUMNS_1 = #("Parts", "Material", "Textures")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
 SAVED_WORKS_LIST_COLUMNS = #("File Name", "Save Date")
@@ -52,6 +52,7 @@ TASK_PARAMS_LIST = #("New Valid Only", "New Invalid Only", "Completed", "Deleted
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
+TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga")
 
 -- Интерфейс
 global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"

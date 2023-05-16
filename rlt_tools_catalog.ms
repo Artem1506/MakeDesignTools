@@ -1,28 +1,23 @@
 
 rollout rlt_tools_catalog "Tools"
 (
-    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:46 align:#center offset:[0, -4]
-    groupBox 'grp_02' " Task: " width:(rlt_tools_catalog.width - 8) height:96 align:#center offset:[0, 0]
-    groupBox 'grp_03' " Objects: " width:(rlt_tools_catalog.width - 8) height:70 align:#center offset:[0, 0]
-
     -- Common
-    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -208] enabled:false tooltip:""
-
-    -- Work State
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, 24] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, 24] enabled:false tooltip:MD_Tooltips.tools_cat_02
-    button 'btn_assign_mat_id' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
-    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
+    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:106 align:#center offset:[0, -4]
+    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -93] enabled:false tooltip:""
     button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16,V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
     button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
     button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
-
-    -- Meshes
-    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, 24] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, 24] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_2 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_10
+    
+    -- Objects
+    groupBox 'grp_03' " Objects: " width:(rlt_tools_catalog.width - 8) height:120 align:#center offset:[0, 4]
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -108] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -108] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
+    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
-
-    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, 4] enabled:false tooltip:MD_Tooltips.tools_cat_10
+    button 'btn_assign_mat_id' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
 
     on rlt_tools_catalog open do
     (
@@ -66,7 +61,6 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_main_mesh pressed do
     (
-        print MD_Data.InWorkTask
         MD_Data.SetMesh selection[1]
         MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
@@ -93,17 +87,17 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_mesh_switch pressed do
     (
-        -- clearSelection()
+        clearSelection()
 
         case MD_Data.ActiveTask.ActiveMesh of
         (
             1:(
                 MD_Data.ActiveTask.ActiveMesh = 2
-                try select MD_Data.ActiveTask.AddMesh catch()
+                -- try select MD_Data.ActiveTask.AddMesh catch()
             )
             2:(
                 MD_Data.ActiveTask.ActiveMesh = 1
-                try select MD_Data.ActiveTask.Mesh catch()
+                -- try select MD_Data.ActiveTask.Mesh catch()
             )
         )
         
