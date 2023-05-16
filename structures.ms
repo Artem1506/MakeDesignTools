@@ -5,7 +5,6 @@ fn FullUpdate =
 	MD_UI.Sort = false
 	MD_Data.ActiveList = 1
 	try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
-	if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
 
 	-- Обновить интерфейс
 	MD_UI.FillMainList()
@@ -16,6 +15,9 @@ fn FullUpdate =
 
 	-- Обновить габаритный контейнер
 	WithoutRedraw MD_BBox.Update
+
+	-- Создать рабочий слой, если есть задание в работе
+	if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
 
 	-- Обновить рабочий слой, если он есть
 	WithoutRedraw MD_Data.SwitchWorkLayer
@@ -393,9 +395,9 @@ struct Task
 				)
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
 
-				-- -- Создать материал
-				-- if not DoesFileExist (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat")) then
-				-- CreateMaterial()
+				-- Создать материал
+				if not DoesFileExist MatLibFile then CreateMaterial()
+				else LoadMaterial()
             )
         )
 	),
@@ -443,18 +445,23 @@ struct GlobalData
 
 	Users = #(),
 
-	fn AssignMatID =
+	fn AssignMatID obj =
 	(
 		try(
 			if subobjectLevel == 4 then
 			(
-				SetMatID $ ActiveTaskAddIndex
-				-- MD_Data.InWorkTask.Material = (loadTempMaterialLibrary MD_Data.InWorkTask.MatLibFile)[1]
-				subobjectLevel = 0
-				$.Material = MD_Data.InWorkTask.Material
-				subobjectLevel = 4
+				SetMatID obj ActiveTaskAddIndex
 				CompleteRedraw()
 			)
+		)catch()
+	),
+
+	fn AssignMaterial obj =
+	(
+		try(
+			subobjectLevel = 0
+			obj.Material = MD_Data.InWorkTask.Material
+			CompleteRedraw()
 		)catch()
 	),
 
@@ -575,10 +582,16 @@ struct GlobalData
 		try (
 			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then 
 			(
-				WorkLayer.on = true
-				WorkLayer.current = true
+				-- WorkLayer.on = true
+				-- WorkLayer.current = true
+				this.ShowLayers mode:#work_only
 			)
-			else WorkLayer.on = False
+			else 
+			(
+				this.ShowLayers mode:#scene_only
+				-- WorkLayer.on = False
+				-- DEFAULT_LAYER.current = true
+			)
 			
 			CompleteRedraw()
 		)catch()
@@ -692,7 +705,7 @@ struct GlobalData
 		catch (MD_Log.Error "[ExitWorkState] Не удалось сохранить данные в файл.")
 
 		ActiveTask.Update()
-		FullUpdate()
+		try FullUpdate() catch()
         try MD_Callbacks.Destruct() catch()
 	),
 
@@ -726,8 +739,8 @@ struct GlobalData
 		-- Обновить
 		SwitchWorkLayer()
 		ActiveTask.Update()
-        FullUpdate()
-        try MD_BBox.Update() catch()
+        try FullUpdate() catch()
+        -- try MD_BBox.Update() catch()
         try MD_Callbacks.Add() catch()
 
 		-- Создать рабочую папку
@@ -803,19 +816,26 @@ struct GlobalData
 				this.InWorkTask.Mesh.Material = undefined
 				this.InWorkTask.Mesh.Name = uniqueName "Object"
 				this.InWorkTask.Mesh = undefined
-				-- this.ActiveTask.ActiveMesh = 1
+				this.ActiveTask.ActiveMesh = 1
 			)
 			else
 			(
+				WorkLayerNodes = GetAllLayerNodes InWorkTask.Article
+				for task_obj in WorkLayerNodes where task_obj.name == InWorkTask.Article do
+				(
+					task_obj.Material = undefined
+					task_obj.Name = uniqueName "Object"
+				)
 				obj.IsHidden = false
 				this.InWorkTask.Mesh = obj
 				this.InWorkTask.Mesh.Name = this.InWorkTask.Article
-				-- this.ActiveTask.ActiveMesh = 1
+				this.ActiveTask.ActiveMesh = 1
 				this.InWorkTask.Mesh.Material = this.InWorkTask.Material
 			)	
 
 			if this.InWorkTask.Mesh == this.InWorkTask.AddMesh then
 			this.InWorkTask.AddMesh = undefined
+			select obj
 			CompleteRedraw()
 		)
 	),
@@ -827,21 +847,31 @@ struct GlobalData
 			if this.InWorkTask.AddMesh == obj then
 			(
 				this.InWorkTask.AddMesh.Material = undefined
+				obj.Material = undefined
 				this.InWorkTask.AddMesh.Name = uniqueName "Object"
 				this.InWorkTask.AddMesh = undefined
 				obj.IsHidden = False
+				this.ActiveTask.ActiveMesh = 1
 			)
 			else
 			(
+				WorkLayerNodes = GetAllLayerNodes InWorkTask.Article
+				for task_obj in WorkLayerNodes where task_obj.name == (InWorkTask.Article + "_" + TRANS_POSTFIX) do
+				(
+					task_obj.Material = undefined
+					task_obj.Name = uniqueName "Object"
+				)
 				this.InWorkTask.AddMesh = obj
 				this.InWorkTask.AddMesh.Name = this.InWorkTask.Article + "_" + TRANS_POSTFIX
 				obj.IsHidden = True
 				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material
+				this.ActiveTask.ActiveMesh = 2
 			)
 
 			if this.InWorkTask.AddMesh == this.InWorkTask.Mesh then
 			this.InWorkTask.Mesh = undefined
-			clearSelection()
+			select obj
+			-- clearSelection()
 			CompleteRedraw()
 		)
 	),
@@ -1283,6 +1313,7 @@ struct UI
 
 	fn FillMainList =
 	(
+		-- print "FillMainList"
 		case MD_Data.ActiveSection of
 		(
 			1:(
@@ -1381,7 +1412,7 @@ struct UI
 		(
 			ToolsCatalog.btn_main_mesh.text = "Main Mesh"
 			ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
-			ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+			-- ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 			ToolsCatalog.btn_vis_switch.text = "Show Scene Objects"
 
 			for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
@@ -1404,6 +1435,7 @@ struct UI
 				if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
 				(
 					ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
+					ToolsCatalog.btn_assign_mat_id.enabled = true
 					try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
 				)
 				else
@@ -1417,24 +1449,37 @@ struct UI
 				(
 
 					ToolsCatalog.btn_mesh_switch.enabled = true
+
 					if MD_Data.ActiveTask.ActiveMesh == 2 then
-					(
-						ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"						
-					)
+					ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"	
+					else ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						ToolsCatalog.btn_main_mesh.enabled = true				
-						ToolsCatalog.btn_add_mesh.enabled = true				
-						ToolsCatalog.btn_add_mesh.enabled = true				
+						if MD_Data.ActiveTask.ActiveMesh == 2 then
+						(
+							ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
+							ToolsCatalog.btn_add_mesh.enabled = true		
+						)
+						else
+						(
+							ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+							ToolsCatalog.btn_main_mesh.enabled = true
+							if MD_Data.ActiveTask.AddMesh == undefined or MD_Data.ActiveTask.AddMesh.IsDeleted then
+							ToolsCatalog.btn_add_mesh.enabled = true
+						)
+								
+						-- ToolsCatalog.btn_add_mesh.enabled = true
+						-- ToolsCatalog.btn_assign_mat_id.enabled = true	
 					)
 
 					-- Доп. меш
 					if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
 					(
 						ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
+						ToolsCatalog.btn_assign_mat_id.enabled = true
 						try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name + "\n" + MD_Tooltips.tools_cat_07_c) catch()
 					)
 					else(
@@ -1449,7 +1494,8 @@ struct UI
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						ToolsCatalog.btn_main_mesh.enabled = true							
+						ToolsCatalog.btn_main_mesh.enabled = true
+						-- ToolsCatalog.btn_assign_mat_id.enabled = true	
 					)
 				)
 				
@@ -1482,12 +1528,19 @@ struct UI
 				)
 
 				-- Material ID и текстуры
-				if MD_Data.ActiveList == 2 then
+				if MD_Data.ActiveList == 1 then
+				(
+					ToolsCatalog.btn_assign_mat_id.text = "Assign Material"
+
+					if subobjectLevel != 0 then ToolsCatalog.btn_assign_mat_id.enabled = false
+				)
+				else if MD_Data.ActiveList == 2 then
 				(
 					ToolsCatalog.btn_assign_texts.enabled = true
+					ToolsCatalog.btn_assign_mat_id.text = "Assign Mat ID"
 
-					if subobjectLevel == 4 then
-					ToolsCatalog.btn_assign_mat_id.enabled = true
+					if subobjectLevel == 4 then ToolsCatalog.btn_assign_mat_id.enabled = true					
+					else if subobjectLevel == 0 then ToolsCatalog.btn_assign_mat_id.enabled = false
 				)
 			)
 
@@ -1498,6 +1551,7 @@ struct UI
 
 	fn FillAddList =
 	(
+		-- print "FillAddList"
 		case Sections.Selection of
 		(
 			1:(
@@ -1539,6 +1593,7 @@ struct UI
 
 	fn UpdateCatalogInfoRlt =
 	(
+		-- print "UpdateCatalogInfoRlt"
 		case MD_Data.ActiveList of
 		(
 			1:(
@@ -2209,8 +2264,8 @@ struct Callback
 				MD_Data.WorkLayer = undefined
 				MD_Data.ActiveTask.Update()
 				
-				FullUpdate()
-				try MD_BBox.Update() catch()
+				try FullUpdate() catch()
+				-- try MD_BBox.Update() catch()
 			)
 		)
 	),
@@ -2241,9 +2296,9 @@ struct Callback
 		if MD_Data.ActiveTask == MD_Data.InWorkTask then
 		(
 			MD_Data.Update()
-			FullUpdate()
-			MD_Data.CreateWorkLayer()
-			MD_Data.ShowLayers mode:#work_only
+			try FullUpdate() catch()
+			-- MD_Data.CreateWorkLayer()
+			-- MD_Data.ShowLayers mode:#work_only
 		)
 
 		this.Add()

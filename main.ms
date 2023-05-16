@@ -32,8 +32,9 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
-        try MD_Callbacks.Add() catch()
-        
+        MD_Data.Update()
+        MD_UI.FillCategoriesLists()
+
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
 		(
@@ -47,30 +48,30 @@
                 MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
             )
 
-            MD_Data.Update()
-            MD_UI.FillCategoriesLists()
-            FullUpdate()               
-
             -- переключить видимость слоёв
-            if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State == STATES[2] then
+            if MD_Data.ActiveTask != undefined then
             (
-                MD_Data.ShowLayers mode:#work_only
-            )
-
-            -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-            if MD_UI.Settings.ckbx_load_last.checked then
-            (
-                try(
-                    if MD_Data.WorkLayerNodes.count == 0 then
+                if MD_Data.ActiveTask.File == MD_Data.InWorkTask.File then
+                (
+                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                    if MD_UI.Settings.ckbx_load_last.checked then
                     (
-                        MD_Data.InWorkTask.LoadWork \
-                        MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
-                        MD_Data.ShowLayers()
+                        -- Создать рабочий слой, если есть задание в работе
+                        if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
+                        try(
+                            if MD_Data.WorkLayerNodes.count == 0 then
+                            (
+                                MD_Data.InWorkTask.LoadWork \
+                                MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                            )
+                        ) catch()      
                     )
-                ) catch()            
+                )
             )
 		)
-        WithoutRedraw MD_BBox.Update
+
+        try MD_Callbacks.Add() catch()
+        try FullUpdate() catch()
     )
     else
     (

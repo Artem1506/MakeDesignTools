@@ -86,7 +86,6 @@ rollout dlg_configure "Configure" width:400 height:164
                 MD_Data.Update()
                 MD_Callbacks.Add()
                 MD_Data.SwitchWorkLayer()
-                FullUpdate()
                 MD_UI.UpdateCatalogTasksRlt()
 
                 -- Попытаться выбрать последнее активное задание
@@ -124,7 +123,7 @@ rollout dlg_configure "Configure" width:400 height:164
                         ) catch()            
                     )
                 )
-                WithoutRedraw MD_BBox.Update
+                try FullUpdate() catch()
 
                 MD_Log.Info ("Путь к локальной базе MakeDesign = " + result)
             )
@@ -225,7 +224,7 @@ rollout dlg_configure "Configure" width:400 height:164
             MD_Data.Update()
             MD_Callbacks.Add()
             MD_Data.SwitchWorkLayer()
-            FullUpdate()
+            try FullUpdate() catch()
             MD_UI.UpdateCatalogTasksRlt()
 
             destroyDialog dlg_configure

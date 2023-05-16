@@ -29,17 +29,17 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSection != arg then
         (
+            try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSection = arg
             MD_Data.ActiveTaskIndex = undefined
-            try MD_Callbacks.Destruct() catch()
             MD_UI.SwitchRollouts()
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
-            MD_Data.SwitchWorkLayer()
+            -- MD_Data.SwitchWorkLayer()
             MD_UI.FillCategoriesLists()
-            FullUpdate()
+            try FullUpdate() catch()
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -48,18 +48,18 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveCategory != arg then
         (
+            try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveCategory = arg
             MD_Data.ActiveTaskIndex = undefined
             try lst_sub_catalog.selection = 1 catch()
-            MD_Data.ActiveSubCategory = lst_sub_catalog.selection            
-            try MD_Callbacks.Destruct() catch()
+            MD_Data.ActiveSubCategory = lst_sub_catalog.selection
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
-            MD_Data.SwitchWorkLayer()
+            -- MD_Data.SwitchWorkLayer()
             MD_UI.FillCategoriesLists()
-            FullUpdate()
+            try FullUpdate() catch()
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -68,15 +68,15 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
+            try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSubCategory = arg
             MD_Data.ActiveTaskIndex = undefined
-            MD_Callbacks.Destruct()
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
-            MD_Data.SwitchWorkLayer()
-            FullUpdate()
+            -- MD_Data.SwitchWorkLayer()
+            try FullUpdate() catch()
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )

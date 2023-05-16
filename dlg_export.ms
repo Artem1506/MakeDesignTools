@@ -9,9 +9,9 @@ rollout dlg_export "Validation And Export" width:300  height:210
         dotnetcontrol 'lbl_bounds_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_cor_mat' "4 - Correct Material" width:160 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_04
         dotnetcontrol 'lbl_cor_mat_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_mat_id' "5 - Material IDs Number" width:190 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_05
+    label 'lbl_mat_id' "5 - Material IDs Count" width:190 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_05
         dotnetcontrol 'lbl_mat_id_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_uvs' "6 - UV Channels Number" width:160 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_06
+    label 'lbl_uvs' "6 - UV Channels Count" width:160 align:#left offset:[6, 2] across:2 tooltip:MD_Tooltips.val_exp_06
         dotnetcontrol 'lbl_uvs_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
 
     groupBox 'grp_01' " Validation " pos:[8,8] width:284 height:152 align:#center

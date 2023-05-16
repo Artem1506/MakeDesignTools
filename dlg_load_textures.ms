@@ -1,4 +1,4 @@
-rollout dlg_load_textures ("Load Textures " + "[" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]") width:320 height:212
+rollout dlg_load_textures "" width:320 height:212
 (
     groupBox 'grp_01' " Textures: " width:(dlg_load_textures.width - 20) height:134 align:#left offset:[-3, 2]
 	-- groupBox 'grp_02' " Tools: " width:(dlg_load_textures.width - 170) height:70 align:#left offset:[-3, -2]
@@ -62,34 +62,38 @@ rollout dlg_load_textures ("Load Textures " + "[" + MD_Data.ActiveTask.Materials
 
     fn InitExistTextures =
     (
-        dlg_load_textures.title = ("Load Textures " + "[" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]")
-        btn_delete.enabled = false
-        btn_load.enabled = false
-
-        for i = 1 to controls_arr.count do
+        if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Load Textures")
+        else 
         (
-            local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
-            local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suf_arr[i]
-            local lib_tex_file = (pathConfig.appendPath task_dir text_name)
+            dlg_load_textures.title = ("Load Textures " + "[" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]")
 
-            if DoesFileExist lib_tex_file then
+            btn_delete.enabled = false
+            btn_load.enabled = false
+
+            for i = 1 to controls_arr.count do
             (
-                controls_arr[i][1].text = text_name
-                controls_arr[i][2].checked = true
-                controls_arr[i][2].enabled = true
-                textures[i] = lib_tex_file
-                btn_delete.enabled = true
-                btn_load.enabled = true
-            )
-            else
-            (
-                controls_arr[i][1].text = EMPTY_TEXT
-                controls_arr[i][2].checked = false
-                controls_arr[i][2].enabled = false
-                textures[i] = undefined
+                local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
+                local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suf_arr[i]
+                local lib_tex_file = (pathConfig.appendPath task_dir text_name)
+
+                if DoesFileExist lib_tex_file then
+                (
+                    controls_arr[i][1].text = text_name
+                    controls_arr[i][2].checked = true
+                    controls_arr[i][2].enabled = true
+                    textures[i] = lib_tex_file
+                    btn_delete.enabled = true
+                    btn_load.enabled = true
+                )
+                else
+                (
+                    controls_arr[i][1].text = EMPTY_TEXT
+                    controls_arr[i][2].checked = false
+                    controls_arr[i][2].enabled = false
+                    textures[i] = undefined
+                )
             )
         )
-
         SetFocus dlg_load_textures 
     )
 
