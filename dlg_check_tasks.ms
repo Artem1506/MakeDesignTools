@@ -45,6 +45,9 @@ rollout dlg_check_tasks "Check Available Tasks" width:250 height:180
         msg = "Доступно заданий: " + (MD_Data.TempArticlesList.count as string) + " из " + MD_Client.response_msg
         MD_Client.Log msg
 
-        if MD_Data.TempArticlesList.count == 0 then try FullUpdate() catch()
+        if MD_Data.TempArticlesList.count == 0 then 
+        (
+            try FullUpdate() catch()
+        )
     )
 )

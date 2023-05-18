@@ -29,15 +29,15 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSection != arg then
         (
+            MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSection = arg
-            MD_Data.ActiveTaskIndex = undefined
-            MD_UI.SwitchRollouts()
+            MD_Data.ActiveTaskIndex = undefined  
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
-
             MD_Data.Update()
-            -- MD_Data.SwitchWorkLayer()
+
+            MD_UI.SwitchRollouts()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
         )
@@ -48,6 +48,7 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveCategory != arg then
         (
+            MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveCategory = arg
             MD_Data.ActiveTaskIndex = undefined
@@ -57,7 +58,6 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
-            -- MD_Data.SwitchWorkLayer()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
         )
@@ -68,6 +68,7 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
+            MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSubCategory = arg
             MD_Data.ActiveTaskIndex = undefined
@@ -75,7 +76,6 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveTaskAddIndex = undefined
 
             MD_Data.Update()
-            -- MD_Data.SwitchWorkLayer()
             try FullUpdate() catch()
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
@@ -105,6 +105,7 @@ rollout rlt_tasks "Tasks"
                 local article = ""
                 local msg = ""
                 local user_id = ""
+                local temp_txt = #()
 
                 for i in MD_Data.CheckedTasks do
                 (
@@ -112,15 +113,15 @@ rollout rlt_tasks "Tasks"
                     article = split[1]
                     msg = split[3]
                     user_id = split[4]
-
                     args += user_id + SEPAR_2
+                    append temp_txt (article + " | " + msg)
                 )
                 args = trimRight args SEPAR_2
                 args += SEPAR_1
 
-                for i in MD_Data.CheckedTasks do
+                for txt in temp_txt do
                 (
-                    args += (article + " | " + msg + SEPAR_2)
+                    args += (txt + SEPAR_2)
                 )
                 args = "\"" + (trimRight args SEPAR_2) + "\""
 
@@ -180,21 +181,36 @@ rollout rlt_tasks "Tasks"
             )
             "Delete":
                 (
-                    if (queryBox "Дейсвительно удалить отмеченные задания?" title:"Внимание!" icon:#warning) then
+                    if keyboard.shiftPressed then
                     (
-                        
                         local del_task_dirs = 0
+
                         for i in MD_Data.CheckedTasks do
                         (
-                            del = MD_Data.DeleteEmptyTask MD_Data.Tasks[i]
+                            del = MD_Data.DeleteEmptyTask MD_Data.Tasks[i] trash:false
                             del_task_dirs += 1
                         )
                         if del_task_dirs > 0 then MD_Log.Info ("Удаленно заданий: " + del_task_dirs as string)
-                        -- MD_Data.Update()
+                    )
+                    else
+                    (
+                        if (queryBox "Дейсвительно удалить отмеченные задания?" title:"Внимание!" icon:#warning) then
+                        (
+                            local del_task_dirs = 0
+
+                            for i in MD_Data.CheckedTasks do
+                            (
+                                del = MD_Data.DeleteEmptyTask MD_Data.Tasks[i]
+                                del_task_dirs += 1
+                            )
+                            if del_task_dirs > 0 then MD_Log.Info ("Удаленно заданий: " + del_task_dirs as string)
+                            -- MD_Data.Update()
+                        )                        
                     )
                 )
         )
-        -- MD_Data.Update()
+        MD_Data.CheckedTasks = #()
+        MD_Data.Update()
         MD_UI.FillMainList()
         MD_UI.FillAddList()
         try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
@@ -311,10 +327,10 @@ rollout rlt_tasks "Tasks"
                 )
                 else 
                 (
-                    WithoutRedraw MD_BBox.Update
-                    if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
-                    (MD_Data.ShowLayers mode:#work_only)
-                    else (MD_Data.ShowLayers mode:#scene_only)
+                    if MD_Data.InWorkTask != MD_Data.ActiveTask then
+                    (MD_Data.ShowLayers mode:#scene_only)
+                    else if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
+                    ( WithoutRedraw MD_BBox.Update; MD_Data.ShowLayers mode:#work_only)
                 )
 
                 MD_UI.FillAddList()

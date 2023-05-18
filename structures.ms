@@ -749,7 +749,13 @@ struct GlobalData
 		catch ()
 		if ActiveTask != InWorkTask then DeleteWorkLayer()
         
-		for task in MD_Data.Tasks do task.State = STATES[1]
+		-- for task in MD_Data.Tasks do
+		-- (
+		-- 	if task.Group != undefined and task.Group == ActiveTask.Group then task.State = STATES[2]
+		-- 	else if task.Group == undefined and task == ActiveTask then STATES[2]
+		-- 	-- else task.State = STATES[1]			
+		-- ) 
+
         ActiveTask.State = STATES[2]
         ActiveTask.ActiveMesh = 1
         InWorkTask = ActiveTask
@@ -1009,7 +1015,7 @@ struct GlobalData
 		)
 	),
 
-	fn DeleteEmptyTask task =
+	fn DeleteEmptyTask task trash:true =
 	(
 		-- Удаляет задания из локальной базы
 		-- Если задание емеет ранее сохранённые рабочие файлы или выполненные файлы, 
@@ -1021,40 +1027,43 @@ struct GlobalData
 	
 		if (doesFileExist task.File) == true then
 		(
-			if done_files.count != 0 or task.SavedWorks.count != 0 then
+			if trash then
 			(
-				-- Проверка существует ли папка корзины
-				if not (doesDirectoryExist MD_LIB_TRASH_DIR) then
+				if done_files.count != 0 or task.SavedWorks.count != 0 then
 				(
-					-- Создать папку корзины
-					make_dir_cmd = "mkdir -p " + MD_LIB_TRASH_DIR
-					HiddenDOSCommand make_dir_cmd donotwait:true
-	
-					-- Сделать папку скрытой
-					add_hide_attrib_cmd = "attrib +h " + MD_LIB_TRASH_DIR
-					HiddenDOSCommand add_hide_attrib_cmd donotwait:true 
-				)
+					-- Проверка существует ли папка корзины
+					if not (doesDirectoryExist MD_LIB_TRASH_DIR) then
+					(
+						-- Создать папку корзины
+						make_dir_cmd = "mkdir -p " + MD_LIB_TRASH_DIR
+						HiddenDOSCommand make_dir_cmd donotwait:true
+		
+						-- Сделать папку скрытой
+						add_hide_attrib_cmd = "attrib +h " + MD_LIB_TRASH_DIR
+						HiddenDOSCommand add_hide_attrib_cmd donotwait:true 
+					)
 
-				local trash_dirs = getDirectories (MD_LIB_TRASH_DIR + "/*.*")
-				local task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR task.Article)
-				local exists = #()
+					local trash_dirs = getDirectories (MD_LIB_TRASH_DIR + "/*.*")
+					local task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR task.Article)
+					local exists = #()
 
-				-- Сущетвует ли в корзине папка с таким же заданием?
-				for dir in trash_dirs do
-				(
-					f = findString dir task.Article
-					if f != undefined then 
-					append exists dir
-				)
-				-- Если существует, то удаляемая папка с занием будет переименована
-				if exists.count != 0 then
-				(
-					copy_name = task.Article + "_" + ((formattedPrint (exists.count + 1) format:"01d") as string)
-					task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR copy_name)
-				)
-	
-				-- Скопировать папку с заданием в корзину
-				dosCommand ("xcopy " + task_dir + " " + task_in_trash_dir + " /S /E /I /Y /R /C")
+					-- Сущетвует ли в корзине папка с таким же заданием?
+					for dir in trash_dirs do
+					(
+						f = findString dir task.Article
+						if f != undefined then 
+						append exists dir
+					)
+					-- Если существует, то удаляемая папка с занием будет переименована
+					if exists.count != 0 then
+					(
+						copy_name = task.Article + "_" + ((formattedPrint (exists.count + 1) format:"01d") as string)
+						task_in_trash_dir = (pathConfig.appendPath MD_LIB_TRASH_DIR copy_name)
+					)
+		
+					-- Скопировать папку с заданием в корзину
+					dosCommand ("xcopy " + task_dir + " " + task_in_trash_dir + " /S /E /I /Y /R /C")
+				)					
 			)
 		)
 
@@ -1702,8 +1711,8 @@ struct UI
 
 	fn UpdateCatalogTasksRlt =
 	(
-		-- Tasks.btn_get.enabled = false
-		-- Tasks.btn_clear.enabled = false
+		Tasks.btn_get.enabled = false
+		Tasks.btn_clear.enabled = false
 
 		if MD_Data.ActiveTask == undefined then
 		(
@@ -1768,7 +1777,7 @@ struct UI
 			(
 				1:(
 					Tasks.btn_get.text = "Get"
-					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a						
+					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
 				)
 				2:(
 					Tasks.btn_get.text = "Send"
@@ -1784,27 +1793,23 @@ struct UI
 					Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_d
 				)
 			)
-
-			if MD_Data.CheckedTasks.Count > 0 then
-			(
-				Tasks.btn_get.enabled = true
-				Tasks.btn_clear.enabled = true
-			)
+			Tasks.btn_clear.text = "Clear"
+			Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 		)
 		else
 		(
-			if MD_Data.CheckedTasks.Count > 0 then
-			(
-				Tasks.btn_get.enabled = true
-				Tasks.btn_get.text = "Update"
-				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_e
-				Tasks.btn_clear.enabled = true
-				Tasks.btn_clear.text = "Delete"
-				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_b
+			Tasks.btn_get.text = "Update"
+			Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_e
+			Tasks.btn_clear.text = "Delete"
+			Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_b
+		)
 
-				Tasks.btn_work_state.enabled = false
-				Tasks.btn_exit_work_state.enabled = false
-			)
+		if MD_Data.CheckedTasks.Count > 0 then
+		(
+			Tasks.btn_get.enabled = true
+			Tasks.btn_clear.enabled = true
+			Tasks.btn_work_state.enabled = false
+			Tasks.btn_exit_work_state.enabled = false
 		)
 
 		if SubCategories.Items.Count != 0 then
@@ -2037,6 +2042,7 @@ struct BoundingBox
 	(
 		LayerManager.newLayerFromName mdt_temp_layer
 		Layer = LayerManager.getLayerFromName mdt_temp_layer
+		Layer.on = false
 		Layer.lock = on
 		Layer.ishidden = MD_UI.Settings.ckbx_show_bb.checked
 	),
