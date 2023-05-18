@@ -132,10 +132,15 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_load_work pressed do
     (
-        MD_Data.CreateWorkLayer()
+        if MD_Data.ActiveTask.Group == undefined then
+        (
+            MD_Data.CreateWorkLayer()
+        
+        )
+
         MD_Data.InWorkTask.LoadWork \
-        MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:false
-        MD_UI.UpdateCatalogToolsRlt()
+        MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:false
+        MD_UI.UpdateCatalogToolsRlt()    
     )
 
     on btn_work_list pressed do

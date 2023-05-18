@@ -324,6 +324,13 @@ rollout rlt_tasks "Tasks"
                     )
                     WithoutRedraw MD_BBox.Update
                     MD_Data.ShowLayers mode:#work_only
+
+                    -- MD_UI.FillAddList()
+                    -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                    -- if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
+                    -- MD_UI.UpdateCatalogTasksRlt()
+                    -- MD_UI.UpdateCatalogInfoRlt()
+                    -- MD_UI.UpdateCatalogToolsRlt()
                 )
                 else 
                 (
@@ -334,9 +341,20 @@ rollout rlt_tasks "Tasks"
                     ( 
                         -- MD_Callbacks.Destruct()
                         MD_Data.ShowLayers mode:#work_only
+                        -- MD_UI.FillAddList()
+                        -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                        -- MD_UI.UpdateCatalogInfoRlt()
+                        -- MD_UI.UpdateCatalogToolsRlt()
                     )
                     else (
                         MD_Data.ShowLayers mode:#scene_only
+
+                        -- MD_UI.FillAddList()
+                        -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                        -- if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
+                        -- MD_UI.UpdateCatalogTasksRlt()
+                        -- MD_UI.UpdateCatalogInfoRlt()
+                        -- MD_UI.UpdateCatalogToolsRlt()
                     )
                 )
 
@@ -429,13 +447,14 @@ rollout rlt_tasks "Tasks"
     on btn_exit_work_state pressed do
     (
         -- Взять массив объектов на рабочем слое
-        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+        try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name catch()
 
         MD_Data.ClearWorkLayer()
 
         -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
-        MD_UI.UpdateCatalogToolsRlt()
+        FullUpdate()
+        -- MD_UI.UpdateCatalogToolsRlt()
     )
 
     on lv_add ColumnClick s e do
