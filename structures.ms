@@ -1457,12 +1457,14 @@ struct UI
 			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 
 			local objs = #()
-
-			if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2] then
+			
+			if (MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2]) or \
+			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
 				ToolsCatalog.btn_vis_switch.enabled = true
 				
-				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+				try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
 
 				objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
 
@@ -1525,12 +1527,14 @@ struct UI
 				-- Если задание НЕ имеет поле трансформации
 				else
 				(
+					MD_Data.ActiveTask.ActiveMesh = 1
+
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						ToolsCatalog.btn_main_mesh.enabled = true
-						if MD_Data.ActiveTask.ActiveMes == 1 and selection[1] == MD_Data.ActiveTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+						if MD_Data.ActiveTask.Mesh == 1 and selection[1] == MD_Data.ActiveTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
 					)
 				)
 				
@@ -2047,13 +2051,13 @@ struct BoundingBox
 		Layer.ishidden = MD_UI.Settings.ckbx_show_bb.checked
 	),
 
-	fn write_pivot_data =
+	fn write_pivot_data task:MD_Data.InWorkTask =
 	(
-		if MD_Data.ActiveTask != undefined then
+		if task != undefined then
 		(
-			ReadDataFile MD_Data.ActiveTask.File
+			ReadDataFile task.File
 			data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
-			WriteDataFile MD_Data.ActiveTask.File
+			WriteDataFile task.File
 		)
 	),
 	
@@ -2124,10 +2128,7 @@ struct BoundingBox
 				arrow.wireColor = clr_main
 
 				if MD_Data.ActiveTask != undefined then
-				-- if MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.State != STATES[1] then
 				(
-					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-
 					case MD_Data.ActiveTask.ActiveMesh of
 					(
 						1:(
@@ -2141,9 +2142,6 @@ struct BoundingBox
 
 							bb.wireColor = clr_main
 							arrow.wireColor = clr_main
-
-							-- try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
-							-- try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
 						)
 						2:(
 							bt_w = MD_Data.ActiveTask.SizeTrans[1]
@@ -2156,9 +2154,6 @@ struct BoundingBox
 
 							bb.wireColor = clr_add
 							arrow.wireColor = clr_add
-
-							-- try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
-							-- try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
 						)
 					)
 

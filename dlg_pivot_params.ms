@@ -13,7 +13,11 @@ rollout dlg_pivot_params "Pivot Settings"
 
     on dlg_pivot_params close do
     (
-        MD_BBox.write_pivot_data()
+        if MD_Data.ActiveTask.Group == undefined then MD_BBox.write_pivot_data()
+        else 
+        (
+            for t in MD_Data.Tasks where t.Group == MD_Data.ActiveTask.Group do MD_BBox.write_pivot_data task:t
+        )
     )
 
     on btn_ok pressed do

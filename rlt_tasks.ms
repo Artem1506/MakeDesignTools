@@ -327,10 +327,17 @@ rollout rlt_tasks "Tasks"
                 )
                 else 
                 (
-                    if MD_Data.InWorkTask != MD_Data.ActiveTask then
-                    (MD_Data.ShowLayers mode:#scene_only)
+                    WithoutRedraw MD_BBox.Update
+                    if MD_Data.ActiveTask.Group == undefined and MD_Data.ActiveTask != MD_Data.InWorkTask then
+                    MD_Data.ShowLayers mode:#scene_only
                     else if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
-                    ( WithoutRedraw MD_BBox.Update; MD_Data.ShowLayers mode:#work_only)
+                    ( 
+                        -- MD_Callbacks.Destruct()
+                        MD_Data.ShowLayers mode:#work_only
+                    )
+                    else (
+                        MD_Data.ShowLayers mode:#scene_only
+                    )
                 )
 
                 MD_UI.FillAddList()

@@ -88,19 +88,24 @@ rollout rlt_tools_catalog "Tools"
     on btn_mesh_switch pressed do
     (
         clearSelection()
+        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
 
         case MD_Data.ActiveTask.ActiveMesh of
         (
             1:(
                 MD_Data.ActiveTask.ActiveMesh = 2
-                -- try select MD_Data.ActiveTask.AddMesh catch()
+                try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
+                try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
+                try select MD_Data.ActiveTask.AddMesh catch()
             )
             2:(
                 MD_Data.ActiveTask.ActiveMesh = 1
-                -- try select MD_Data.ActiveTask.Mesh catch()
+                try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
+                try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
+                try select MD_Data.ActiveTask.Mesh catch()
             )
         )
-        
+
         MD_UI.UpdateCatalogToolsRlt()
         MD_BBox.Update()
         MD_UI.UpdateCatalogInfoRlt()
