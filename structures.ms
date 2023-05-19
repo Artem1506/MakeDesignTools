@@ -1374,35 +1374,35 @@ struct UI
 					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 					dn_list_item.Checked = false
 					dn_list_item.ForeColor = DN_CLR_DEFAULT
-					
-					
+
 					if task.Group != undefined then
 					(
-						-- State
-						if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
+						if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and task.Group == MD_Data.InWorkTask.Group then
 						(
-							dn_list_item.SubItems.add task.State
-							-- if task.Article == MD_Data.ActiveTask.Article then
-							-- (
-							-- 	MD_Data.InWorkTask = task
-							-- 	MD_Data.CreateWorkLayer()							
-							-- )
+							dn_list_item.ForeColor = DN_CLR_INWORK
+							dn_list_item.Font = DN_FNT_GRP
 						)
-						else if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and task.State != STATES[2] and task.Group == MD_Data.InWorkTask.Group then
-						dn_list_item.SubItems.add STATES[2]
-						else dn_list_item.SubItems.add ""
-
-						-- Group
-						dn_list_item.SubItems.add task.Group
 					)
-					else
+
+					if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
 					(
-						if MD_Data.ActiveTask != undefined and task.State == STATES[2] then
 						dn_list_item.SubItems.add task.State
-						else dn_list_item.SubItems.add ""
-
-						dn_list_item.SubItems.add ""
+						if task.Article == MD_Data.ActiveTask.Article then
+						(
+							MD_Data.InWorkTask = task
+							MD_Data.CreateWorkLayer()							
+						)
 					)
+					else dn_list_item.SubItems.add ""
+
+					-- else
+					-- (
+					-- 	if MD_Data.ActiveTask != undefined and task.State == STATES[2] then
+					-- 	dn_list_item.SubItems.add task.State
+					-- 	else dn_list_item.SubItems.add ""
+
+					-- 	dn_list_item.SubItems.add ""
+					-- )
 
 					-- if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
 					-- (
@@ -1416,8 +1416,8 @@ struct UI
 					-- else dn_list_item.SubItems.add ""
 
 					-- Group
-					-- if task.Group != undefined then dn_list_item.SubItems.add task.Group
-					-- else dn_list_item.SubItems.add ""
+					if task.Group != undefined then dn_list_item.SubItems.add task.Group
+					else dn_list_item.SubItems.add ""
 
 					-- Transformation
 					if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
@@ -1768,12 +1768,10 @@ struct UI
 		else
 		(
 			Tasks.btn_work_state.enabled = true
-
-			if (MD_Data.ActiveTask.State == STATES[1] and (MD_Data.InWorkTask == undefined or MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group != MD_Data.InWorkTask.Group)) then
+			if (MD_Data.ActiveTask.State == STATES[1] and (MD_Data.InWorkTask == undefined or MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group == undefined)) then
 			(
 				Tasks.btn_work_state.text = "Set Work State"
 				Tasks.btn_exit_work_state.enabled = false
-				print "1"
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 			)
@@ -1792,7 +1790,6 @@ struct UI
 				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
 				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 				Tasks.btn_work_state.enabled = true
-				print "2"
 				-- if MD_Data.ActiveTask == MD_Data.InWorkTask then
 				-- Tasks.btn_exit_work_state.enabled = true
 				-- else Tasks.btn_exit_work_state.enabled = false
