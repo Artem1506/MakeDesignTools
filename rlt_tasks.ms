@@ -29,7 +29,7 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSection != arg then
         (
-            MD_Data.ShowLayers mode:#scene_only
+            MD_Data.ShowLayers mode:#none
 
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
@@ -52,7 +52,7 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveCategory != arg then
         (
-            MD_Data.ShowLayers mode:#scene_only
+            MD_Data.ShowLayers mode:#none
 
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
@@ -76,8 +76,8 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
-            MD_Data.ShowLayers mode:#scene_only
-            
+            MD_Data.ShowLayers mode:#none
+
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSubCategory = arg
@@ -108,6 +108,7 @@ rollout rlt_tasks "Tasks"
     (
         local args = ""
         local msg = ""
+        MD_Data.ShowLayers mode:#none
 
         case btn_get.text of
         (
@@ -188,6 +189,8 @@ rollout rlt_tasks "Tasks"
     
     on btn_clear pressed do 
     (
+        MD_Data.ShowLayers mode:#none
+
         case btn_clear.text of
         (
             "Clear":(
@@ -312,6 +315,7 @@ rollout rlt_tasks "Tasks"
         (
             if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) or self.Items.count == 1 then
             (
+                -- MD_Data.ShowLayers mode:#none
                 MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag
 
                 -- Проверка сортировки
@@ -352,7 +356,10 @@ rollout rlt_tasks "Tasks"
                 (
                     WithoutRedraw MD_BBox.Update
 
-                    if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Group != undefined and \
+                    if MD_Data.InWorkTask != undefined and \
+                    MD_Data.InWorkTask != undefined and \
+                    MD_Data.InWorkTask.Article != undefined and \
+                    MD_Data.ActiveTask.Group != undefined and \
                     MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
                     (
                         MD_Data.ShowLayers mode:#work_only
@@ -404,7 +411,9 @@ rollout rlt_tasks "Tasks"
     )
 
     on btn_work_state pressed do
-    (
+    ( 
+        MD_Data.ShowLayers mode:#none
+
         -- Проверка состояния кнопки
         case btn_work_state.text of
         (
@@ -443,7 +452,7 @@ rollout rlt_tasks "Tasks"
             )
         )
         try FullUpdate() catch()
-        MD_Data.VisibleLayers = false
+        -- MD_Data.VisibleLayers = false
         MD_Data.ShowLayers mode:#work_only
     )
 

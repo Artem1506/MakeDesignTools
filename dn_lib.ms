@@ -90,6 +90,7 @@ struct DotNetLib
 			5: (fname = "Consolas")
 			6: (fname = "Century Gothic")
 			7: (fname = "Segoe UI Symbol")
+			8: (fname = "Times New Roman")
 		)
 		case style of
 		(

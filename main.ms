@@ -33,7 +33,7 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
-        MD_Data.ShowLayers mode:#scene_only
+        MD_Data.ShowLayers mode:#none
 
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
@@ -73,7 +73,7 @@
         try FullUpdate() catch()
         try MD_Callbacks.Add() catch()
 
-        if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+        if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
         (
             MD_Data.ShowLayers mode:#work_only
         )

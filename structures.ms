@@ -637,15 +637,11 @@ struct GlobalData
 		try (
 			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then 
 			(
-				-- WorkLayer.on = true
-				-- WorkLayer.current = true
 				this.ShowLayers mode:#work_only
 			)
 			else 
 			(
 				this.ShowLayers mode:#scene_only
-				-- WorkLayer.on = False
-				-- DEFAULT_LAYER.current = true
 			)
 			
 			CompleteRedraw()
@@ -657,6 +653,8 @@ struct GlobalData
 		-- #all
 		-- #scene_only
 		-- #work_only
+		-- #none
+
 		try(
 			case mode of
 			(
@@ -694,6 +692,13 @@ struct GlobalData
 					(
 						lr = LayerManager.getLayer i
 						lr.on = true
+					)
+				)
+				#none:(
+					for i = 0 to LayerManager.count - 1 do
+					(
+						lr = LayerManager.getLayer i
+						lr.on = false
 					)
 				)
 			)			
@@ -800,9 +805,9 @@ struct GlobalData
 		catch ()
         
 		-- Обновить
-		SwitchWorkLayer()
+		-- SwitchWorkLayer()
 		ActiveTask.Update()
-        try FullUpdate() catch()
+        -- try FullUpdate() catch()
         try MD_Callbacks.Add() catch()
 
 		local work_tasks = #()
@@ -1458,18 +1463,13 @@ struct UI
 					dn_list_item.Checked = false
 					dn_list_item.ForeColor = DN_CLR_DEFAULT
 
-					if task.Group != undefined then
+					if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
+					(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
 					(
-						if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and task.Group == MD_Data.InWorkTask.Group then
-						(
-							dn_list_item.ForeColor = DN_CLR_INWORK
-							dn_list_item.Font = DN_FNT_GRP
-						)
-					)
+						dn_list_item.ForeColor = DN_CLR_INWORK
+						dn_list_item.Font = DN_FNT_GRP
+						dn_list_item.SubItems.add STATES[2]
 
-					if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
-					(
-						dn_list_item.SubItems.add task.State
 						if task.Article == MD_Data.ActiveTask.Article then
 						(
 							MD_Data.InWorkTask = task
@@ -1477,26 +1477,6 @@ struct UI
 						)
 					)
 					else dn_list_item.SubItems.add ""
-
-					-- else
-					-- (
-					-- 	if MD_Data.ActiveTask != undefined and task.State == STATES[2] then
-					-- 	dn_list_item.SubItems.add task.State
-					-- 	else dn_list_item.SubItems.add ""
-
-					-- 	dn_list_item.SubItems.add ""
-					-- )
-
-					-- if MD_Data.ActiveTask != undefined and task.State == STATES[2] then 
-					-- (
-					-- 	dn_list_item.SubItems.add task.State
-					-- 	if task.Article == MD_Data.ActiveTask.Article then
-					-- 	(
-					-- 		MD_Data.InWorkTask = task
-					-- 		MD_Data.CreateWorkLayer()							
-					-- 	)
-					-- )
-					-- else dn_list_item.SubItems.add ""
 
 					-- Group
 					if task.Group != undefined then dn_list_item.SubItems.add task.Group
@@ -1748,6 +1728,8 @@ struct UI
 		case MD_Data.ActiveList of
 		(
 			1:(
+				InfoCatalog.title = "Info"
+
 				if MD_Data.ActiveTask != undefined then
 				(
 					try (
@@ -1796,7 +1778,7 @@ struct UI
 					)
 
 					try (InfoCatalog.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
-					InfoCatalog.title = "Info"
+					InfoCatalog.title = MD_Data.ActiveTask.Article
 					InfoCatalog.height = 280					
 				)
 			)
@@ -1817,7 +1799,7 @@ struct UI
 					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
 				)
 
-				InfoCatalog.title = "Info (Materials)"
+				InfoCatalog.title = MD_Data.ActiveTask.Article + "  [" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].PartName + "]"
 				InfoCatalog.height = 280
 			)
 		)
