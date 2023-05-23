@@ -56,7 +56,16 @@ rollout dlg_export "Validation And Export" width:210  height:210
     on btn_export pressed do
     (
         -- Экспорт валидного задания
-        MD_Data.ExportTask()
         destroyDialog dlg_export
+        if MD_Data.InWorkTask.Group == undefined then MD_Data.ExportTask()
+        else(
+            for t in MD_Data.Tasks where t.group == MD_Data.InWorkTask.Group do
+            (
+                MD_Data.ActiveTask = t
+                MD_Data.ExportTask()
+            )
+        )
+        
+        
     )
 )

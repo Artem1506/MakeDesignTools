@@ -68,7 +68,7 @@ rollout rlt_tools_catalog "Tools"
 
     on btn_add_mesh pressed do
     (
-        if selection[1] != undefined then 
+        if MD_Data.InWorkTask != undefined and selection[1] != undefined then 
         (
             if MD_Data.InWorkTask.AddMesh == undefined and MD_Data.InWorkTask.Mesh == selection[1] then
             (
@@ -88,27 +88,30 @@ rollout rlt_tools_catalog "Tools"
     on btn_mesh_switch pressed do
     (
         clearSelection()
-        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
-
-        case MD_Data.ActiveTask.ActiveMesh of
+        if MD_Data.InWorkTask != undefined then
         (
-            1:(
-                MD_Data.ActiveTask.ActiveMesh = 2
-                try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
-                try MD_Data.ActiveTask.AddMesh.IsHidden = false catch()
-                try select MD_Data.ActiveTask.AddMesh catch()
-            )
-            2:(
-                MD_Data.ActiveTask.ActiveMesh = 1
-                try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
-                try MD_Data.ActiveTask.AddMesh.IsHidden = true catch()
-                try select MD_Data.ActiveTask.Mesh catch()
-            )
-        )
+            MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
-        MD_UI.UpdateCatalogToolsRlt()
-        MD_BBox.Update()
-        MD_UI.UpdateCatalogInfoRlt()
+            case MD_Data.InWorkTask.ActiveMesh of
+            (
+                1:(
+                    MD_Data.InWorkTask.ActiveMesh = 2
+                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
+                    try MD_Data.InWorkTask.AddMesh.IsHidden = false catch()
+                    try select MD_Data.InWorkTask.AddMesh catch()
+                )
+                2:(
+                    MD_Data.InWorkTask.ActiveMesh = 1
+                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
+                    try MD_Data.InWorkTask.AddMesh.IsHidden = true catch()
+                    try select MD_Data.InWorkTask.Mesh catch()
+                )
+            )
+
+            MD_UI.UpdateCatalogToolsRlt()
+            MD_BBox.Update()
+            MD_UI.UpdateCatalogInfoRlt()
+        )
     )
 
     on btn_set_pivot pressed do
@@ -135,7 +138,6 @@ rollout rlt_tools_catalog "Tools"
         if MD_Data.ActiveTask.Group == undefined then
         (
             MD_Data.CreateWorkLayer()
-        
         )
 
         MD_Data.InWorkTask.LoadWork \

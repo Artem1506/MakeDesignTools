@@ -10,12 +10,13 @@ global data_file = ""
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
 MD_LIB_TRASH_DIR = ""
 ICONS_DIR = pathConfig.appendPath MAIN_DIR "icons"
-HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "http_client"
+HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "md_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
 
 -- HTTP - клиент
-HTTP_CLIENT = pathConfig.appendPath HTTP_CLIENT_DIR "md_requests.exe"
-HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath HTTP_CLIENT_DIR "md_requests.config"
+HTTP_CLIENT_NAME = "md_client"
+HTTP_CLIENT = pathConfig.appendPath HTTP_CLIENT_DIR (HTTP_CLIENT_NAME + ".exe")
+HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath HTTP_CLIENT_DIR (HTTP_CLIENT_NAME + ".config")
 
 -- Файл конфигурации MDT
 MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
@@ -48,12 +49,25 @@ ADD_LIST_COLUMNS_1 = #("Parts", "Material", "Textures")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
 SAVED_WORKS_LIST_COLUMNS = #("File Name", "Save Date")
-TASK_PARAMS_LIST = #("New Valid Only", "New Invalid Only", "Completed", "Deleted")
+TASK_PARAMS_LIST = #("New", "Incorrect", "Completed", "Deleted")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
 TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga")
-
+CLR_PALETTE_1 = #(
+    color 87 53 255,
+    color 255 53 53,
+    color 150 255 53,
+    color 52 200 255,
+    color 255 25 171,
+    color 255 170 53,
+    color 78 255 53,
+    color 172 53 255,
+    color 53 114 255,
+    color 255 170 53,
+    color 255 114 53,
+    color 53 255 194)
+    
 -- Интерфейс
 global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
 MAIN_RLT_WIDTH = 240
@@ -70,13 +84,14 @@ V_MARGIN = -2
 EMPTY_TEXT = "-----"
 DN_CLR_DEFAULT = DN_Lib.dnColor 0 0 0 255
 DN_CLR_DONE = DN_Lib.dnColor 0 128 0 255
-DN_CLR_INWORK = DN_Lib.dnColor 0 0 255 255
+DN_CLR_INWORK = DN_Lib.dnColor 10 50 150 255
 DN_CLR_BAD = DN_Lib.dnColor 205 92 92 255
 DN_CLR_TEMP = DN_Lib.dnColor 119 136 153 255
 DN_CLR_X = DN_Lib.dnColor 200 50 50 255
 DN_CLR_OK = DN_Lib.dnColor 10 130 10 255
 DN_CLR_TRANSP = DN_Lib.dnColor 0 0 0 255
 DN_CLR_BG = DN_Lib.dnColor  30 30 30 255
+DN_FNT_GRP = DN_Lib.Font 3 8.6 3
 CLR_LINK = color 100 190 255
 CLR_BBOX_MAIN = color 60 150 255
 CLR_BBOX_ADD = color 255 100 50
@@ -89,7 +104,7 @@ TRANS_POSTFIX = "trans"
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018
 
--- Разделители для задания параметров запуска утилиты "md_requests.exe"
+-- Разделители для задания параметров запуска утилиты "md_client.exe"
 SEPAR_1 = "%"
 SEPAR_2 = "$"
 

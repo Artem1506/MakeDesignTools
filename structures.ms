@@ -135,13 +135,12 @@ struct Task
 	MatLibFile = undefined,
 	Valid = False,
 	InWorkDir = undefined,
+	GroupDir = undefined,
 
 	fn CreateMaterial =
 	(
         local mat = Multimaterial name:Article
         local MatLib = materialLibrary()
-		local clr_vals = #(45, 115, 185, 255)
-		local exist_colors = #()
 		local m_name = ""
 
 		mat.materialList.count = Materials.count
@@ -150,29 +149,14 @@ struct Task
 		(
 			local val = true
 
-			while val do
-			(
-				local rnd_clr = color \
-				(random clr_vals[1] clr_vals[clr_vals.count]) \
-				(random clr_vals[1] clr_vals[clr_vals.count]) \
-				(random clr_vals[1] clr_vals[clr_vals.count])
+			m_name = TASK_MAT_NAME + "_" + (formattedPrint i format:#02d)
 
-				local f = findItem exist_colors rnd_clr
-
-				if f == 0 then 
-				(
-					m_name = TASK_MAT_NAME + "_" + (formattedPrint i format:#02d)
-
-					mat.materialList[i] = Standardmaterial()
-					mat.materialList[i].Diffuse = rnd_clr
-					mat.materialList[i].Name = m_name
-					mat.names[i] = Materials[i].PartName
-
-					append exist_colors rnd_clr
-					val = false
-				)
-			)
+			mat.materialList[i] = Standardmaterial()
+			mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
+			mat.materialList[i].Name = m_name
+			mat.names[i] = Materials[i].PartName
 		)
+
 		Material = mat
         append MatLib mat
 		if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
@@ -223,18 +207,35 @@ struct Task
 		(
 			for obj in merged_objs do
 			(
-				if obj.name == MD_Data.InWorkTask.Article then
+				if MD_Data.InWorkTask != undefined then
 				(
-					MD_Data.InWorkTask.Mesh = obj
-					MD_Data.AssignMaterial obj
-				)
-				if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
-				(
-					MD_Data.InWorkTask.AddMesh = obj
-					MD_Data.AssignMaterial obj
+					if MD_Data.InWorkTask.Group == undefined then 
+					(
+						if obj.name == MD_Data.InWorkTask.Article then
+						(
+							MD_Data.InWorkTask.Mesh = obj
+							MD_Data.AssignMaterial obj
+						)
+						if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
+						(
+							MD_Data.InWorkTask.AddMesh = obj
+							MD_Data.AssignMaterial obj
+						)						
+					)else(
+						if obj.name == MD_Data.InWorkTask.Group then
+						(
+							MD_Data.InWorkTask.Mesh = obj
+							MD_Data.AssignMaterial obj
+						)
+						if obj.name == (MD_Data.InWorkTask.Group + "_" + TRANS_POSTFIX) then
+						(
+							MD_Data.InWorkTask.AddMesh = obj
+							MD_Data.AssignMaterial obj
+						)	
+					)
 				)
 			)
-			try (select MD_Data.InWorkTask.Mesh) catch()
+			-- try (select MD_Data.InWorkTask.Mesh) catch()
 			load_result = true		
 		)
 		else try (select cur_sel_objs) catch()
@@ -248,11 +249,13 @@ struct Task
 
 	fn SaveWork =
 	(
-		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
+		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+
 		local save = true
 		local file_path
 		local prev_file
-
+		local save_dir
+		
 		if MD_Data.WorkLayerNodes.count != 0 then
 		(
 			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
@@ -264,16 +267,16 @@ struct Task
 			-- (
 				local index
 		
-				if MD_Data.ActiveTask.SavedWorks.count == 0 then
+				if MD_Data.InWorkTask.SavedWorks.count == 0 then
 					index = formattedPrint 1 format:#02d
 				else
 				(
-					if MD_Data.ActiveTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
+					if MD_Data.InWorkTask.SavedWorks.count >= MD_UI.Settings.spn_save_count.value then
 					(
-						local last_file = MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count]
+						local last_file = MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count]
 						local last_file_index = (filterString (getFilenameFile last_file) "_")[2] as integer
-						local first_max_file = MD_Data.ActiveTask.SavedWorks[1]
-						local first_prev_file = (trimRight MD_Data.ActiveTask.SavedWorks[1] ".max") + ".jpg"
+						local first_max_file = MD_Data.InWorkTask.SavedWorks[1]
+						local first_prev_file = (trimRight MD_Data.InWorkTask.SavedWorks[1] ".max") + ".jpg"
 		
 						index = formattedPrint (last_file_index + 1) format:#02d
 		
@@ -284,7 +287,7 @@ struct Task
 					(
 						local max_index = 0
 		
-						for f in MD_Data.ActiveTask.SavedWorks do
+						for f in MD_Data.InWorkTask.SavedWorks do
 						(
 							local f_index = (filterString (getFilenameFile f) "_")[2] as integer
 							if f_index > max_index then max_index = f_index
@@ -297,17 +300,22 @@ struct Task
 
 				local file_name = (SAVED_FILE_NAME + "_" + index)
 
+				if Group == undefined then save_dir = MD_Data.InWorkTask.InWorkDir
+				else save_dir = MD_Data.InWorkTask.GroupDir
+
+				if not doesDirectoryExist save_dir then MakeDir save_dir
+
 				-- Сохранить рабочий файл .max
-				file_path = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".max"))
+				file_path = (pathconfig.appendpath save_dir (file_name + ".max"))
 				save_nodes MD_Data.WorkLayerNodes file_path
 
 				-- Сохранить скриншот сцены .jpg
-				prev_file = (pathconfig.appendpath MD_Data.ActiveTask.InWorkDir (file_name + ".jpg"))
+				prev_file = (pathconfig.appendpath save_dir (file_name + ".jpg"))
 
 				ViewportSnapshot prev_file SAVED_PREVIEW_SIZE auto_frame:MD_UI.Settings.ckbx_auto_prev.checked
 
-				MD_Data.ActiveTask.SavedWorks = GetFiles (MD_Data.ActiveTask.InWorkDir + "/*.max")
-				sort MD_Data.ActiveTask.SavedWorks
+				MD_Data.InWorkTask.SavedWorks = GetFiles (save_dir + "/*.max")
+				sort MD_Data.InWorkTask.SavedWorks
 
 				DisplayTempPrompt "Работа была сохранена." 5000
 				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
@@ -356,6 +364,13 @@ struct Task
 				local task_file_dir = getFilenamePath File
 				TaskDir = pathConfig.removePathLeaf task_file_dir
 				InWorkDir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) "InWork"
+				try Group = data["tags"][1] catch()
+				if Group != undefined then 
+				(
+					GroupDir = pathConfig.removePathLeaf task_file_dir
+					GroupDir = pathConfig.removePathLeaf GroupDir
+					GroupDir = pathConfig.appendPath GroupDir Group
+				)
 				MatLibFile = (pathConfig.appendPath InWorkDir (TASK_MAT_NAME + ".mat"))
 				local ref_file_name = data["ref_photo_name"]
 				local ref_file_type = getFilenameType ref_file_name
@@ -401,7 +416,7 @@ struct Task
 
 				State = data["state"]
 				Pivot = data["pivot"]
-				try Group = data["tags"][1] catch()
+				
 				UserId = data["userId"]
                 UserName = data["userName"]
                 Size = #(
@@ -416,10 +431,21 @@ struct Task
 				) 
 				catch()
 				
-				if pathConfig.doesFileExist InWorkDir then
+				if Group == undefined then
 				(
-					SavedWorks = GetFiles (InWorkDir + "/*.max")
-					sort SavedWorks
+					if pathConfig.doesFileExist InWorkDir then
+					(
+						SavedWorks = GetFiles (InWorkDir + "/*.max")
+						sort SavedWorks
+					)					
+				) 
+				else
+				(
+					if pathConfig.doesFileExist GroupDir then
+					(
+						SavedWorks = GetFiles (GroupDir + "/*.max")
+						sort SavedWorks
+					)	
 				)
 				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
 
@@ -488,7 +514,7 @@ struct GlobalData
 	(
 		try(
 			subobjectLevel = 0
-			obj.Material = MD_Data.InWorkTask.Material
+			obj.Material = MD_Data.ActiveTask.Material
 			CompleteRedraw()
 		)catch()
 	),
@@ -504,20 +530,20 @@ struct GlobalData
 		local val = true
 		local msg = ""
 		local valids = #("X", "X", "X", "X", "X", "X")
-		local objs = #(ActiveTask.Mesh, ActiveTask.AddMesh)
+		local objs = #(InWorkTask.Mesh, InWorkTask.AddMesh)
 
 		-- Check count
-		if ActiveTask.SizeTrans == undefined then
+		if InWorkTask.SizeTrans == undefined then
 		(
-			if WorkLayerNodes.count == 1 and ActiveTask.Mesh != undefined and ActiveTask.AddMesh == undefined then
+			if WorkLayerNodes.count == 1 and InWorkTask.Mesh != undefined and InWorkTask.AddMesh == undefined then
 			(
 				valids[1] = "OK"
 				obj = WorkLayerNodes[1]
 			)
-		)else if WorkLayerNodes.count == 2 and ActiveTask.Mesh != undefined and ActiveTask.AddMesh != undefined then
+		)else if WorkLayerNodes.count == 2 and InWorkTask.Mesh != undefined and InWorkTask.AddMesh != undefined then
 		(
 			valids[1] = "OK"
-			obj = objs[MD_Data.ActiveTask.ActiveMesh]
+			obj = objs[MD_Data.InWorkTask.ActiveMesh]
 		)
 		else (msg = "The task layer contains more than one object.")
 		
@@ -542,7 +568,8 @@ struct GlobalData
 					-- Check submaterials count
 					sub_mats_count = 0
 					try(sub_mats_count = obj.material.count)catch()
-					if obj.material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count then
+					if (InWorkTask.Group == undefined and obj.material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count) or \
+					(InWorkTask.Group == ActiveTask.Group and ActiveTask.Material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count) then
 					(
 						valids[4] = "OK"
 	
@@ -678,8 +705,15 @@ struct GlobalData
 	fn CreateWorkLayer =
 	(
 		try (
-			LayerManager.newLayerFromName InWorkTask.Article
-			WorkLayer = LayerManager.getLayerFromName InWorkTask.Article
+			if InWorkTask.Group == undefined then
+			(
+				LayerManager.newLayerFromName InWorkTask.Article
+				WorkLayer = LayerManager.getLayerFromName InWorkTask.Article
+			)
+			else(
+				LayerManager.newLayerFromName InWorkTask.Group
+				WorkLayer = LayerManager.getLayerFromName InWorkTask.Group
+			)
 			WorkLayer.on
 			WorkLayer.current = true
 		)catch()
@@ -692,7 +726,7 @@ struct GlobalData
 			WorkLayer.on
 			WorkLayer.current = true
 
-			WorkLayerNodes = GetAllLayerNodes ActiveTask.Article
+			this.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 			select cur_selection
 		)catch()
 	),
@@ -700,19 +734,19 @@ struct GlobalData
 	fn DeleteWorkLayer =
 	(
 		try (
-			local nodes = GetAllLayerNodes InWorkTask.Article
+			local nodes
+			local name_case = InWorkTask.Article
 
-			-- for n in nodes do 
-			-- (
-			-- 	DEFAULT_LAYER.addNode n
-			-- 	n.IsHidden = False
-			-- )
+			if InWorkTask.Group != undefined then name_case = InWorkTask.Group
+
+			nodes = GetAllLayerNodes name_case
 			Delete nodes
-			gc()
-			DeleteAllSubLayers InWorkTask.Article
-			LayerManager.deleteLayerByName InWorkTask.Article
+			DeleteAllSubLayers name_case
+			LayerManager.deleteLayerByName name_case
 			InWorkTask = undefined
 			WorkLayer = undefined
+
+			gc()
 			CompleteRedraw()
 		)
 		catch()
@@ -720,8 +754,13 @@ struct GlobalData
 
 	fn ExitWorkState =
 	(
-        InWorkTask.State = STATES[1]
-        InWorkTask.ActiveMesh = 1
+		try MD_Callbacks.Destruct() catch()
+
+		for t in MD_Data.Tasks do
+		(
+			t.State = STATES[1]
+			t.ActiveMesh = 1
+		)
         DeleteWorkLayer()
         InWorkTask = undefined
 
@@ -731,16 +770,6 @@ struct GlobalData
 			WriteDataFile MD_LIB_COMMON_DATA_FILE
 		)
 		catch (MD_Log.Error "[ExitWorkState] Не удалось сохранить данные в файл.")
-
-		-- ActiveTask.Update()
-		-- try FullUpdate() catch()
-        -- try MD_Callbacks.Destruct() catch()
-	),
-
-	fn CreateWorkState =
-	(
-		try MD_Callbacks.Destruct() catch()
-		try InWorkTask.State = STATES[1] catch()
 		try (
 			ReadDataFile InWorkTaskFile
 			data["state"] = STATES[1]
@@ -748,18 +777,17 @@ struct GlobalData
 		)
 		catch ()
 		if ActiveTask != InWorkTask then DeleteWorkLayer()
-        
-		-- for task in MD_Data.Tasks do
-		-- (
-		-- 	if task.Group != undefined and task.Group == ActiveTask.Group then task.State = STATES[2]
-		-- 	else if task.Group == undefined and task == ActiveTask then STATES[2]
-		-- 	-- else task.State = STATES[1]			
-		-- ) 
+	),
+
+	fn CreateWorkState =
+	(
+		try this.ExitWorkState() catch()
 
         ActiveTask.State = STATES[2]
         ActiveTask.ActiveMesh = 1
         InWorkTask = ActiveTask
 		InWorkTaskFile = ActiveTask.File
+		try ClearTrashLayers() catch()
 		CreateWorkLayer()
 		AttachSelectedToWorkLayer()
 		try AttachObjectsToWorkState() catch()
@@ -777,15 +805,26 @@ struct GlobalData
         try FullUpdate() catch()
         try MD_Callbacks.Add() catch()
 
-		-- Создать рабочую папку
-		MakeDir MD_Data.ActiveTask.InWorkDir
+		local work_tasks = #()
 
-		-- Создать материал
-		if DoesFileExist (pathConfig.appendPath InWorkTask.InWorkDir (TASK_MAT_NAME + ".mat")) then
+		if this.ActiveTask.Group != undefined then
 		(
-			InWorkTask.LoadMaterial()
-			
-		)else InWorkTask.CreateMaterial()
+			work_tasks = for t in this.Tasks where t.Group == this.ActiveTask.Group collect t
+		)
+		else work_tasks = #(this.ActiveTask)
+
+		for t in work_tasks do
+		(
+			-- Создать рабочую папку
+			MakeDir t.InWorkDir
+
+			-- Создать материал
+			if DoesFileExist (pathConfig.appendPath t.InWorkDir (TASK_MAT_NAME + ".mat")) then
+			(
+				t.LoadMaterial()
+				
+			)else t.CreateMaterial()			
+		)
 	),
 
 	fn ClearTrashLayers =
@@ -805,24 +844,27 @@ struct GlobalData
 
 	fn UpdateWorkState =
 	(
-		MD_Callbacks.Destruct()
-        ActiveTask.State = STATES[2]
-        ActiveTask.ActiveMesh = 1
-        InWorkTask = ActiveTask
-		InWorkTaskFile = ActiveTask.File
-		CreateWorkLayer()
-		try (
-			ReadDataFile MD_LIB_COMMON_DATA_FILE
-			data["in_work_task"] = InWorkTask.File
-			WriteDataFile MD_LIB_COMMON_DATA_FILE
-		)
-		catch ()
-		SwitchWorkLayer()
-		MD_UI.UpdateCatalogToolsRlt()
-		MakeDir MD_Data.ActiveTask.InWorkDir
-		MD_Callbacks.Add()
+		try
+		(
+			MD_Callbacks.Destruct()
+			InWorkTask.State = STATES[2]
+			InWorkTask.ActiveMesh = 1
+			InWorkTask = ActiveTask
+			InWorkTaskFile = InWorkTask.File
+			CreateWorkLayer()
+			try (
+				ReadDataFile MD_LIB_COMMON_DATA_FILE
+				data["in_work_task"] = InWorkTaskFile
+				WriteDataFile MD_LIB_COMMON_DATA_FILE
+			)
+			catch ()
+			SwitchWorkLayer()
+			MakeDir MD_Data.ActiveTask.InWorkDir
+			MD_Callbacks.Add()
 
-		try ClearTrashLayers() catch()
+			try ClearTrashLayers() catch()			
+		)
+		catch()
 	),
 
 	fn GetTasksInActiveCategory =
@@ -834,16 +876,20 @@ struct GlobalData
 
 		for dir in tasks_dirs do
 		(
-			local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
-			task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
-
-			append Tasks (Task File:task_file)
+			-- Валидация имени папки. (Для исключения папок для групп)
+			local f = trimRight (filenameFromPath dir) "\\"
+			if (filterstring f "-").count >= 4 then
+			(
+				local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
+				task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+				append Tasks (Task File:task_file)
+			)
 		)
 	),
 
 	fn SetMesh obj =
 	(
-		if (SuperClassOf obj == GeometryClass) then
+		if (SuperClassOf obj == GeometryClass) and MD_Data.InWorkTask != undefined then
 		(
 			if this.InWorkTask.Mesh == obj then
 			(
@@ -854,15 +900,26 @@ struct GlobalData
 			)
 			else
 			(
-				WorkLayerNodes = GetAllLayerNodes InWorkTask.Article
-				for task_obj in WorkLayerNodes where task_obj.name == InWorkTask.Article do
+				local mesh_name = ""
+				this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name
+
+				if this.InWorkTask.Group == undefined then 
+				(
+					mesh_name = this.InWorkTask.Article
+				)
+				else 
+				(
+					mesh_name = this.InWorkTask.Group
+				)
+
+				for task_obj in this.WorkLayerNodes where task_obj.name == mesh_name do
 				(
 					task_obj.Material = undefined
 					task_obj.Name = uniqueName "Object"
 				)
 				obj.IsHidden = false
 				this.InWorkTask.Mesh = obj
-				this.InWorkTask.Mesh.Name = this.InWorkTask.Article
+				this.InWorkTask.Mesh.Name = mesh_name
 				this.ActiveTask.ActiveMesh = 1
 				this.InWorkTask.Mesh.Material = this.InWorkTask.Material
 			)	
@@ -876,7 +933,7 @@ struct GlobalData
 
 	fn SetAddMesh obj =
 	(
-		if (SuperClassOf obj == GeometryClass) then
+		if (SuperClassOf obj == GeometryClass) and MD_Data.InWorkTask != undefined then
 		(
 			if this.InWorkTask.AddMesh == obj then
 			(
@@ -889,14 +946,25 @@ struct GlobalData
 			)
 			else
 			(
-				WorkLayerNodes = GetAllLayerNodes InWorkTask.Article
-				for task_obj in WorkLayerNodes where task_obj.name == (InWorkTask.Article + "_" + TRANS_POSTFIX) do
+				local mesh_name = ""
+				this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name
+
+				if this.InWorkTask.Group == undefined then 
+				(
+					mesh_name = this.InWorkTask.Article
+				)
+				else 
+				(
+					mesh_name = this.InWorkTask.Group
+				)
+
+				for task_obj in this.WorkLayerNodes where task_obj.name == (mesh_name + "_" + TRANS_POSTFIX) do
 				(
 					task_obj.Material = undefined
 					task_obj.Name = uniqueName "Object"
 				)
 				this.InWorkTask.AddMesh = obj
-				this.InWorkTask.AddMesh.Name = this.InWorkTask.Article + "_" + TRANS_POSTFIX
+				this.InWorkTask.AddMesh.Name = mesh_name + "_" + TRANS_POSTFIX
 				obj.IsHidden = True
 				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material
 				this.ActiveTask.ActiveMesh = 2
@@ -914,13 +982,14 @@ struct GlobalData
 	(
 		local valid_result = validation()
 		local objs = #()
+		local cur_obj_names = #()
 
 		if valid_result[1] then
 		(
 			MD_Callbacks.Destruct()
 
-			if ActiveTask.SizeTrans == undefined then objs = #(ActiveTask.Mesh)
-			else objs = #(ActiveTask.Mesh, ActiveTask.AddMesh)
+			if InWorkTask.SizeTrans == undefined then (objs = #(InWorkTask.Mesh); cur_obj_names = #(InWorkTask.Mesh.Name))
+			else (objs = #(InWorkTask.Mesh, InWorkTask.AddMesh); cur_obj_names = #(InWorkTask.Mesh.Name, InWorkTask.AddMesh.Name))
 
 			local main_dir = pathConfig.removePathLeaf (getFilenamePath ActiveTask.File)
 			local save_fbx_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".fbx")
@@ -938,6 +1007,12 @@ struct GlobalData
 
 			with redraw off 
 			(
+				if InWorkTask.Group != undefined then
+				(
+					objs[1].name = ActiveTask.Article
+					try objs[2].name = (ActiveTask.Article + "_" + TRANS_POSTFIX) catch()
+				)
+
 				try(
 					SaveSelectedObjects objs save_max_path
 				)catch(MD_Log.Error "Не удалось сохранить текущее состояние сцены!")
@@ -945,6 +1020,12 @@ struct GlobalData
 				try(
 					ExportToFBX objs save_fbx_path
 				)catch(MD_Log.Error "Не удалось экспортировать задание!")
+
+				if InWorkTask.Group != undefined then
+				(
+					objs[1].name = cur_obj_names[1]
+					try objs[2].name = cur_obj_names[2] catch()
+				)
 			)
 
 			for obj in objs do 
@@ -959,16 +1040,18 @@ struct GlobalData
 
 	fn ClearWorkLayer =
 	(
-		WorkLayerNodes = GetAllLayerNodes WorkLayer.Name
+		try (
+			this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name
 
-		if WorkLayerNodes.count != 0 then
-		(
-			if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nСохранить работу перед удалением?" title:"Внимание!" icon:#question) then
-			InWorkTask.SaveWork()
-		)
+			if MD_Data.InWorkTask != undefined and WorkLayerNodes.count != 0 then
+			(
+				if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nСохранить работу перед удалением?" title:"Внимание!" icon:#question) then
+				InWorkTask.SaveWork()
+			)
 
-		delete WorkLayerNodes
-		gc()
+			delete WorkLayerNodes
+			gc()
+		) catch()
 	),
 
 	fn Update =
@@ -1099,7 +1182,7 @@ struct GlobalData
 		(
 			ReadDataFile MD_LIB_COMMON_DATA_FILE
 			InWorkTaskFile = data["in_work_task"]
-			InWorkTask = Task file:InWorkTaskFile
+			if InWorkTaskFile != undefined then InWorkTask = Task file:InWorkTaskFile
 		)
 		else 
 		(
@@ -1491,8 +1574,7 @@ struct UI
 			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
 				ToolsCatalog.btn_vis_switch.enabled = true
-				
-				try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
+				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
 				objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
 
@@ -1500,11 +1582,11 @@ struct UI
 				ToolsCatalog.btn_set_pivot.enabled = true
 
 				-- Основной меш
-				if MD_Data.ActiveTask.Mesh != undefined and not MD_Data.ActiveTask.Mesh.IsDeleted then
+				if MD_Data.InWorkTask.Mesh != undefined and not MD_Data.InWorkTask.Mesh.IsDeleted then
 				(
 					ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-					if MD_Data.ActiveTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
-					try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.Mesh.Name) catch()
+					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+					try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name) catch()
 				)
 				else
 				(
@@ -1513,12 +1595,12 @@ struct UI
 				)
 
 				-- Если задание имеет поле трансформации
-				if MD_Data.ActiveTask.SizeTrans != undefined then 
+				if MD_Data.InWorkTask.SizeTrans != undefined then 
 				(
 
 					ToolsCatalog.btn_mesh_switch.enabled = true
 
-					if MD_Data.ActiveTask.ActiveMesh == 2 then
+					if MD_Data.InWorkTask.ActiveMesh == 2 then
 					ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"	
 					else ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
@@ -1526,7 +1608,7 @@ struct UI
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						if MD_Data.ActiveTask.ActiveMesh == 2 then
+						if MD_Data.InWorkTask.ActiveMesh == 2 then
 						(
 							ToolsCatalog.btn_mesh_switch.text = "<< Switch To Main Mesh"
 							ToolsCatalog.btn_add_mesh.enabled = true		
@@ -1535,17 +1617,17 @@ struct UI
 						(
 							ToolsCatalog.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 							ToolsCatalog.btn_main_mesh.enabled = true
-							if MD_Data.ActiveTask.AddMesh == undefined or MD_Data.ActiveTask.AddMesh.IsDeleted then
+							if MD_Data.InWorkTask.AddMesh == undefined or MD_Data.InWorkTask.AddMesh.IsDeleted then
 							ToolsCatalog.btn_add_mesh.enabled = true
 						)
 					)
 
 					-- Доп. меш
-					if MD_Data.ActiveTask.AddMesh != undefined and not MD_Data.ActiveTask.AddMesh.IsDeleted then
+					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
 						ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-						if MD_Data.ActiveTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then ToolsCatalog.btn_assign_mat_id.enabled = true
-						try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.ActiveTask.AddMesh.Name) catch()
+						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+						try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name) catch()
 					)
 					else(
 						ToolsCatalog.btn_add_mesh.text = "Additional Mesh"
@@ -1555,14 +1637,14 @@ struct UI
 				-- Если задание НЕ имеет поле трансформации
 				else
 				(
-					MD_Data.ActiveTask.ActiveMesh = 1
+					MD_Data.InWorkTask.ActiveMesh = 1
 
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						ToolsCatalog.btn_main_mesh.enabled = true
-						if MD_Data.ActiveTask.Mesh == 1 and selection[1] == MD_Data.ActiveTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
 					)
 				)
 				
@@ -1588,7 +1670,7 @@ struct UI
 				)
 
 				-- Загрузить работу
-				if MD_Data.ActiveTask.SavedWorks.count != 0 then
+				if MD_Data.InWorkTask.SavedWorks.count != 0 then
 				(
 					ToolsCatalog.btn_load_work.enabled = true
 					ToolsCatalog.btn_work_list.enabled = true
@@ -1768,18 +1850,16 @@ struct UI
 		else
 		(
 			Tasks.btn_work_state.enabled = true
-			if (MD_Data.ActiveTask.State == STATES[1] and (MD_Data.InWorkTask == undefined or MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group == undefined)) then
+			if (MD_Data.ActiveTask != MD_Data.InWorkTask and MD_Data.ActiveTask.Group == undefined) or \
+			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != MD_Data.InWorkTask and MD_Data.ActiveTask.Group != MD_Data.InWorkTask.Group) then
 			(
 				Tasks.btn_work_state.text = "Set Work State"
 				Tasks.btn_exit_work_state.enabled = false
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 			)
-			else if (MD_Data.ActiveTask.State == STATES[2]) or \ 
-			(MD_Data.InWorkTask != undefined and \
-			MD_Data.InWorkTask.Article != undefined and \
-			MD_Data.ActiveTask.Group != undefined and \
-			MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file and MD_Data.ActiveTask.Group == undefined) or \
+			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			(
 				Tasks.btn_work_state.text = "Update Work State"
 				Tasks.btn_exit_work_state.enabled = true
@@ -1793,6 +1873,12 @@ struct UI
 				-- if MD_Data.ActiveTask == MD_Data.InWorkTask then
 				-- Tasks.btn_exit_work_state.enabled = true
 				-- else Tasks.btn_exit_work_state.enabled = false
+			)
+			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file != MD_Data.InWorkTask.file and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			(
+				Tasks.btn_work_state.text = "Set Work State"
+				Tasks.btn_work_state.enabled = true
+				Tasks.btn_exit_work_state.enabled = true
 			)
 			for ctrl in InfoCatalog.Controls do ctrl.enabled = true
 			
@@ -2036,46 +2122,46 @@ struct BoundingBox
 	fn CreateBBox =
 	(
 		-- Bounding box
-		bb = Box name:(uniqueName "bbox_") length:0.0 width:0.0 height:0.0 isSelected:off
-		arrow = Ngon name:(uniqueName "barrow_") radius:0.0 cornerRadius:0 nsides:3 circular:off scribe:1 pos:[0, 0, 0] isSelected:off
-		pp = Point name:(uniqueName "ppoint_") isSelected:off
+		this.bb = Box name:(uniqueName "bbox_") length:0.0 width:0.0 height:0.0 isSelected:off
+		this.arrow = Ngon name:(uniqueName "barrow_") radius:0.0 cornerRadius:0 nsides:3 circular:off scribe:1 pos:[0, 0, 0] isSelected:off
+		this.pp = Point name:(uniqueName "ppoint_") isSelected:off
 		cur_sel = selection
 
-		bb.boxmode = on
-		bb.showFrozenInGray = arrow.showFrozenInGray = off
-		bb.isFrozen = arrow.isFrozen = on
-		bb.isSelected = arrow.isSelected = off
-		bb.renderable = arrow.renderable = off
-		bb.wireColor = arrow.wireColor = clr_main
-		arrow.render_renderable = false
-		arrow.render_useViewportSettings = false
-		arrow.render_displayRenderMesh = false
+		this.bb.boxmode = on
+		this.bb.showFrozenInGray = this.arrow.showFrozenInGray = off
+		this.bb.isFrozen = this.arrow.isFrozen = on
+		this.bb.isSelected = this.arrow.isSelected = off
+		this.bb.renderable = this.arrow.renderable = off
+		this.bb.wireColor = this.arrow.wireColor = clr_main
+		this.arrow.render_renderable = false
+		this.arrow.render_useViewportSettings = false
+		this.arrow.render_displayRenderMesh = false
 
-		pp.centermarker = on
-		pp.Box = off
-		pp.cross = off
-		pp.axistripod = off
-		pp.drawontop = on
-		pp.showFrozenInGray = off
-		pp.isFrozen = on
-		pp.wireColor = CLR_BBOX_PIVOT
-		pp.ishidden = on
+		this.pp.centermarker = on
+		this.pp.Box = off
+		this.pp.cross = off
+		this.pp.axistripod = off
+		this.pp.drawontop = on
+		this.pp.showFrozenInGray = off
+		this.pp.isFrozen = on
+		this.pp.wireColor = CLR_BBOX_PIVOT
+		this.pp.ishidden = on
 
-		Layer.addnode bb
-		Layer.addnode arrow
-		Layer.addnode pp
+		this.Layer.addnode bb
+		this.Layer.addnode arrow
+		this.Layer.addnode pp
 
 		select cur_sel
 		snapMode.toFrozen = true
 		completeRedraw()
 
-		MD_Data.TempLayerNodes = GetAllLayerNodes Layer.Name
+		MD_Data.TempLayerNodes = GetAllLayerNodes this.Layer.Name
 	),
 
 	fn CreateLayer =
 	(
 		LayerManager.newLayerFromName mdt_temp_layer
-		Layer = LayerManager.getLayerFromName mdt_temp_layer
+		this.Layer = LayerManager.getLayerFromName mdt_temp_layer
 		Layer.on = false
 		Layer.lock = on
 		Layer.ishidden = MD_UI.Settings.ckbx_show_bb.checked
@@ -2111,7 +2197,7 @@ struct BoundingBox
 			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
 			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
 			
-			pp.pos = pivot_pos
+			this.pp.pos = pivot_pos
 
 			completeRedraw()
 		)catch()
@@ -2121,7 +2207,7 @@ struct BoundingBox
 	(
 		try(
 			pivot_pos = [0.0, 0.0, 0.0]
-			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
 			write_pivot_data()
 		)catch()
 	),
@@ -2130,7 +2216,7 @@ struct BoundingBox
 	(
 		try(
 			pivot_pos = [0.0, 0.0, 0.0]
-			pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
+			this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
 			write_pivot_data()
 		)catch()
 	),
@@ -2143,7 +2229,7 @@ struct BoundingBox
 				local arrow_offset = ConvertValueToSystemUnits #cm 10.0
 				
 				try read_pivot_data() catch()
-				try pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] catch(
+				try this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] catch(
 					Remove()
 					CreateLayer()
 					CreateBBox()
@@ -2151,60 +2237,60 @@ struct BoundingBox
 				this.Layer.on = false
 				arrow_rad = 0.0
 				bbox_size = [0, 0, 0]
-				bb.isHidden = false
-				arrow.isHidden = false
-				pp.isHidden = true
-				bb.wireColor = clr_main
-				arrow.wireColor = clr_main
+				this.bb.isHidden = false
+				this.arrow.isHidden = false
+				this.pp.isHidden = true
+				this.bb.wireColor = clr_main
+				this.arrow.wireColor = clr_main
 
-				if MD_Data.ActiveTask != undefined then
+				if MD_Data.InWorkTask != undefined then
 				(
-					case MD_Data.ActiveTask.ActiveMesh of
+					case MD_Data.InWorkTask.ActiveMesh of
 					(
 						1:(
-							bb_w = MD_Data.ActiveTask.Size[1]
-							bb_d = MD_Data.ActiveTask.Size[2]
-							bb_h = MD_Data.ActiveTask.Size[3]
+							bb_w = MD_Data.InWorkTask.Size[1]
+							bb_d = MD_Data.InWorkTask.Size[2]
+							bb_h = MD_Data.InWorkTask.Size[3]
 
 							bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
 							ConvertValueToSystemUnits #cm bb_d,\
 							ConvertValueToSystemUnits #cm bb_h]
 
-							bb.wireColor = clr_main
-							arrow.wireColor = clr_main
+							this.bb.wireColor = clr_main
+							this.arrow.wireColor = clr_main
 						)
 						2:(
-							bt_w = MD_Data.ActiveTask.SizeTrans[1]
-							bt_d = MD_Data.ActiveTask.SizeTrans[2]
-							bt_h = MD_Data.ActiveTask.SizeTrans[3]
+							bt_w = MD_Data.InWorkTask.SizeTrans[1]
+							bt_d = MD_Data.InWorkTask.SizeTrans[2]
+							bt_h = MD_Data.InWorkTask.SizeTrans[3]
 
 							bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
 							ConvertValueToSystemUnits #cm bt_d,\
 							ConvertValueToSystemUnits #cm bt_h]
 
-							bb.wireColor = clr_add
-							arrow.wireColor = clr_add
+							this.bb.wireColor = clr_add
+							this.arrow.wireColor = clr_add
 						)
 					)
 
-					if MD_UI.Settings.ckbx_auto_pivot.checked == true then pp.isHidden = false
-					else pp.isHidden = true
+					if MD_UI.Settings.ckbx_auto_pivot.checked == true then this.pp.isHidden = false
+					else this.pp.isHidden = true
 					
 					arrow_rad = ConvertValueToSystemUnits #cm 20.0
 				)
 				this.Layer.on = MD_UI.Settings.ckbx_show_bb.checked
 
-				bb.length = bbox_size[1]
-				bb.width = bbox_size[2]
-				bb.height = bbox_size[3]
-				arrow.radius = arrow_rad
-				arrow.pos.x = (bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+				this.bb.length = bbox_size[1]
+				this.bb.width = bbox_size[2]
+				this.bb.height = bbox_size[3]
+				this.arrow.radius = arrow_rad
+				this.arrow.pos.x = (this.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
 
 			)
 			2:(
-				bb.isHidden = true
-				arrow.isHidden = true
-				pp.isHidden = true
+				this.bb.isHidden = true
+				this.arrow.isHidden = true
+				this.pp.isHidden = true
 			)
 		)
 	),
@@ -2217,12 +2303,12 @@ struct BoundingBox
 		case MD_Data.ActiveTask.ActiveMesh of
 		(
 			1:(
-				bb.wireColor = clr_main
-				arrow.wireColor = clr_main
+				this.bb.wireColor = clr_main
+				this.arrow.wireColor = clr_main
 			)
 			2:(
-				bb.wireColor = clr_add
-				arrow.wireColor = clr_add
+				this.bb.wireColor = clr_add
+				this.arrow.wireColor = clr_add
 			)
 		)
 		completeRedraw()
@@ -2230,9 +2316,9 @@ struct BoundingBox
 
 	fn Init =
 	(
-		Remove()
-		CreateLayer()
-		CreateBBox()
+		this.Remove()
+		this.CreateLayer()
+		this.CreateBBox()
 	),
 	on create do Init()
 )

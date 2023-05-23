@@ -117,7 +117,7 @@ rollout dlg_configure "Configure" width:400 height:164
                             if MD_Data.WorkLayerNodes.count == 0 then
                             (
                                 MD_Data.InWorkTask.LoadWork \
-                                MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                                MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                                 MD_Data.ShowLayers()
                             )
                         ) catch()            

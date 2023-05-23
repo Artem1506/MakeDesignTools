@@ -35,7 +35,7 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 
     on clock tick do
     (
-		proc = process.GetProcessesByName("md_requests")
+		proc = process.GetProcessesByName(HTTP_CLIENT_NAME)
 
         if proc.count == 0 then 
         (

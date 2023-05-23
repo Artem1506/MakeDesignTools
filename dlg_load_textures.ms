@@ -34,55 +34,56 @@ rollout dlg_load_textures "" width:320 height:212
         if textures[1] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[1]
-            MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = bm
             bm.reload()
         )
-        else MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = undefined
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = undefined
 
         if textures[2] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[2]
-            MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = bm
             bm.reload()
         )
-        else MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = undefined
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = undefined
 
         if textures[3] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[3]
-            MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = bm
             bm.reload()
         )
-        else MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = undefined
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = undefined
 
         if textures[4] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[4]
-            MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = bm
             bm.reload()
         )
-        else MD_Data.InWorkTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = undefined
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = undefined
 
         -- append MatLib MD_Data.InWorkTask.Material
-        MD_Data.InWorkTask.MatLib[1] = MD_Data.InWorkTask.Material
-        saveTempMaterialLibrary MD_Data.InWorkTask.MatLib MD_Data.InWorkTask.MatLibFile
-        MD_Data.InWorkTask.MatLib = loadTempMaterialLibrary MD_Data.InWorkTask.MatLibFile
-        MD_Data.InWorkTask.Material = MD_Data.InWorkTask.MatLib[1]
+        MD_Data.ActiveTask.MatLib[1] = MD_Data.ActiveTask.Material
+        saveTempMaterialLibrary MD_Data.ActiveTask.MatLib MD_Data.ActiveTask.MatLibFile
+        MD_Data.ActiveTask.MatLib = loadTempMaterialLibrary MD_Data.ActiveTask.MatLibFile
+        MD_Data.ActiveTask.Material = MD_Data.ActiveTask.MatLib[1]
         UpdateSceneMaterialLib()
         actionMan.executeAction 0 "63545"
-        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
-        for obj in MD_Data.WorkLayerNodes do
+
+        if MD_Data.InWorkTask != undefined then
         (
-            try(
-                if obj == MD_Data.InWorkTask.Mesh or obj == MD_Data.InWorkTask.AddMesh then
-                MD_Data.AssignMaterial obj
-            )catch()
+            if MD_Data.InWorkTask.Group == undefined then MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
+            else MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Group
+
+            for obj in MD_Data.WorkLayerNodes do
+            (
+                try(
+                    if obj == MD_Data.InWorkTask.Mesh or obj == MD_Data.InWorkTask.AddMesh then
+                    MD_Data.AssignMaterial obj
+                )catch()
+            )
         )
-        -- try MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh catch()
-        -- try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh catch()
-        -- try MD_Data.AssignMaterial selection[1] catch()
-        -- saveMaterialLibrary MD_Data.InWorkTask.MatLibFile
-        
     )
 
     fn GetCheckedItems =
@@ -99,15 +100,15 @@ rollout dlg_load_textures "" width:320 height:212
         if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Load Textures")
         else 
         (
-            dlg_load_textures.title = ("Load Textures " + "[" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]")
+            dlg_load_textures.title = ("Load Textures " + "[" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]")
 
             btn_delete.enabled = false
             btn_load.enabled = false
 
             for i = 1 to controls_arr.count do
             (
-                local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
-                local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
+                local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File)
+                local text_name = "T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
                 local lib_tex_file = (pathConfig.appendPath task_dir text_name)
 
                 if DoesFileExist lib_tex_file then
@@ -135,7 +136,7 @@ rollout dlg_load_textures "" width:320 height:212
     (
         -- Вызов диалогового окна для выбора директории локальной базы
         local file = getOpenFileName caption:"Set Texture File ..." types:"Targa (*.tga)|*.tga|"
-        local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
+        local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File)
         local suffix = ""
         local text_name = ""
         btn_delete.enabled = false
@@ -145,13 +146,13 @@ rollout dlg_load_textures "" width:320 height:212
         (
             case def_text of
             (
-                "Diffuse":(suffix = TEXTURES_SIFFIXES[1]; textures[1] = (pathConfig.appendPath task_dir ("T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[1] = file)
-                "Metallic":(suffix = TEXTURES_SIFFIXES[2]; textures[2] = (pathConfig.appendPath task_dir ("T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[2] = file)
-                "Normal":(suffix = TEXTURES_SIFFIXES[3]; textures[3] = (pathConfig.appendPath task_dir ("T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[3] = file)
-                "ARD":(suffix = TEXTURES_SIFFIXES[4]; textures[4] = (pathConfig.appendPath task_dir ("T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[4] = file)
+                "Diffuse":(suffix = TEXTURES_SIFFIXES[1]; textures[1] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[1] = file)
+                "Metallic":(suffix = TEXTURES_SIFFIXES[2]; textures[2] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[2] = file)
+                "Normal":(suffix = TEXTURES_SIFFIXES[3]; textures[3] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[3] = file)
+                "ARD":(suffix = TEXTURES_SIFFIXES[4]; textures[4] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[4] = file)
             )
 
-            text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix
+            text_name = "T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix
 
             btn.text = text_name
             lbl.checked = true
@@ -169,7 +170,7 @@ rollout dlg_load_textures "" width:320 height:212
 
     fn CopyTextsToLib = 
     (
-        local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
+        local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File)
 
         for i = 1 to controls_arr.count where controls_arr[i][2].checked do
         (
@@ -232,7 +233,7 @@ rollout dlg_load_textures "" width:320 height:212
     (
         CopyTextsToLib()
         ChangeMaterial()
-        MD_Data.InWorkTask.Update()
+        MD_Data.ActiveTask.Update()
         MD_UI.FillAddList()
         CompleteRedraw()
     )
@@ -250,7 +251,7 @@ rollout dlg_load_textures "" width:320 height:212
             )
             InitExistTextures()
             ChangeMaterial()
-            MD_Data.InWorkTask.Update()
+            MD_Data.ActiveTask.Update()
             MD_UI.FillAddList()
             CompleteRedraw()
         )

@@ -77,10 +77,12 @@ struct DotNetLib
 -- Font
 	fn Font family size style = 
 	(
+		-- Defeaul 0 8.25 1
 		fname
 		fstyle
 		case family of
 		(
+			0: (fname = "Microsoft Sans Serif")
 			1: (fname = "Verdana")
 			2: (fname = "Tahoma")
 			3: (fname = "Arial")

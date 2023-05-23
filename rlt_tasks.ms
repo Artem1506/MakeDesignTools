@@ -7,8 +7,8 @@ rollout rlt_tasks "Tasks"
     button 'btn_check' "Check tasks" width:(CTRL_WIDTH_1/2 - 3) height:CTRL_HEIGHT_1 align:#center offset:[11, V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tasks_01
     button 'btn_get' "Get" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[29, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_02_a
     button 'btn_clear' "Clear" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[19, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_03_a
-    dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:140 align:#center offset:[1, 0] enabled:true
-    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:92 align:#center offset:[1, V_MARGIN] enabled:true
+    dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:176 align:#center offset:[1, 0] enabled:true
+    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, V_MARGIN] enabled:true
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
     
@@ -29,6 +29,8 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSection != arg then
         (
+            MD_Data.ShowLayers mode:#scene_only
+
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSection = arg
@@ -36,10 +38,12 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
             MD_Data.Update()
-
             MD_UI.SwitchRollouts()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
+            
+            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+            else MD_Data.ShowLayers mode:#scene_only
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -48,6 +52,8 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveCategory != arg then
         (
+            MD_Data.ShowLayers mode:#scene_only
+
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveCategory = arg
@@ -56,10 +62,12 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveSubCategory = lst_sub_catalog.selection
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
-
             MD_Data.Update()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
+
+            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+            else MD_Data.ShowLayers mode:#scene_only
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -68,15 +76,19 @@ rollout rlt_tasks "Tasks"
     (
         if MD_Data.ActiveSubCategory != arg then
         (
+            MD_Data.ShowLayers mode:#scene_only
+            
             MD_Data.CheckedTasks = #()
             try MD_Callbacks.Destruct() catch()
             MD_Data.ActiveSubCategory = arg
             MD_Data.ActiveTaskIndex = undefined
             MD_Data.ActiveList = 1
             MD_Data.ActiveTaskAddIndex = undefined
-
             MD_Data.Update()
             try FullUpdate() catch()
+
+            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+            else MD_Data.ShowLayers mode:#scene_only
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -170,6 +182,8 @@ rollout rlt_tasks "Tasks"
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogToolsRlt()
         WithoutRedraw MD_BBox.Update
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
     )
     
     on btn_clear pressed do 
@@ -218,6 +232,8 @@ rollout rlt_tasks "Tasks"
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogToolsRlt()
         WithoutRedraw MD_BBox.Update
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
     )
 
     on lv_main ItemChecked self args do
@@ -290,6 +306,7 @@ rollout rlt_tasks "Tasks"
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = 0
         subobjectLevel = 0
+
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
@@ -304,72 +321,60 @@ rollout rlt_tasks "Tasks"
                 -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
                 MD_Data.ActiveTaskAddIndex = undefined
 
-                if MD_Data.ActiveTask.State == STATES[2] then
+                if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file then
                 (
-                    MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.ActiveTask.Article
-                    MD_Data.ActiveTask.ActiveMesh = 1
+                    MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
+                    MD_Data.InWorkTask.ActiveMesh = 1
 
                     for obj in MD_Data.WorkLayerNodes do
                     (
-                        if obj.name == MD_Data.ActiveTask.Article then
+                        if obj.name == MD_Data.InWorkTask.Article then
                         (
-                            MD_Data.ActiveTask.Mesh = obj
+                            MD_Data.InWorkTask.Mesh = obj
                         )
-                        if obj.name == (MD_Data.ActiveTask.Article + "_" + TRANS_POSTFIX) then
+                        if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
                         (
-                            MD_Data.ActiveTask.AddMesh = obj
-                            MD_Data.ActiveTask.AddMesh.isHidden = true
-                        )
-                        
+                            MD_Data.InWorkTask.AddMesh = obj
+                            MD_Data.InWorkTask.AddMesh.isHidden = true
+                        )    
+                    )
+
+                    if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+                    ( 
+                        try MD_Data.InWorkTask.Mesh.Material = MD_Data.InWorkTask.Material catch()
+                        try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Material catch()
+                        completeRedraw()
                     )
                     WithoutRedraw MD_BBox.Update
                     MD_Data.ShowLayers mode:#work_only
-
-                    -- MD_UI.FillAddList()
-                    -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                    -- if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
-                    -- MD_UI.UpdateCatalogTasksRlt()
-                    -- MD_UI.UpdateCatalogInfoRlt()
-                    -- MD_UI.UpdateCatalogToolsRlt()
                 )
                 else 
                 (
                     WithoutRedraw MD_BBox.Update
-                    if MD_Data.ActiveTask.Group == undefined and MD_Data.ActiveTask != MD_Data.InWorkTask then
-                    MD_Data.ShowLayers mode:#scene_only
-                    else if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Article != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
-                    ( 
-                        -- MD_Callbacks.Destruct()
-                        MD_Data.ShowLayers mode:#work_only
-                        -- MD_UI.FillAddList()
-                        -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                        -- MD_UI.UpdateCatalogInfoRlt()
-                        -- MD_UI.UpdateCatalogToolsRlt()
-                    )
-                    else (
-                        MD_Data.ShowLayers mode:#scene_only
 
-                        -- MD_UI.FillAddList()
-                        -- try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                        -- if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
-                        -- MD_UI.UpdateCatalogTasksRlt()
-                        -- MD_UI.UpdateCatalogInfoRlt()
-                        -- MD_UI.UpdateCatalogToolsRlt()
+                    if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Group != undefined and \
+                    MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
+                    (
+                        MD_Data.ShowLayers mode:#work_only
+                        try MD_Data.InWorkTask.Mesh.Material = MD_Data.ActiveTask.Material catch()
+                        try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Material catch()
+                        completeRedraw()
+                    )
+                    else 
+                    (
+                        try(destroyDialog MD_UI.Dialogs.Export)catch()
+                        MD_Data.ShowLayers mode:#scene_only
                     )
                 )
 
                 MD_UI.FillAddList()
                 try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
                 MD_UI.UpdateCatalogTasksRlt()
                 MD_UI.UpdateCatalogInfoRlt()
                 MD_UI.UpdateCatalogToolsRlt()
-                
-                -- WithoutRedraw MD_BBox.Update
             )
         )
 
-        -- WithoutRedraw MD_Data.SwitchWorkLayer
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
 
@@ -404,12 +409,12 @@ rollout rlt_tasks "Tasks"
         case btn_work_state.text of
         (
             "Set Work State":(
-                
                 try ClearTrashLayers() catch()
+                
                 MD_Data.CreateWorkState()
 
                 -- Если имеются ранее сохранённые рабочие файлы
-                if MD_Data.ActiveTask.SavedWorks.count != 0 then
+                if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.SavedWorks.count != 0 then
                 (
                     dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
                     dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
@@ -427,21 +432,19 @@ rollout rlt_tasks "Tasks"
                         )
                         -- Загрузить последнюю работу
                         MD_Data.InWorkTask.LoadWork \
-                        MD_Data.ActiveTask.SavedWorks[MD_Data.ActiveTask.SavedWorks.count] quiet_mode:true
+                        MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                     )
                 )
-                MD_Data.VisibleLayers = false
-                MD_Data.ShowLayers mode:#work_only
             )
             "Update Work State":(
 
                 -- Создать рабочее состояние
-                MD_Data.UpdateWorkState()
-                MD_Data.VisibleLayers = false
-                MD_Data.ShowLayers mode:#work_only
+                MD_Data.CreateWorkState()
             )
         )
-        MD_UI.UpdateCatalogToolsRlt()
+        try FullUpdate() catch()
+        MD_Data.VisibleLayers = false
+        MD_Data.ShowLayers mode:#work_only
     )
 
     on btn_exit_work_state pressed do
@@ -453,8 +456,8 @@ rollout rlt_tasks "Tasks"
 
         -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
-        FullUpdate()
-        -- MD_UI.UpdateCatalogToolsRlt()
+        try FullUpdate() catch()
+        MD_Data.ShowLayers mode:#scene_only
     )
 
     on lv_add ColumnClick s e do

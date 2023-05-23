@@ -25,15 +25,15 @@
         include "rlt_make_design.ms"
         
         clearSelection()
-
+        try MD_Data.ClearTrashLayers() catch()
+        
         MD_Data = GlobalData()
         MD_UI = UI()
         MD_BBox = BoundingBox()
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
-        -- MD_Data.Update()
-        -- MD_UI.FillCategoriesLists()
+        MD_Data.ShowLayers mode:#scene_only
 
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
@@ -47,9 +47,9 @@
                 MD_Data.ActiveTaskIndex = exist_task_index
                 MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
             )
-
+            
             -- переключить видимость слоёв
-            if MD_Data.ActiveTask != undefined then
+            if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined then
             (
                 if MD_Data.ActiveTask.File == MD_Data.InWorkTask.File then
                 (
@@ -64,14 +64,19 @@
                                 MD_Data.InWorkTask.LoadWork \
                                 MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                             )
-                        ) catch()      
+                        ) catch()    
                     )
+                    MD_Data.ShowLayers mode:#work_only
                 )
             )
 		)
-
-        try MD_Callbacks.Add() catch()
         try FullUpdate() catch()
+        try MD_Callbacks.Add() catch()
+
+        if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+        (
+            MD_Data.ShowLayers mode:#work_only
+        )
     )
     else
     (
