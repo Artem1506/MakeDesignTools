@@ -59,13 +59,15 @@ rollout dlg_export "Validation And Export" width:210  height:210
         destroyDialog dlg_export
         if MD_Data.InWorkTask.Group == undefined then MD_Data.ExportTask()
         else(
+            local cur_active_task = MD_Data.ActiveTask
+
             for t in MD_Data.Tasks where t.group == MD_Data.InWorkTask.Group do
             (
                 MD_Data.ActiveTask = t
                 MD_Data.ExportTask()
             )
+            
+            MD_Data.ActiveTask = cur_active_task
         )
-        
-        
     )
 )

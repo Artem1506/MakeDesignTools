@@ -14,13 +14,13 @@ fn FullUpdate =
 	MD_UI.UpdateCatalogToolsRlt()
 
 	-- Обновить габаритный контейнер
-	WithoutRedraw MD_BBox.Update
+	try WithoutRedraw MD_BBox.Update catch()
 
 	-- Создать рабочий слой, если есть задание в работе
 	try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
 
 	-- Обновить рабочий слой, если он есть
-	WithoutRedraw MD_Data.SwitchWorkLayer
+	try WithoutRedraw MD_Data.SwitchWorkLayer catch()
 
 	-- Попытаться выбрать первый элемент в списке
 	if MD_Data.ActiveTaskIndex == undefined then try MD_UI.ListMain.Items.Item[0].selected = true catch()
@@ -124,6 +124,7 @@ struct Task
     RefFile = undefined,
 	Size = undefined,
 	SizeTrans = undefined,
+	IconSize = #(),
 
 	Layer = undefined,
 	Mesh = undefined,
@@ -216,7 +217,7 @@ struct Task
 							MD_Data.InWorkTask.Mesh = obj
 							MD_Data.AssignMaterial obj
 						)
-						if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
+						if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
 						(
 							MD_Data.InWorkTask.AddMesh = obj
 							MD_Data.AssignMaterial obj
@@ -227,7 +228,7 @@ struct Task
 							MD_Data.InWorkTask.Mesh = obj
 							MD_Data.AssignMaterial obj
 						)
-						if obj.name == (MD_Data.InWorkTask.Group + "_" + TRANS_POSTFIX) then
+						if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
 						(
 							MD_Data.InWorkTask.AddMesh = obj
 							MD_Data.AssignMaterial obj
@@ -415,22 +416,30 @@ struct Task
 				)
 
 				State = data["state"]
-				Pivot = data["pivot"]
+				Pivot = #(
+					ConvertCentimeterToSysUnits data["pivot"][1],
+					ConvertCentimeterToSysUnits data["pivot"][2],
+					ConvertCentimeterToSysUnits data["pivot"][3]
+				)
 				
 				UserId = data["userId"]
                 UserName = data["userName"]
                 Size = #(
-					ConvertValueToSystemUnits #cm data["size"][1],
-					ConvertValueToSystemUnits #cm data["size"][2],
-					ConvertValueToSystemUnits #cm data["size"][3]
+					ConvertCentimeterToSysUnits data["size"][1],
+					ConvertCentimeterToSysUnits data["size"][2],
+					ConvertCentimeterToSysUnits data["size"][3]
+				)
+				IconSize = #(
+					ConvertCentimeterToSysUnits data["size"][1], 
+					ConvertCentimeterToSysUnits data["size"][2]
 				)
                 try SizeTrans = #(
-					ConvertValueToSystemUnits #cm data["size_trans"][1], 
-					ConvertValueToSystemUnits #cm data["size_trans"][2], 
-					ConvertValueToSystemUnits #cm data["size_trans"][3]
+					ConvertCentimeterToSysUnits data["size_trans"][1], 
+					ConvertCentimeterToSysUnits data["size_trans"][2], 
+					ConvertCentimeterToSysUnits data["size_trans"][3]
 				) 
 				catch()
-				
+
 				if Group == undefined then
 				(
 					if pathConfig.doesFileExist InWorkDir then
@@ -457,6 +466,131 @@ struct Task
 	),
 
 	on create do Init()
+)
+
+struct TaskIcon
+(
+	icon = undefined,
+
+	fn Create categ_article =
+	(
+		local icon_file = pathConfig.appendPath SOURCE_DIR (categ_article + (ICON_POSTFIX + ".max"))
+		mergeMAXFile icon_file #deleteOldDups #useSceneMtlDups #neverReparent
+		this.icon = (getLastMergedNodes())[1]
+		this.icon.IsHidden = true
+		setTransformLockFlags this.icon #all
+	),
+
+	fn FitSizeToBBox bbox =
+	(
+		local offset_d = undefined
+		local offset_w = undefined
+
+		if bbox != undefined then
+		(
+			offset_d = (bbox.max.x - bbox.min.x)/2 - (this.icon.max.x - this.icon.min.x)/2
+			offset_w = (bbox.max.y - bbox.min.y)/2 - (this.icon.max.y - this.icon.min.y)/2					
+		)
+
+		if (bbox.max.x - bbox.min.x) != 0.0 and (bbox.max.y - bbox.min.y) != 0.0 then
+		(
+			MoveVertsInNamedSet this.icon #left_side [0.0, -offset_w, 0.0]
+			MoveVertsInNamedSet this.icon #right_side [0.0, offset_w, 0.0]
+			MoveVertsInNamedSet this.icon #back_side [-offset_d, 0.0, 0.0]
+			MoveVertsInNamedSet this.icon #front_side [offset_d, 0.0, 0.0]			
+		)
+
+		CompleteRedraw()		
+	),
+
+	fn IconRender frame_size out_file frame_is_quad:false =
+	(
+		if this.icon != undefined then
+		(
+			-- Switch to Scanline render
+			if classof renderers.current != Default_Scanline_Renderer then
+			renderers.current = RendererClass.classes[1]()
+
+			-- Prepare the environment
+			useEnvironmentMap = off
+			backgroundColor = color 0 0 0
+			ambientColor = color 0 0 0
+			lightTintColor = color 255 255 255
+
+			-- Targa settings
+			Targa.setColorDepth 16
+			Targa.setCompressed true
+			Targa.setAlphaSplit false
+
+			local layer_states = #()
+			local obj_cur_layer = this.icon.layer
+			local targ_dist = ConvertCentimeterToSysUnits 100
+			local obj_w = (this.icon.max.y - this.icon.min.y)
+			local obj_d = (this.icon.max.x - this.icon.min.x)
+			local fov = (atan ((ConvertSysUnitsToCentimeters obj_w/2.0)/targ_dist)) * 2.0
+			local main_camera = undefined
+
+			-- Save current layers states and hide them all
+			for i = 0 to LayerManager.count - 1 do
+			(
+				lr = LayerManager.getLayer i
+				append layer_states lr.ishidden
+				lr.ishidden = true
+			)
+
+			-- Move icon object to the temp layer
+			MD_BBox.Layer.on = true
+
+			-- Calculate the rendering frame size
+			if frame_is_quad then
+			(
+				renderWidth = frame_size
+				renderHeight = frame_size
+			)else(
+				local aspect = obj_w / obj_d
+
+				if aspect >= 1.0 then
+				(
+					renderWidth = frame_size
+					renderHeight = (ceil ((frame_size as float)/aspect)) as integer
+				)else(
+					renderWidth = (ceil ((frame_size as float)*aspect)) as integer
+					renderHeight = frame_size
+				)		
+			)
+
+			-- Create the camera
+			main_camera = Freecamera orthoProjection:true targetDistance:targ_dist fov:fov
+			main_camera.transform = matrix3 [0, 1, 0] [-1, 0, 0] [0, 0, 1] [0, 0, targ_dist]
+
+			-- Switch to the camera view
+			max vpt camera
+			
+			-- Start rendering
+			vfb = render outputfile:out_file vfb:true
+			close vfb
+
+			-- Recover the layers visibility state
+			for i = 0 to LayerManager.count - 1 do
+			(
+				lr = LayerManager.getLayer i
+				append layer_states lr.ishidden
+				lr.ishidden = layer_states[i + 1]
+			)
+
+			-- Garbage collect
+			delete main_camera
+			free layer_states
+			gc()
+		)
+	),
+
+	fn Destruct =
+	(
+		delete this.icon
+		this.icon = undefined
+		gc()
+	)
 )
 
 struct GlobalData
@@ -490,6 +624,7 @@ struct GlobalData
 	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
 	WorkLayerNodes = #(),
 	TempLayerNodes = #(),
+	icon = TaskIcon(),
 	-- Projects
 	proj_main_categs = #(),
 	proj_main_categ_ids = #(),
@@ -502,7 +637,7 @@ struct GlobalData
 	fn AssignMatID obj =
 	(
 		try(
-			if subobjectLevel == 4 then
+			if subobjectLevel == 4 or subobjectLevel == 5 then
 			(
 				SetMatID obj ActiveTaskAddIndex
 				CompleteRedraw()
@@ -554,7 +689,7 @@ struct GlobalData
 				valids[2] = "OK"
 				
 				-- Check dimensions and position
-				threshold = ConvertValueToSystemUnits #cm 0.25
+				threshold = ConvertSysUnitsToCentimeters 0.25
 				
 				if ((distance MD_BBox.bb.min obj.min) < threshold) and ((distance MD_BBox.bb.max obj.max) < threshold) then 
 				(
@@ -563,19 +698,19 @@ struct GlobalData
 				)else (msg = "Either the dimensions of the object or its position is not correct.")
 	
 				-- Check material
-				if obj.material != undefined then
+				if this.ActiveTask.material != undefined then
 				(
 					-- Check submaterials count
 					sub_mats_count = 0
-					try(sub_mats_count = obj.material.count)catch()
-					if (InWorkTask.Group == undefined and obj.material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count) or \
-					(InWorkTask.Group == ActiveTask.Group and ActiveTask.Material.name == ActiveTask.Article and sub_mats_count == ActiveTask.Materials.count) then
+					try(sub_mats_count = this.ActiveTask.material.count)catch()
+					if (InWorkTask.Group == undefined and this.ActiveTask.material.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) or \
+					(InWorkTask.Group == this.ActiveTask.Group and this.ActiveTask.Material.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) then
 					(
 						valids[4] = "OK"
 	
 						-- Check material id count
 						mat_ids = GetMaterialIDList obj
-						if mat_ids.count >= ActiveTask.Materials.count then
+						if mat_ids.count >= this.ActiveTask.Materials.count then
 						(
 							valids[5] = "OK"
 						)else (msg = "The number of material IDs for the object does not match.")
@@ -584,7 +719,7 @@ struct GlobalData
 	
 				-- Check uv channels count
 				uv_count = GetNumUVChannels obj
-				if uv_count == 2 then
+				if uv_count >= 1 then
 				(
 					valids[6] = "OK"                                    
 				)else(msg = "The number of UV channels is not equal to 2.")
@@ -622,7 +757,7 @@ struct GlobalData
 					WorkLayer.addNode obj
 
 				)
-				if obj.name == (ActiveTask.Article + "_" + TRANS_POSTFIX) then
+				if obj.name == (ActiveTask.Article + TRANS_POSTFIX) then
 				(
 					MD_Data.SetAddMesh obj
 					WorkLayer.addNode obj
@@ -770,9 +905,9 @@ struct GlobalData
         InWorkTask = undefined
 
 		try (
-			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			ReadDataFile MD_LIB_DATA_FILE
 			data["in_work_task"] = undefined
-			WriteDataFile MD_LIB_COMMON_DATA_FILE
+			WriteDataFile MD_LIB_DATA_FILE
 		)
 		catch (MD_Log.Error "[ExitWorkState] Не удалось сохранить данные в файл.")
 		try (
@@ -782,6 +917,8 @@ struct GlobalData
 		)
 		catch ()
 		if ActiveTask != InWorkTask then DeleteWorkLayer()
+
+		try this.icon.Destruct() catch()
 	),
 
 	fn CreateWorkState =
@@ -798,9 +935,9 @@ struct GlobalData
 		try AttachObjectsToWorkState() catch()
 
 		try (
-			ReadDataFile MD_LIB_COMMON_DATA_FILE
-			data["in_work_task"] = InWorkTask.File
-			WriteDataFile MD_LIB_COMMON_DATA_FILE
+			ReadDataFile MD_LIB_DATA_FILE
+			data["in_work_task"] = substituteString InWorkTask.File "\\" "/"
+			WriteDataFile MD_LIB_DATA_FILE
 		)
 		catch ()
         
@@ -830,6 +967,12 @@ struct GlobalData
 				
 			)else t.CreateMaterial()			
 		)
+
+		-- Add icon
+		MD_Callbacks.Destruct()
+		this.active_catalog_article = (this.main_categ_ids[this.ActiveCategory][this.ActiveSubCategory])
+		try this.icon.Create this.active_catalog_article catch()
+		MD_Callbacks.Add()
 	),
 
 	fn ClearTrashLayers =
@@ -858,9 +1001,9 @@ struct GlobalData
 			InWorkTaskFile = InWorkTask.File
 			CreateWorkLayer()
 			try (
-				ReadDataFile MD_LIB_COMMON_DATA_FILE
-				data["in_work_task"] = InWorkTaskFile
-				WriteDataFile MD_LIB_COMMON_DATA_FILE
+				ReadDataFile MD_LIB_DATA_FILE
+				data["in_work_task"] = substituteString InWorkTaskFile "\\" "/"
+				WriteDataFile MD_LIB_DATA_FILE
 			)
 			catch ()
 			SwitchWorkLayer()
@@ -887,6 +1030,7 @@ struct GlobalData
 			(
 				local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
 				task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+				task_file = substituteString task_file "\\" "/"
 				append Tasks (Task File:task_file)
 			)
 		)
@@ -963,13 +1107,13 @@ struct GlobalData
 					mesh_name = this.InWorkTask.Group
 				)
 
-				for task_obj in this.WorkLayerNodes where task_obj.name == (mesh_name + "_" + TRANS_POSTFIX) do
+				for task_obj in this.WorkLayerNodes where task_obj.name == (mesh_name + TRANS_POSTFIX) do
 				(
 					task_obj.Material = undefined
 					task_obj.Name = uniqueName "Object"
 				)
 				this.InWorkTask.AddMesh = obj
-				this.InWorkTask.AddMesh.Name = mesh_name + "_" + TRANS_POSTFIX
+				this.InWorkTask.AddMesh.Name = mesh_name + TRANS_POSTFIX
 				obj.IsHidden = True
 				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material
 				this.ActiveTask.ActiveMesh = 2
@@ -1015,7 +1159,7 @@ struct GlobalData
 				if InWorkTask.Group != undefined then
 				(
 					objs[1].name = ActiveTask.Article
-					try objs[2].name = (ActiveTask.Article + "_" + TRANS_POSTFIX) catch()
+					try objs[2].name = (ActiveTask.Article + TRANS_POSTFIX) catch()
 				)
 
 				try(
@@ -1037,6 +1181,25 @@ struct GlobalData
 			(
 				obj.pos = MD_BBox.pp.pos
 			)
+
+			-- Запись данных в файл задания
+			ReadDataFile this.ActiveTask.File
+			-- max_size = amax #(this.InWorkTask.Size[1], this.InWorkTask.Size[2])
+			data["icon_size"] = #(
+				ICON_THICKNESS,
+				ConvertSysUnitsToCentimeters this.InWorkTask.Size[1],
+				ConvertSysUnitsToCentimeters this.InWorkTask.Size[2]
+			)
+			WriteDataFile this.ActiveTask.File
+
+			-- Запись инфо о задании в lib_data.json для последующего импорта в UE	
+			ReadDataFile MD_LIB_DATA_FILE
+			local dict = PY_BUILTINS.dict()
+			if data["to_import"] == undefined then data["to_import"] = dict
+			else dict = data["to_import"]
+			dict[this.ActiveTask.Article] = substituteString (pathConfig.removePathLeaf this.ActiveTask.InWorkDir) "\\" "/"
+			data["to_import"] = dict
+			WriteDataFile MD_LIB_DATA_FILE
 
 			MD_Callbacks.Add()
 			CompleteRedraw()
@@ -1169,7 +1332,7 @@ struct GlobalData
 		-- Инициализирует исходные глобальные данные
 
 		MD_LIB_DIR = ""
-		MD_LIB_COMMON_DATA_FILE = ""
+		MD_LIB_DATA_FILE = ""
 		MD_LIB_TRASH_DIR = ""
 		Tasks = #()
 		sub_categs = #()
@@ -1178,14 +1341,14 @@ struct GlobalData
 
 		try (
 			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
-			MD_LIB_COMMON_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
+			MD_LIB_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
 			MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
 		)
 		catch (MD_Log.Error "Не указан путь к локальной базе MakeDesign.")
 
-		if DoesFileExist MD_LIB_COMMON_DATA_FILE then
+		if DoesFileExist MD_LIB_DATA_FILE then
 		(
-			ReadDataFile MD_LIB_COMMON_DATA_FILE
+			ReadDataFile MD_LIB_DATA_FILE
 			InWorkTaskFile = data["in_work_task"]
 			if InWorkTaskFile != undefined then InWorkTask = Task file:InWorkTaskFile
 		)
@@ -1193,7 +1356,7 @@ struct GlobalData
 		(
 			data = PY_BUILTINS.dict()
 			data["in_work_task"] = undefined
-			WriteDataFile MD_LIB_COMMON_DATA_FILE
+			WriteDataFile MD_LIB_DATA_FILE
 		)
 
 		-- Инициализация списков категорий
@@ -1380,6 +1543,7 @@ struct UI
 	InfoCatalog = rlt_info_catalog,
 	InfoProjects = rlt_info_projects,
 	ToolsCatalog = rlt_tools_catalog,
+	UtilsCatalog = rlt_utils,
 	ToolsProjects = rlt_tools_projects,
 	Help = rlt_about,
 	Dialogs = UI_Dialogs(),
@@ -1548,7 +1712,7 @@ struct UI
 			for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 
 			local objs = #()
-			
+
 			if (MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2]) or \
 			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
@@ -1560,12 +1724,13 @@ struct UI
 
 				-- Пивот
 				ToolsCatalog.btn_set_pivot.enabled = true
+				ToolsCatalog.btn_edit_icon.enabled = true
 
 				-- Основной меш
 				if MD_Data.InWorkTask.Mesh != undefined and not MD_Data.InWorkTask.Mesh.IsDeleted then
 				(
 					ToolsCatalog.btn_main_mesh.text = "  Main Mesh •"
-					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat.enabled = true
 					try ToolsCatalog.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name) catch()
 				)
 				else
@@ -1606,7 +1771,7 @@ struct UI
 					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
 						ToolsCatalog.btn_add_mesh.text = "  Additional Mesh •"
-						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then ToolsCatalog.btn_assign_mat.enabled = true
 						try ToolsCatalog.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name) catch()
 					)
 					else(
@@ -1624,7 +1789,7 @@ struct UI
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						ToolsCatalog.btn_main_mesh.enabled = true
-						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat_id.enabled = true
+						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then ToolsCatalog.btn_assign_mat.enabled = true
 					)
 				)
 				
@@ -1657,21 +1822,21 @@ struct UI
 				)
 
 				-- Material ID и текстуры
-				if MD_Data.ActiveList == 1 then
-				(
-					if subobjectLevel == 0 or subobjectLevel == undefined then
-					(
-						ToolsCatalog.btn_assign_mat_id.text = "Assign Material"
-					)
-				)
-				else if MD_Data.ActiveList == 2 then
-				(
-					ToolsCatalog.btn_assign_texts.enabled = true
-					ToolsCatalog.btn_assign_mat_id.text = "Assign Mat ID"
+				-- if MD_Data.ActiveList == 1 then
+				-- (
+				-- 	if subobjectLevel == 0 or subobjectLevel == undefined then
+				-- 	(
+				-- 		ToolsCatalog.btn_assign_mat.text = "Assign Material"
+				-- 	)
+				-- )
+				-- else if MD_Data.ActiveList == 2 then
+				-- (
+				-- 	-- ToolsCatalog.btn_assign_texts.enabled = true
+				-- 	ToolsCatalog.btn_assign_mat_id.text = "Assign Mat ID"
 
-					if subobjectLevel == 4 then ToolsCatalog.btn_assign_mat_id.enabled = true					
-					else if subobjectLevel == 0 or subobjectLevel == undefined then ToolsCatalog.btn_assign_mat_id.enabled = false
-				)
+				-- 	if subobjectLevel == 4 then ToolsCatalog.btn_assign_mat_id.enabled = true					
+				-- 	else if subobjectLevel == 0 or subobjectLevel == undefined then ToolsCatalog.btn_assign_mat_id.enabled = false
+				-- )
 			)
 
 			free MD_Data.WorkLayerNodes
@@ -1784,20 +1949,20 @@ struct UI
 			)
 			2:(
 				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-				InfoCatalog.lbl_size.visible = false
-				InfoCatalog.lbl_size_txt.visible = false
-				InfoCatalog.lbl_site.visible = false
-				InfoCatalog.hpl_site.visible = false
+				-- InfoCatalog.lbl_size.visible = false
+				-- InfoCatalog.lbl_size_txt.visible = false
+				-- InfoCatalog.lbl_site.visible = false
+				-- InfoCatalog.hpl_site.visible = false
 
-				-- Если будет указан сайт материала
+				-- -- Если будет указан сайт материала
 
-				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
-				(
-					InfoCatalog.lbl_site.visible = true
-					InfoCatalog.hpl_site.visible = true
-					InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
-					InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
-				)
+				-- if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite != undefined then
+				-- (
+				-- 	InfoCatalog.lbl_site.visible = true
+				-- 	InfoCatalog.hpl_site.visible = true
+				-- 	InfoCatalog.hpl_site.text = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite
+				-- 	InfoCatalog.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite	
+				-- )
 
 				InfoCatalog.title = MD_Data.ActiveTask.Article + "  [" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].PartName + "]"
 				InfoCatalog.height = 280
@@ -1809,6 +1974,8 @@ struct UI
 	(
 		Tasks.btn_get.enabled = false
 		Tasks.btn_clear.enabled = false
+		Tasks.btn_assign_mat_id.enabled = false	
+		Tasks.btn_assign_texts.enabled = false
 
 		if MD_Data.ActiveTask == undefined then
 		(
@@ -1832,7 +1999,8 @@ struct UI
 		else
 		(
 			Tasks.btn_work_state.enabled = true
-			if (MD_Data.ActiveTask != MD_Data.InWorkTask and MD_Data.ActiveTask.Group == undefined) or \
+			if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article != MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == undefined) or \
+			(MD_Data.InWorkTask == undefined and (MD_Data.ActiveTask.Group == undefined or MD_Data.ActiveTask.Group != undefined)) or \
 			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != MD_Data.InWorkTask and MD_Data.ActiveTask.Group != MD_Data.InWorkTask.Group) then
 			(
 				Tasks.btn_work_state.text = "Set Work State"
@@ -1840,8 +2008,9 @@ struct UI
 				for ctrl in ToolsCatalog.Controls do ctrl.enabled = false
 				for ctrl in ToolsProjects.Controls do ctrl.enabled = false
 			)
-			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file and MD_Data.ActiveTask.Group == undefined) or \
-			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == undefined) or \
+			
+			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			(
 				Tasks.btn_work_state.text = "Update Work State"
 				Tasks.btn_exit_work_state.enabled = true
@@ -1852,11 +2021,16 @@ struct UI
 				Tasks.btn_get.tooltip = MD_Tooltips.tasks_02_a
 				Tasks.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 				Tasks.btn_work_state.enabled = true
-				-- if MD_Data.ActiveTask == MD_Data.InWorkTask then
-				-- Tasks.btn_exit_work_state.enabled = true
-				-- else Tasks.btn_exit_work_state.enabled = false
+
+				-- Material ID и текстуры
+				if MD_Data.ActiveList == 2 then
+				(
+					Tasks.btn_assign_texts.enabled = true
+					if subobjectLevel == 4 or subobjectLevel == 5 then Tasks.btn_assign_mat_id.enabled = true			
+					else if subobjectLevel == 0 or subobjectLevel == undefined then Tasks.btn_assign_mat_id.enabled = false
+				)
 			)
-			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file != MD_Data.InWorkTask.file and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article != MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			(
 				Tasks.btn_work_state.text = "Set Work State"
 				Tasks.btn_work_state.enabled = true
@@ -1929,7 +2103,7 @@ struct UI
 		)
 		catch()
 
-		ListMain.Focus()
+		-- ListMain.Focus()
 	),
 
 	fn FillTempData =
@@ -2028,7 +2202,9 @@ struct UI
 		AddSubRollout Main.sub_rlt Settings rolledUp:true
 		AddSubRollout Main.sub_rlt Tasks rolledUp:false
 		AddSubRollout Main.sub_rlt InfoCatalog rolledUp:true
+		AddSubRollout Main.sub_rlt UtilsCatalog rolledUp:true
 		AddSubRollout Main.sub_rlt ToolsCatalog rolledUp:false
+		
 		AddSubRollout Main.sub_rlt Help rolledUp:true
 
 		-- Инициализация входных значений
@@ -2088,14 +2264,15 @@ struct BoundingBox
 	pp = undefined,
 	clr_main = MD_UI.Settings.clr_bb_main.color,
 	clr_add = MD_UI.Settings.clr_bb_add.color,
-	arrow_offset = ConvertValueToSystemUnits #cm 10.0,
-	arrow_rad = ConvertValueToSystemUnits #cm 20.0,
+	arrow_offset = ConvertSysUnitsToCentimeters 10.0,
+	arrow_rad = ConvertSysUnitsToCentimeters 20.0,
 
 	fn Remove =
 	(
-		try(delete $bbox* )catch()
-		try(delete $barrow* )catch()
-		try(delete $ppoin* )catch()
+		try(delete (execute ("$" + HELPER_OBJECTS[1] + "*")))catch()
+		try(delete (execute ("$" + HELPER_OBJECTS[2] + "*")))catch()
+		try(delete (execute ("$" + HELPER_OBJECTS[3] + "*")))catch()
+		try(delete (execute ("$" + HELPER_OBJECTS[4] + "*")))catch()
 		try(LayerManager.deleteLayerByName mdt_temp_layer)catch()
 
 		gc()
@@ -2104,10 +2281,14 @@ struct BoundingBox
 	fn CreateBBox =
 	(
 		-- Bounding box
-		this.bb = Box name:(uniqueName "bbox_") length:0.0 width:0.0 height:0.0 isSelected:off
-		this.arrow = Ngon name:(uniqueName "barrow_") radius:0.0 cornerRadius:0 nsides:3 circular:off scribe:1 pos:[0, 0, 0] isSelected:off
-		this.pp = Point name:(uniqueName "ppoint_") isSelected:off
+		this.bb = Box name:HELPER_OBJECTS[1] length:0.0 width:0.0 height:0.0 isSelected:off
+		this.arrow = Ngon name:HELPER_OBJECTS[2] radius:0.0 cornerRadius:0 nsides:3 circular:off scribe:1 pos:[0, 0, 0] isSelected:off
+		this.pp = Point name:HELPER_OBJECTS[3] isSelected:off
 		cur_sel = selection
+
+		setTransformLockFlags this.bb #all
+		setTransformLockFlags this.arrow #all
+		setTransformLockFlags this.pp #all
 
 		this.bb.boxmode = on
 		this.bb.showFrozenInGray = this.arrow.showFrozenInGray = off
@@ -2149,22 +2330,28 @@ struct BoundingBox
 		Layer.ishidden = MD_UI.Settings.ckbx_show_bb.checked
 	),
 
-	fn write_pivot_data task:MD_Data.InWorkTask =
+	fn WritePivotData task:MD_Data.InWorkTask =
 	(
 		if task != undefined then
 		(
 			ReadDataFile task.File
-			data["pivot"] = #(pivot_pos[1], pivot_pos[2], pivot_pos[3])
+			data["pivot"] = #(
+				ConvertSysUnitsToCentimeters pivot_pos[1], 
+				ConvertSysUnitsToCentimeters pivot_pos[2], 
+				ConvertSysUnitsToCentimeters pivot_pos[3]
+			)
 			WriteDataFile task.File
 		)
 	),
 	
-	fn read_pivot_data =
+	fn ReadPivotData =
 	(
 		if MD_Data.ActiveTask != undefined then
 		(
 			ReadDataFile MD_Data.ActiveTask.File
-			pivot_pos = data["pivot"]
+			pivot_pos = [ConvertCentimeterToSysUnits data["pivot"][1], \
+			ConvertCentimeterToSysUnits data["pivot"][2], \
+			ConvertCentimeterToSysUnits data["pivot"][3]]
 		)
 	),
 
@@ -2179,10 +2366,9 @@ struct BoundingBox
 			bb_y[MD_UI.Dialogs.PivotParams.lst_y.selection], \
 			bb_z[MD_UI.Dialogs.PivotParams.lst_z.selection]]
 			
-			this.pp.pos = pivot_pos
-
-			completeRedraw()
+			this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
 		)catch()
+		completeRedraw()
 	),
 
 	fn ResetPivot =
@@ -2190,17 +2376,9 @@ struct BoundingBox
 		try(
 			pivot_pos = [0.0, 0.0, 0.0]
 			this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
-			write_pivot_data()
+			WritePivotData()
 		)catch()
-	),
-
-	fn ResetPivot =
-	(
-		try(
-			pivot_pos = [0.0, 0.0, 0.0]
-			this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]]
-			write_pivot_data()
-		)catch()
+		completeRedraw()
 	),
 
 	fn Update =
@@ -2208,10 +2386,11 @@ struct BoundingBox
 		case MD_Data.ActiveSection of
 		(
 			1:(
-				local arrow_offset = ConvertValueToSystemUnits #cm 10.0
+				local arrow_offset = ConvertCentimeterToSysUnits 10.0
 				
-				try read_pivot_data() catch()
-				try this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] catch(
+				try ReadPivotData() catch()
+				try this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] 
+				catch(
 					Remove()
 					CreateLayer()
 					CreateBBox()
@@ -2234,9 +2413,7 @@ struct BoundingBox
 							bb_d = MD_Data.InWorkTask.Size[2]
 							bb_h = MD_Data.InWorkTask.Size[3]
 
-							bbox_size = [ConvertValueToSystemUnits #cm bb_w,\
-							ConvertValueToSystemUnits #cm bb_d,\
-							ConvertValueToSystemUnits #cm bb_h]
+							bbox_size = [bb_w, bb_d, bb_h]
 
 							this.bb.wireColor = clr_main
 							this.arrow.wireColor = clr_main
@@ -2246,9 +2423,7 @@ struct BoundingBox
 							bt_d = MD_Data.InWorkTask.SizeTrans[2]
 							bt_h = MD_Data.InWorkTask.SizeTrans[3]
 
-							bbox_size = [ConvertValueToSystemUnits #cm bt_w,\
-							ConvertValueToSystemUnits #cm bt_d,\
-							ConvertValueToSystemUnits #cm bt_h]
+							bbox_size = [bt_w, bt_d, bt_h]
 
 							this.bb.wireColor = clr_add
 							this.arrow.wireColor = clr_add
@@ -2258,7 +2433,7 @@ struct BoundingBox
 					if MD_UI.Settings.ckbx_auto_pivot.checked == true then this.pp.isHidden = false
 					else this.pp.isHidden = true
 					
-					arrow_rad = ConvertValueToSystemUnits #cm 20.0
+					arrow_rad = ConvertSysUnitsToCentimeters 20.0
 				)
 				this.Layer.on = MD_UI.Settings.ckbx_show_bb.checked
 
@@ -2267,7 +2442,10 @@ struct BoundingBox
 				this.bb.height = bbox_size[3]
 				this.arrow.radius = arrow_rad
 				this.arrow.pos.x = (this.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
-
+				try (
+					MD_Data.icon.FitSizeToBBox this.bb
+					MD_Data.icon.icon.isHidden = not MD_UI.Settings.ckbx_show_icon.checked
+				)catch()
 			)
 			2:(
 				this.bb.isHidden = true
@@ -2275,6 +2453,7 @@ struct BoundingBox
 				this.pp.isHidden = true
 			)
 		)
+		completeRedraw()
 	),
 
 	fn ChangeColor =
@@ -2313,6 +2492,21 @@ struct Callback
 	(
 		-- print "UpdateUI"
 		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogTasksRlt()
+
+		if not MD_UI.Settings.ckbx_show_icon.checked then
+		(
+			MD_Data.Icon.Icon.IsHidden = not MD_UI.Settings.ckbx_show_icon.checked
+			MD_Data.WorkLayer.on = on
+			completeRedraw()			
+		)
+	),
+
+	fn UpdateUI2 ev nd = 
+	(
+		-- print "UpdateUI"
+		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogTasksRlt()
 	),
 
 	fn AddObject = 
@@ -2467,9 +2661,9 @@ struct Callback
 		-- callbacks.addScript #selectionSetChanged MD_UI.UpdateCatalogToolsRlt id:#md_callbacks
 
 		ToolsUIUpdate = NodeEventCallback mouseUp:false delay:250 \
-		subobjectSelectionChanged:UpdateUI \
 		materialOtherEvent:MatChange \
-		selectionChanged: UpdateUI
+		selectionChanged: UpdateUI \
+		subobjectSelectionChanged:UpdateUI2
 		-- deleted: DeleteObject \
 		-- layerChanged: LayerChange \
 		-- added: AddObject \

@@ -23,6 +23,7 @@
         include "rlt_tools_projects.ms"
         include "rlt_about.ms"
         include "rlt_make_design.ms"
+        include "rlt_utilities.ms"
         
         clearSelection()
         try MD_Data.ClearTrashLayers() catch()
@@ -51,32 +52,55 @@
             -- переключить видимость слоёв
             if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined then
             (
-                if MD_Data.ActiveTask.File == MD_Data.InWorkTask.File then
+                if MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
+                    -- Создать рабочее состояние
+                    MD_Data.CreateWorkState()
+
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
                     if MD_UI.Settings.ckbx_load_last.checked then
                     (
-                        -- Создать рабочий слой, если есть задание в работе
-                        if MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer()
                         try(
                             if MD_Data.WorkLayerNodes.count == 0 then
                             (
                                 MD_Data.InWorkTask.LoadWork \
                                 MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                                
                             )
                         ) catch()    
                     )
+
+                    MD_UI.UpdateCatalogToolsRlt()
                     MD_Data.ShowLayers mode:#work_only
                 )
             )
 		)
-        try FullUpdate() catch()
+        
+        try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+        MD_UI.UpdateCatalogTasksRlt()
+        MD_UI.UpdateCatalogInfoRlt()
+
+        -- Обновить габаритный контейнер
+        try WithoutRedraw MD_BBox.Update catch()
+
+        -- Создать рабочий слой, если есть задание в работе
+        try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
+
+        -- Обновить рабочий слой, если он есть
+        try WithoutRedraw MD_Data.SwitchWorkLayer catch()
+
+        -- Попытаться выбрать первый элемент в списке
+        if MD_Data.ActiveTaskIndex == undefined then try MD_UI.ListMain.Items.Item[0].selected = true catch()
+
         try MD_Callbacks.Add() catch()
 
-        if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
-        (
-            MD_Data.ShowLayers mode:#work_only
-        )
+        try (
+            if MD_Data.InWorkTask != undefined then
+            (
+                if MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+                MD_Data.ShowLayers mode:#work_only
+            )
+        )catch()
     )
     else
     (

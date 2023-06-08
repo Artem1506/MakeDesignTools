@@ -232,7 +232,6 @@ fn ConvertValueToSystemUnits input_units val =
 	-- input_units: Единицы измерения входного числа [#mm | #cm | #m | #km]
 	-- val: Входное значение [float | int]
 
-	local new_val = undefined
 	local factor = case units.systemType of
 	(
 		#Millimeters: 1.0
@@ -247,9 +246,34 @@ fn ConvertValueToSystemUnits input_units val =
 		#m: 100.0
 		#km: 100000.0
 	)
-	new_val = val*factor*shift
 
-	new_val
+	return (val*factor*shift)
+)
+
+fn ConvertSysUnitsToCentimeters val = 
+(
+	local factor = case units.systemType of
+	(
+		#Millimeters: 0.1
+		#Centimeters: 1.0
+		#Meters: 100.0
+		#Kilometers: 100000.0
+	)
+
+	return (val*factor)
+)
+
+fn ConvertCentimeterToSysUnits val = 
+(
+	local factor = case units.systemType of
+	(
+		#Millimeters: 0.1
+		#Centimeters: 1.0
+		#Meters: 100.0
+		#Kilometers: 100000.0
+	)
+
+	return (val/factor)
 )
 
 fn GetAllLayerNodes layer_name =
@@ -589,5 +613,14 @@ fn WithoutRedraw foo params:#() =
 	catch(
 		enableSceneRedraw()
 		completeRedraw()
+	)
+)
+
+fn MoveVertsInNamedSet obj set_name offset = 
+(
+	for i in (obj.Verts[set_name] as BitArray) do
+	(
+		cur_pos = polyop.getvert obj i
+		polyop.setvert obj i (cur_pos + offset)
 	)
 )

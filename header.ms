@@ -9,9 +9,9 @@ global data_file = ""
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
 MD_LIB_TRASH_DIR = ""
-ICONS_DIR = pathConfig.appendPath MAIN_DIR "icons"
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "md_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
+SOURCE_DIR = pathConfig.appendPath MAIN_DIR "source"
 
 -- HTTP - клиент
 HTTP_CLIENT_NAME = "md_client"
@@ -25,15 +25,15 @@ MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
 MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
-MD_LIB_COMMON_DATA_FILE = ""
-COMMON_DATA_FILE_NAME = "common_data.json"
+MD_LIB_DATA_FILE = ""
+COMMON_DATA_FILE_NAME = "lib_data.json"
 TASK_FILE_NAME = "data.json"
 SAVED_FILE_NAME = "Saving"
 TASK_MAT_NAME = "Material"
 
 -- Файлы иконок
-ICON_NO_PRVIEW_FILE = pathConfig.appendPath ICONS_DIR "mdt_no_preview.png"
-ICON_MDT_FILE = pathConfig.appendPath ICONS_DIR "mdt_48.png"
+ICON_NO_PRVIEW_FILE = pathConfig.appendPath SOURCE_DIR "mdt_no_preview.png"
+ICON_MDT_FILE = pathConfig.appendPath SOURCE_DIR "mdt_48.png"
 
 -- Инфо
 author = "Зайцев Павел"
@@ -53,7 +53,8 @@ TASK_PARAMS_LIST = #("New", "Incorrect", "Completed", "Deleted")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
-TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga")
+TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga", "_E.tga", "_SSS.tga")
+HELPER_OBJECTS = #("_bbox_", "_arrow_", "_pivot_", "_icon_")
 CLR_PALETTE_1 = #(
     color 87 53 255,
     color 255 53 53,
@@ -67,7 +68,9 @@ CLR_PALETTE_1 = #(
     color 255 170 53,
     color 255 114 53,
     color 53 255 194)
-    
+
+ICON_THICKNESS = 0.4 -- Толщина декали в см
+
 -- Интерфейс
 global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
 MAIN_RLT_WIDTH = 240
@@ -80,6 +83,7 @@ CTRL_HEIGHT_1 = 22
 CTRL_HEIGHT_2 = 32
 PREVIEW_SIZE = MAIN_RLT_WIDTH - 12
 SAVED_PREVIEW_SIZE = 384
+CTRL_MANIP_SIZE = 29
 V_MARGIN = -2
 EMPTY_TEXT = "-----"
 DN_CLR_DEFAULT = DN_Lib.dnColor 0 0 0 255
@@ -99,7 +103,8 @@ CLR_BBOX_PIVOT = color 14 255 2
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
 mdt_temp_layer = "_mdt_temp_"
-TRANS_POSTFIX = "trans"
+TRANS_POSTFIX = "_trans"
+ICON_POSTFIX = "_icon"
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018
@@ -124,6 +129,7 @@ rlt_info_projects
 rlt_tasks
 rlt_tools_catalog
 rlt_tools_projects
+rlt_utils
 rlt_about
 
 -- Базовые структуры
@@ -134,6 +140,7 @@ MD_UI
 MD_BBox
 MD_Callbacks
 MD_Client
+MD_Icon
 
 global CheckExistTaskLayer
 InitExistTextures
