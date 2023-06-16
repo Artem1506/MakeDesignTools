@@ -12,6 +12,7 @@ MD_LIB_TRASH_DIR = ""
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "md_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
 SOURCE_DIR = pathConfig.appendPath MAIN_DIR "source"
+SOURCE_ICONS_DIR = pathConfig.appendPath SOURCE_DIR "category_icons"
 
 -- HTTP - клиент
 HTTP_CLIENT_NAME = "md_client"
@@ -29,7 +30,9 @@ MD_LIB_DATA_FILE = ""
 COMMON_DATA_FILE_NAME = "lib_data.json"
 TASK_FILE_NAME = "data.json"
 SAVED_FILE_NAME = "Saving"
-TASK_MAT_NAME = "Material"
+TASK_MAT_NAME = "Material.mat"
+TASK_ICON_NAME = "Icon.max"
+ICON_TEMPLATE_FILE = pathConfig.appendPath SOURCE_DIR "_icon_template_.max"
 
 -- Файлы иконок
 ICON_NO_PRVIEW_FILE = pathConfig.appendPath SOURCE_DIR "mdt_no_preview.png"
@@ -43,7 +46,7 @@ DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
 -- Списки
 STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
-TASK_INNER_DIRS = #("Task", "InWork")
+TASK_INNER_DIRS = #("Task", "InWork", "InWork/Saved")
 MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
 ADD_LIST_COLUMNS_1 = #("Parts", "Material", "Textures")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
@@ -53,8 +56,9 @@ TASK_PARAMS_LIST = #("New", "Incorrect", "Completed", "Deleted")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
-TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga", "_E.tga", "_SSS.tga")
+TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga", "_E.tga", "_SSS.tga", "_ICON.tga")
 HELPER_OBJECTS = #("_bbox_", "_arrow_", "_pivot_", "_icon_")
+SELECTION_SET_NAMES = #("Left_side", "Right_side", "Front_side", "Back_side")
 CLR_PALETTE_1 = #(
     color 87 53 255,
     color 255 53 53,
@@ -70,6 +74,7 @@ CLR_PALETTE_1 = #(
     color 53 255 194)
 
 ICON_THICKNESS = 0.4 -- Толщина декали в см
+MAX_TEX_SIZE = 4096
 
 -- Интерфейс
 global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
@@ -103,6 +108,7 @@ CLR_BBOX_PIVOT = color 14 255 2
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
 mdt_temp_layer = "_mdt_temp_"
+icon_temp_layer = "_icon_template_"
 TRANS_POSTFIX = "_trans"
 ICON_POSTFIX = "_icon"
 
@@ -129,7 +135,7 @@ rlt_info_projects
 rlt_tasks
 rlt_tools_catalog
 rlt_tools_projects
-rlt_utils
+rlt_utilities
 rlt_about
 
 -- Базовые структуры
@@ -144,3 +150,5 @@ MD_Icon
 
 global CheckExistTaskLayer
 InitExistTextures
+cur_view_tm = undefined
+cur_view_type = undefined

@@ -19,12 +19,12 @@
         include "rlt_info_catalog.ms"
         include "rlt_info_projects.ms"
         include "rlt_tasks.ms"
+        include "rlt_utilities.ms"
         include "rlt_tools_catalog.ms"
         include "rlt_tools_projects.ms"
         include "rlt_about.ms"
         include "rlt_make_design.ms"
-        include "rlt_utilities.ms"
-        
+
         clearSelection()
         try MD_Data.ClearTrashLayers() catch()
         
@@ -35,6 +35,12 @@
         MD_Client = HTTPClient()
 
         MD_Data.ShowLayers mode:#none
+        for ctrl in MD_UI.Settings.Controls do ctrl.enabled = true
+
+        MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+        icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+        -- Установить иконку для текущей категории
+        MD_Data.ActiveCategoryIcon.SetIcon icon_file
 
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then

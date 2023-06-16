@@ -1,13 +1,12 @@
 
 rollout rlt_tools_catalog "General"
 (
-   
-    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:96 align:#center offset:[0, -4]
+    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:97 align:#center offset:[0, -4]
     button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -82] across:2 enabled:false tooltip:""
     button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -82] enabled:false tooltip:MD_Tooltips.tools_cat_01
     button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
     button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
-    button 'btn_edit_icon' "Edit Icon" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
+	checkbutton 'btn_edit_icon' "Edit Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
 
     groupBox 'grp_02' " Mesh: " width:(rlt_tools_catalog.width - 8) height:72 align:#center offset:[0, 4]
     button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -57] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
@@ -30,17 +29,8 @@ rollout rlt_tools_catalog "General"
     on rlt_tools_catalog close do
     (
         -- SetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name
-    )  
-
-    on btn_edit_icon pressed do
-    (
-        select MD_Data.Icon.Icon
-        MD_Callbacks.Destruct()
-        MD_Data.Icon.Icon.IsHidden = false
-        MD_Data.WorkLayer.on = off
-        completeRedraw()
-        MD_Callbacks.Add()
     )
+
     on btn_assign_mat pressed do
     (
         MD_Data.AssignMaterial selection[1]
@@ -172,6 +162,60 @@ rollout rlt_tools_catalog "General"
         MD_Data.AttachSelectedToWorkLayer()
         MD_Data.ShowLayers mode:#work_only
     )
+
+	on btn_edit_icon changed arg do
+	(
+		case arg of
+		(
+			true:(
+                MD_Callbacks.Destruct()
+
+				MD_BBox.Layer.on = false
+				MD_BBox.Layer.lock = false
+				MD_BBox.Layer.ishidden = false
+				MD_BBox.Layer.current = true
+
+                for i = 0 to LayerManager.count - 1 do
+				(
+					lr = LayerManager.getLayer i
+					if lr != MD_BBox.Layer then lr.ishidden = true
+				)
+
+				for ctrl in MD_UI.Settings.Controls do ctrl.enabled = false
+				for ctrl in MD_UI.Tasks.Controls do ctrl.enabled = false
+				for ctrl in MD_UI.ToolsCatalog.Controls do ctrl.enabled = false
+                btn_edit_icon.enabled = true
+
+                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = false catch()
+                try select MD_Data.ActiveCategoryIcon.Icon catch()
+                max modify mode
+                subobjectLevel = 1
+                -- try (polyop.setVertSelection MD_Data.ActiveCategoryIcon.Icon #{}) catch()
+			)
+			false:(
+                MD_BBox.Update()
+
+                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = not MD_UI.Settings.ckbx_show_icon.checked catch()
+
+				if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
+				MD_Data.ShowLayers mode:#work_only else MD_Data.ShowLayers mode:#scene_only
+
+				for ctrl in MD_UI.Settings.Controls do ctrl.enabled = true
+				for ctrl in MD_UI.Tasks.Controls do ctrl.enabled = true
+				MD_UI.UpdateCatalogTasksRlt()
+				MD_UI.UpdateCatalogToolsRlt()
+                
+                -- Сохранить дефолтную иконку для текущей категории
+                local file_path = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME
+                gc()
+                save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
+                
+                MD_Callbacks.Add()
+			)
+		)
+		completeRedraw()
+		MD_Data.edit_icon_mode = arg
+	)
 
     -- on btn_assign_texts pressed do
     -- (

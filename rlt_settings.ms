@@ -39,8 +39,13 @@ rollout rlt_settings "Settings"
 
     on ckbx_show_icon changed arg do 
     (
-        MD_Data.icon.icon.isHidden = not arg
-        completeRedraw()
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then
+        (
+            try MD_Data.ActiveCategoryIcon.icon.isHidden = not arg catch()
+            completeRedraw()            
+        )else(
+            try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
+        )
     )
 
     on ckbx_auto_pivot changed arg do 

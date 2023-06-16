@@ -5,6 +5,13 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
 
     on rlt_make_design open do
     (
+        -- try(
+        --     GetINISettings rlt_settings MDT_CONFIG_FILE rlt_settings.name
+        --     GetINISettings rlt_tasks MDT_CONFIG_FILE rlt_tasks.name onlyRollState:true
+        --     GetINISettings rlt_info_catalog MDT_CONFIG_FILE rlt_info_catalog.name onlyRollState:true
+        --     GetINISettings rlt_utilities MDT_CONFIG_FILE rlt_utilities.name onlyRollState:true
+        --     GetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name onlyRollState:true
+        -- )catch ()
         -- Установить расположение главного роллаута
         -- Имеет смысл только, если роллаут не втроенный 
         try(
@@ -27,7 +34,11 @@ rollout rlt_make_design ("MakeDesignTools v" + version)
         try FullUpdate() catch()
 
         -- Запись текущего состояния интерфейса
-        for sr in sub_rlt.rollouts do SetINISettings sr MDT_CONFIG_FILE sr.name
+        SetINISettings MD_UI.Settings MDT_CONFIG_FILE MD_UI.Settings.name
+        SetINISettings MD_UI.Tasks MDT_CONFIG_FILE MD_UI.Tasks.name include_list:#(MD_UI.Tasks.lst_basic_catalog, MD_UI.Tasks.lst_sub_catalog, MD_UI.Tasks.lv_main)
+        SetINISettings MD_UI.InfoCatalog MDT_CONFIG_FILE MD_UI.InfoCatalog.name onlyRollState:true
+        SetINISettings MD_UI.UtilsCatalog MDT_CONFIG_FILE MD_UI.UtilsCatalog.name onlyRollState:true
+        SetINISettings MD_UI.ToolsCatalog MDT_CONFIG_FILE MD_UI.ToolsCatalog.name onlyRollState:true
 
         -- Очистить рабочую сцену
         try MD_Callbacks.Destruct() catch()

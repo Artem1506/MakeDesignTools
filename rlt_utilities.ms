@@ -1,12 +1,26 @@
 
-rollout rlt_utils "Tools"
+rollout rlt_utilities "Tools"
 (
-    groupBox 'grp_02' " Transformations: " width:(rlt_utils.width - 8) height:120 align:#center offset:[0, -4]
+    groupBox 'grp_01' " Transform: " width:(rlt_utilities.width - 8) height:120 align:#center offset:[0, -4]
     button 'btn_up' "▲" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -104]
 	button 'btn_left' "◄" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[37, -2] across:3
 	button 'btn_center' "•" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[0, -2]
     button 'btn_right' "►" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-37, -2]
 	button 'btn_down' "▼" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -2] 
+
+	groupBox 'grp_02' " Icon: " width:(rlt_utilities.width - 8) height:146 align:#center offset:[0, 4]
+	checkbutton 'btn_create_icon' "Create Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132]
+	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false
+    dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false
+	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
+	button 'btn_fit' "Fit" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -3] enabled:false
+	spinner 'spn_d' "Depth:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[4, -1] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
+	button 'btn_render' "Render" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false
+	button 'btn_save' "Save As Default Icon" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
+
+	local icon_controls = #(btn_create_sel_set, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
+	local icon_layer = undefined
+	local layer_nodes = #()
 
 	fn getViewCoordSys =
 	(
@@ -35,7 +49,7 @@ rollout rlt_utils "Tools"
 		
 		return result
 	)
-	
+
 	fn ConvertSelectedToVerts obj =
 	(
 		local verts = BitArray()
@@ -253,7 +267,7 @@ rollout rlt_utils "Tools"
 			)
 		)
 	)
-	
+
     on btn_up pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw()))
 	
 	on btn_down pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #down catch(); CompleteRedraw()))
@@ -271,4 +285,66 @@ rollout rlt_utils "Tools"
 	on btn_right rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #hcenter catch(); CompleteRedraw()))
 		
 	on btn_center pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #center catch(); CompleteRedraw()))
+
+	on btn_create_icon changed arg do
+	(
+		case arg of
+		(
+			true:(
+				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
+				for ctrl in icon_controls do ctrl.enabled = true
+				MD_Data.ActiveCategoryIcon.New()
+			)
+			false:(
+				MD_Data.ActiveCategoryIcon.Destruct()
+				MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+				local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+				try MD_Data.ActiveCategoryIcon.Create icon_file catch()
+				for ctrl in icon_controls do ctrl.enabled = false
+				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
+				spn_w.value = ConvertCentimeterToSysUnits 100.0
+				spn_d.value = ConvertCentimeterToSysUnits 100.0
+			)
+		)
+		completeRedraw()
+		MD_Data.edit_icon_mode = arg
+	)
+
+	on btn_create_sel_set pressed do 
+	(
+		try MD_Data.ActiveCategoryIcon.SetNamedSelSet lst_sel_sets.items[lst_sel_sets.selection] catch()
+	)
+
+	on spn_w changed arg do (MD_BBox.bb.length = arg; completeRedraw())
+
+	on spn_d changed arg do 
+	(
+		MD_BBox.bb.width = arg
+		arrow_offset = ConvertCentimeterToSysUnits 10.0
+		arrow_rad = ConvertCentimeterToSysUnits 20.0
+		MD_BBox.arrow.radius = arrow_rad
+		MD_BBox.arrow.pos.x = (MD_BBox.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+
+		completeRedraw()
+	)
+
+	on btn_fit pressed do (
+		undo on
+		MD_Data.ActiveCategoryIcon.Icon.Pivot = MD_Data.ActiveCategoryIcon.Icon.Center
+		MD_Data.ActiveCategoryIcon.Icon.Pos = [0, 0, 0]
+		try MD_Data.ActiveCategoryIcon.FitSizeToBBox MD_BBox.bb catch()
+
+		completeRedraw()
+	)
+
+	on btn_render pressed do (
+		try MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon catch()
+	)
+
+	on btn_save pressed do (
+		-- Сохранить дефолтную иконку для текущей категории
+		local file_path = (pathconfig.appendpath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + "_icon.max"))
+		gc()
+		save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
+	)
 )

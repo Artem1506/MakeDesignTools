@@ -46,6 +46,7 @@ rollout rlt_tasks "Tasks"
             
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -70,6 +71,10 @@ rollout rlt_tasks "Tasks"
 
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+            
+            MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+			local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			MD_Data.ActiveCategoryIcon.SetIcon icon_file
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -91,8 +96,17 @@ rollout rlt_tasks "Tasks"
 
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+
+            MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+			local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			MD_Data.ActiveCategoryIcon.SetIcon icon_file
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        try (
+			if MD_Data.ActiveCategoryIcon.Icon != undefined then
+			MD_UI.UtilsCatalog.btn_mode.text = "Edit Icon"
+			else MD_UI.UtilsCatalog.btn_mode.text = "Create Icon"			
+		)catch()
     )
 
     on lst_sub_catalog rightClick do
@@ -450,13 +464,11 @@ rollout rlt_tasks "Tasks"
                 )
             )
             "Update Work State":(
-
                 -- Создать рабочее состояние
-                MD_Data.CreateWorkState()
+                MD_Data.UpdateWorkState()
             )
         )
         try FullUpdate() catch()
-        -- MD_Data.VisibleLayers = false
         MD_Data.ShowLayers mode:#work_only
     )
 
