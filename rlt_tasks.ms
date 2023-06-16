@@ -11,8 +11,8 @@ rollout rlt_tasks "Tasks"
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
     dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
-    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
-    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
+    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07
     
     on rlt_tasks open do
     (
@@ -104,8 +104,8 @@ rollout rlt_tasks "Tasks"
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
         try (
 			if MD_Data.ActiveCategoryIcon.Icon != undefined then
-			MD_UI.UtilsCatalog.btn_mode.text = "Edit Icon"
-			else MD_UI.UtilsCatalog.btn_mode.text = "Create Icon"			
+			MD_UI.ToolsCatalogRoll.btn_mode.text = "Edit Icon"
+			else MD_UI.ToolsCatalogRoll.btn_mode.text = "Create Icon"			
 		)catch()
     )
 
@@ -447,7 +447,7 @@ rollout rlt_tasks "Tasks"
                     dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
 
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    if MD_UI.Settings.ckbx_load_last.checked then
+                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
                     (
                         if MD_Data.WorkLayerNodes.count != 0 then
                         (

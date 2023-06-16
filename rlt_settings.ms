@@ -34,7 +34,8 @@ rollout rlt_settings "Settings"
     
     on ckbx_show_bb changed arg do 
     (
-        MD_BBox.Update()
+        MD_BBox.Layer.IsHidden = not ckbx_show_bb.checked
+        completeRedraw()
     )
 
     on ckbx_show_icon changed arg do 

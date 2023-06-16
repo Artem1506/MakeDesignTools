@@ -1,225 +1,350 @@
 
-rollout rlt_tools_catalog "General"
+rollout rlt_tools_catalog "Tools"
 (
-    groupBox 'grp_01' " Common: " width:(rlt_tools_catalog.width - 8) height:97 align:#center offset:[0, -4]
-    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -82] across:2 enabled:false tooltip:""
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -82] enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_03
-    button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
-	checkbutton 'btn_edit_icon' "Edit Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
+    groupBox 'grp_01' " Transform: " width:(rlt_tools_catalog.width - 8) height:120 align:#center offset:[0, -4]
+    button 'btn_up' "▲" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -104]
+	button 'btn_left' "◄" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[37, -2] across:3
+	button 'btn_center' "•" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[0, -2]
+    button 'btn_right' "►" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-37, -2]
+	button 'btn_down' "▼" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -2] 
 
-    groupBox 'grp_02' " Mesh: " width:(rlt_tools_catalog.width - 8) height:72 align:#center offset:[0, 4]
-    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -57] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -57] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
-    button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
+	groupBox 'grp_02' " Icon: " width:(rlt_tools_catalog.width - 8) height:146 align:#center offset:[0, 4]
+	checkbutton 'btn_create_icon' "Create Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132]
+	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false
+    dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false
+	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
+	button 'btn_fit' "Fit" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -3] enabled:false
+	spinner 'spn_d' "Depth:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[4, -1] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
+	button 'btn_render' "Render" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false
+	button 'btn_save' "Save As Default Icon" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
 
-    groupBox 'grp_03' " Files: " width:(rlt_tools_catalog.width - 8) height:80 align:#center offset:[0, 4]
-    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16, -67] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
-    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
-    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
-    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_2 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_10
+	local icon_controls = #(btn_create_sel_set, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
+	local icon_layer = undefined
+	local layer_nodes = #()
 
-    -- button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
+	fn getViewCoordSys =
+	(
+		local coordSysTM = undefined
+		local result = #()
+		
+		coordSysTM = Inverse(viewport.GetTM())
+		coordSysTM.row3 *= -1
 
-    on rlt_tools_catalog open do
-    (
+		for i = 1 to 3 do
+		(
+			local val = coordSysTM[i]
+			local max_num = 0
+			local max_num_index = undefined
+			local new_vector = [0, 0, 0]
+				
+			for k = 1 to 3 where abs val[k] > abs max_num do
+			(	
+				max_num = val[k]		
+				max_num_index = k
+			)
+			
+			new_vector[max_num_index] = floor (max_num + 0.5)
+			append result new_vector
+		)
+		
+		return result
+	)
 
-    )
-    
-    on rlt_tools_catalog close do
-    (
-        -- SetINISettings rlt_tools_catalog MDT_CONFIG_FILE rlt_tools_catalog.name
-    )
+	fn ConvertSelectedToVerts obj =
+	(
+		local verts = BitArray()
+		
+		if obj != undefined then
+		(
+			obj = snapshotAsMesh obj
+			
+			case subobjectLevel of
+			(
+				undefined:(verts = #{1..(getNumVerts obj)})
+				0:(verts = #{1..(getNumVerts obj)})
+				1:(verts = getVertSelection obj)
+				2:(verts = meshop.getVertsUsingEdge obj (getEdgeSelection obj))
+				3:(verts = meshop.getVertsUsingEdge obj (getFaceSelection obj))
+				4:(verts = meshop.getVertsUsingFace obj (getFaceSelection obj))
+				5:(verts = meshop.getVertsUsingFace obj (getFaceSelection obj))
+			)
+		)
 
-    on btn_assign_mat pressed do
-    (
-        MD_Data.AssignMaterial selection[1]
-    )
+		return verts
+	)
 
-    on btn_vis_switch pressed do
-    (
-        MD_Data.CreateWorkLayer()
-        case btn_vis_switch.text of
-        (
-            "Show Scene Objects":(
-                MD_Data.ShowLayers mode:#all
-                btn_vis_switch.text = "Isolate Task Layer"
-            )
-            "Isolate Task Layer":(
-                MD_Data.ShowLayers mode:#work_only
-                btn_vis_switch.text = "Show Scene Objects"
-            )
-        )
-        
-    )
+	fn MinOfSelected obj =
+	(
+		local verts = ConvertSelectedToVerts obj
+		local sel_min = undefined
+		
+		if obj != undefined and verts.count != 0 then
+		(
+			obj = snapshotAsMesh obj
+			local sel_min = meshop.getVert obj (verts as array)[1]
+			
+			for i in verts do
+			(
+				vert_pos = meshop.getVert obj i
+				if vert_pos.x < sel_min.x then sel_min.x = vert_pos.x
+				if vert_pos.y < sel_min.y then sel_min.y = vert_pos.y
+				if vert_pos.z < sel_min.z then sel_min.z = vert_pos.z
+			)
+		)
+		
+		return sel_min
+	)
+	
+	fn MaxOfSelected obj =
+	(
+		local verts = ConvertSelectedToVerts obj
+		local sel_max = undefined
+		
+		if obj != undefined and verts.count != 0 then
+		(
+			obj = snapshotAsMesh obj
+			local sel_max = meshop.getVert obj (verts as array)[1]
+			
+			for i in verts do
+			(
+				vert_pos = meshop.getVert obj i
+				if vert_pos.x > sel_max.x then sel_max.x = vert_pos.x
+				if vert_pos.y > sel_max.y then sel_max.y = vert_pos.y
+				if vert_pos.z > sel_max.z then sel_max.z = vert_pos.z
+			)
+		)
+		
+		return sel_max
+	)
+	
+	fn MinByGeom obj =
+	(
+		local sel_min = undefined
+		
+		if obj != undefined then
+		(
+			obj = snapshotAsMesh obj
+			local verts_count = getNumVerts obj
+			local sel_min = meshop.getVert obj 1
+			
+			for i = 1 to verts_count do
+			(
+				vert_pos = meshop.getVert obj i
+				if vert_pos.x < sel_min.x then sel_min.x = vert_pos.x
+				if vert_pos.y < sel_min.y then sel_min.y = vert_pos.y
+				if vert_pos.z < sel_min.z then sel_min.z = vert_pos.z
+			)
+		)
+		
+		return sel_min
+	)
 
-    on btn_main_mesh pressed do
-    (
-        MD_Data.SetMesh selection[1]
-        MD_UI.UpdateCatalogToolsRlt()
-        MD_BBox.Update()
-    )
+	fn MaxByGeom obj =
+	(
+		local sel_max = undefined
+		
+		if obj != undefined then
+		(
+			obj = snapshotAsMesh obj
+			local verts_count = getNumVerts obj
+			local sel_max = meshop.getVert obj 1
+			
+			for i = 1 to verts_count do
+			(
+				vert_pos = meshop.getVert obj i
+				if vert_pos.x > sel_max.x then sel_max.x = vert_pos.x
+				if vert_pos.y > sel_max.y then sel_max.y = vert_pos.y
+				if vert_pos.z > sel_max.z then sel_max.z = vert_pos.z
+			)
+		)
+		
+		return sel_max
+	)
+	
+	fn AlignBoundings obj bound_box dir =
+	(
+		local vcs = getViewCoordSys()
+		local move_dist = [0,0,0]
+		local val = undefined
 
-    on btn_add_mesh pressed do
-    (
-        if MD_Data.InWorkTask != undefined and selection[1] != undefined then 
-        (
-            if MD_Data.InWorkTask.AddMesh == undefined and MD_Data.InWorkTask.Mesh == selection[1] then
-            (
-                if (queryBox "Создать дополнительный меш путём копирования основного?" title:"Внимание!" icon:#question) then 
-                (
-                    MD_Data.SetAddMesh (copy selection[1])
-                )
-                -- else MD_Data.SetAddMesh selection[1]
-            )
-            else MD_Data.SetAddMesh selection[1]
-        )
-        
-        MD_UI.UpdateCatalogToolsRlt()
-        MD_BBox.Update()
-    )
+		case dir of
+		(
+			#left:(
+				if (vcs[1].x +  vcs[1].y +  vcs[1].z) > 0 then
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) 
+					else if subobjectLevel > 0 then val = (MinOfSelected obj)
+					move_dist = ((bound_box.min * vcs[1])-(val * vcs[1]))
+				)
+				else 
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
+					move_dist = ((((bound_box.max * vcs[1])-(val * vcs[1]))) * -1)
+				)
+			)
+			#right:(
+				if (vcs[1].x +  vcs[1].y +  vcs[1].z) > 0 then
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
+					move_dist = ((bound_box.max * vcs[1])-(val * vcs[1]))	
+				)
+				else 
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) else val = (MinOfSelected obj)
+					move_dist = ((((bound_box.min * vcs[1])-(val * vcs[1]))) * -1)
+				)
+			)
+			#up:(
+				if (vcs[2].x +  vcs[2].y +  vcs[2].z) > 0 then
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
+					move_dist = ((bound_box.max * vcs[2])-(val * vcs[2]))
+				)
+				else 
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) else val = (MinOfSelected obj)
+					move_dist = ((((bound_box.min * vcs[2])-(val * vcs[2]))) * -1)
+				)
+			)
+			#down:(
+				if (vcs[2].x +  vcs[2].y +  vcs[2].z) > 0 then
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) else val = (MinOfSelected obj)
+					move_dist = ((bound_box.min * vcs[2])-(val * vcs[2]))
+				)
+				else 
+				(
+					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
+					move_dist = ((((bound_box.max * vcs[2])-(val * vcs[2]))) * -1)
+				)
+                CompleteRedraw()
+			)
+			#center:(
+				if subobjectLevel == 0 or subobjectLevel == undefined then val = (((MaxByGeom obj) + (MinByGeom obj))/2) else val = (((MaxOfSelected obj) + (MinOfSelected obj))/2)
+				move_dist = bound_box.center - val
+			)
+			#vcenter:(
+				if subobjectLevel == 0 or subobjectLevel == undefined then val = (((MaxByGeom obj) + (MinByGeom obj))/2) else val = (((MaxOfSelected obj) + (MinOfSelected obj))/2)
+				if (vcs[2].x +  vcs[2].y +  vcs[2].z) > 0 then
+				move_dist = ((bound_box.center * vcs[2])-(val * vcs[2]))
+				else move_dist = ((((bound_box.center * vcs[2])-(val * vcs[2]))) * -1)
+			)
+			#hcenter:(
+				if subobjectLevel == 0 or subobjectLevel == undefined then val = (((MaxByGeom obj) + (MinByGeom obj))/2) else val = (((MaxOfSelected obj) + (MinOfSelected obj))/2)
+				if (vcs[1].x +  vcs[1].y +  vcs[1].z) > 0 then 
+				move_dist = ((bound_box.center * vcs[1])-(val * vcs[1]))
+				else move_dist = ((((bound_box.center * vcs[1])-(val * vcs[1]))) * -1)
+			)
+		)
 
-    on btn_mesh_switch pressed do
-    (
-        clearSelection()
-        if MD_Data.InWorkTask != undefined then
-        (
-            MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+		case superClassOf obj of
+		(
+			GeometryClass:(
+				if subobjectLevel == 0 or subobjectLevel == undefined then (move obj move_dist)
+				case classOf obj of
+				(
+					Editable_Poly:(
+							if subobjectLevel > 0 then (
+								if obj.useSoftSel == off then polyop.moveVert obj (ConvertSelectedToVerts obj) move_dist
+								else polyop.moveVert obj #all move_dist useSoftSel:true
+							)
+						)
+					Editable_mesh:(
+							if subobjectLevel > 0 then (
+								if meshop.getSoftSel obj == off then meshop.moveVert obj (ConvertSelectedToVerts obj) move_dist
+								else (meshop.moveVert obj #all useSoftSel:true; update obj)
+							)
+						)
+				)				
+			)
+			Shape:(
+				if subobjectLevel == 0 or subobjectLevel == undefined then (move obj move_dist)
+-- 				else if subobjectLevel == 1 then
+-- 				(
+-- 					getKnotSelection <shape> <spline_index_integer>
+-- 					setKnotPoint obj 1 1 move_dist
+-- 				)
+			)
+		)
+	)
 
-            case MD_Data.InWorkTask.ActiveMesh of
-            (
-                1:(
-                    MD_Data.InWorkTask.ActiveMesh = 2
-                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
-                    try MD_Data.InWorkTask.AddMesh.IsHidden = false catch()
-                    try select MD_Data.InWorkTask.AddMesh catch()
-                )
-                2:(
-                    MD_Data.InWorkTask.ActiveMesh = 1
-                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
-                    try MD_Data.InWorkTask.AddMesh.IsHidden = true catch()
-                    try select MD_Data.InWorkTask.Mesh catch()
-                )
-            )
+    on btn_up pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw()))
+	
+	on btn_down pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #down catch(); CompleteRedraw()))
+	
+    on btn_left pressed do (undo on for o in selection do (try AlignBoundings o MD_BBox.bb #left catch(); CompleteRedraw()))
 
-            MD_UI.UpdateCatalogToolsRlt()
-            MD_BBox.Update()
-            MD_UI.UpdateCatalogInfoRlt()
-        )
-    )
+	on btn_right pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #right catch(); CompleteRedraw()))
+		
+	on btn_up rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #vcenter catch(); CompleteRedraw()))
+	
+	on btn_down rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #vcenter catch(); CompleteRedraw()))
+		
+	on btn_left rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #hcenter catch(); CompleteRedraw()))
+	
+	on btn_right rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #hcenter catch(); CompleteRedraw()))
+		
+	on btn_center pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #center catch(); CompleteRedraw()))
 
-    on btn_set_pivot pressed do
-    (
-        try destroyDialog MD_UI.Dialogs.PivotParams catch()
-        createDialog MD_UI.Dialogs.PivotParams 340 100 modal:false
-        MD_BBox.Update()
-    )
-
-    on btn_set_pivot rightclick do
-    (
-        MD_BBox.ResetPivot()
-        MD_BBox.ResetPivot()
-    )
-
-    on btn_save_work pressed do
-    (
-        MD_Data.InWorkTask.SaveWork()
-        MD_UI.UpdateCatalogToolsRlt()
-    )
-
-    on btn_load_work pressed do
-    (
-        if MD_Data.ActiveTask.Group == undefined then
-        (
-            MD_Data.CreateWorkLayer()
-        )
-
-        MD_Data.InWorkTask.LoadWork \
-        MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:false
-        MD_UI.UpdateCatalogToolsRlt()    
-    )
-
-    on btn_work_list pressed do
-    (
-        try destroyDialog MD_UI.Dialogs.LoadWork catch()
-
-        if MD_Data.ActiveTask.SavedWorks.count != 0 then
-        (
-           createDialog MD_UI.Dialogs.LoadWork 628 398 modal:true
-           MD_UI.UpdateCatalogToolsRlt()
-        )
-    )
-
-    on btn_export pressed do
-    (
-        MD_Callbacks.Add()
-        try(destroyDialog MD_UI.Dialogs.Export)catch()
-        CreateDialog MD_UI.Dialogs.Export style:#(#style_sysmenu, #style_titlebar)
-    )
-
-    on btn_attach_to_task pressed do
-    (
-        MD_Data.AttachSelectedToWorkLayer()
-        MD_Data.ShowLayers mode:#work_only
-    )
-
-	on btn_edit_icon changed arg do
+	on btn_create_icon changed arg do
 	(
 		case arg of
 		(
 			true:(
-                MD_Callbacks.Destruct()
-
-				MD_BBox.Layer.on = false
-				MD_BBox.Layer.lock = false
-				MD_BBox.Layer.ishidden = false
-				MD_BBox.Layer.current = true
-
-                for i = 0 to LayerManager.count - 1 do
-				(
-					lr = LayerManager.getLayer i
-					if lr != MD_BBox.Layer then lr.ishidden = true
-				)
-
-				for ctrl in MD_UI.Settings.Controls do ctrl.enabled = false
-				for ctrl in MD_UI.Tasks.Controls do ctrl.enabled = false
-				for ctrl in MD_UI.ToolsCatalog.Controls do ctrl.enabled = false
-                btn_edit_icon.enabled = true
-
-                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = false catch()
-                try select MD_Data.ActiveCategoryIcon.Icon catch()
-                max modify mode
-                subobjectLevel = 1
-                -- try (polyop.setVertSelection MD_Data.ActiveCategoryIcon.Icon #{}) catch()
+				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
+				for ctrl in icon_controls do ctrl.enabled = true
+				MD_Data.ActiveCategoryIcon.New()
 			)
 			false:(
-                MD_BBox.Update()
-
-                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = not MD_UI.Settings.ckbx_show_icon.checked catch()
-
-				if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
-				MD_Data.ShowLayers mode:#work_only else MD_Data.ShowLayers mode:#scene_only
-
-				for ctrl in MD_UI.Settings.Controls do ctrl.enabled = true
-				for ctrl in MD_UI.Tasks.Controls do ctrl.enabled = true
-				MD_UI.UpdateCatalogTasksRlt()
-				MD_UI.UpdateCatalogToolsRlt()
-                
-                -- Сохранить дефолтную иконку для текущей категории
-                local file_path = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME
-                gc()
-                save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
-                
-                MD_Callbacks.Add()
+				MD_Data.ActiveCategoryIcon.Destruct()
+				MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+				local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+				try MD_Data.ActiveCategoryIcon.Create icon_file catch()
+				for ctrl in icon_controls do ctrl.enabled = false
+				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
+				spn_w.value = ConvertCentimeterToSysUnits 100.0
+				spn_d.value = ConvertCentimeterToSysUnits 100.0
 			)
 		)
 		completeRedraw()
 		MD_Data.edit_icon_mode = arg
 	)
 
-    -- on btn_assign_texts pressed do
-    -- (
-    --     try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
-    --     CreateDialog MD_UI.Dialogs.LoadTextures modal:false
-    -- )
+	on btn_create_sel_set pressed do 
+	(
+		try MD_Data.ActiveCategoryIcon.SetNamedSelSet lst_sel_sets.items[lst_sel_sets.selection] catch()
+	)
+
+	on spn_w changed arg do (MD_BBox.bb.length = arg; completeRedraw())
+
+	on spn_d changed arg do 
+	(
+		MD_BBox.bb.width = arg
+		arrow_offset = ConvertCentimeterToSysUnits 10.0
+		arrow_rad = ConvertCentimeterToSysUnits 20.0
+		MD_BBox.arrow.radius = arrow_rad
+		MD_BBox.arrow.pos.x = (MD_BBox.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+
+		completeRedraw()
+	)
+
+	on btn_fit pressed do (
+		undo on
+		MD_Data.ActiveCategoryIcon.Icon.Pivot = MD_Data.ActiveCategoryIcon.Icon.Center
+		MD_Data.ActiveCategoryIcon.Icon.Pos = [0, 0, 0]
+		try MD_Data.ActiveCategoryIcon.FitSizeToBBox MD_BBox.bb catch()
+
+		completeRedraw()
+	)
+
+	on btn_render pressed do (
+		try MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon catch()
+	)
+
+	on btn_save pressed do (
+		-- Сохранить дефолтную иконку для текущей категории
+		local file_path = (pathconfig.appendpath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + "_icon.max"))
+		gc()
+		save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
+	)
 )

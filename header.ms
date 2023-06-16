@@ -119,7 +119,7 @@ MAX_VERSION = 2018
 SEPAR_1 = "%"
 SEPAR_2 = "$"
 
--- Роллауты
+-- Диалоги
 dlg_configure
 dlg_check_tasks
 dlg_pivot_params
@@ -128,18 +128,20 @@ dlg_export
 dlg_request
 dlg_load_textures
 
+-- Роллауты
 global rlt_make_design
 rlt_settings
 rlt_info_catalog
 rlt_info_projects
 rlt_tasks
+rlt_general_catalog
+rlt_general_projects
 rlt_tools_catalog
-rlt_tools_projects
-rlt_utilities
 rlt_about
 
 -- Базовые структуры
 MD_Log
+Client_Log
 MD_Tooltips
 MD_Data
 MD_UI
@@ -150,5 +152,6 @@ MD_Icon
 
 global CheckExistTaskLayer
 InitExistTextures
+FullUpdate
 cur_view_tm = undefined
 cur_view_type = undefined
