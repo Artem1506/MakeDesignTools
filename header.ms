@@ -9,9 +9,11 @@ global data_file = ""
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
 MD_LIB_TRASH_DIR = ""
-ICONS_DIR = pathConfig.appendPath MAIN_DIR "icons"
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "md_client"
 DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
+if not doesDirectoryExist DATA_DIR then makeDir DATA_DIR
+SOURCE_DIR = pathConfig.appendPath MAIN_DIR "source"
+SOURCE_ICONS_DIR = pathConfig.appendPath SOURCE_DIR "category_icons"
 
 -- HTTP - клиент
 HTTP_CLIENT_NAME = "md_client"
@@ -25,15 +27,17 @@ MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
 MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
-MD_LIB_COMMON_DATA_FILE = ""
-COMMON_DATA_FILE_NAME = "common_data.json"
+MD_LIB_DATA_FILE = ""
+COMMON_DATA_FILE_NAME = "lib_data.json"
 TASK_FILE_NAME = "data.json"
 SAVED_FILE_NAME = "Saving"
-TASK_MAT_NAME = "Material"
+TASK_MAT_NAME = "Material.mat"
+TASK_ICON_NAME = "Icon.max"
+ICON_TEMPLATE_FILE = pathConfig.appendPath SOURCE_DIR "_icon_template_.max"
 
 -- Файлы иконок
-ICON_NO_PRVIEW_FILE = pathConfig.appendPath ICONS_DIR "mdt_no_preview.png"
-ICON_MDT_FILE = pathConfig.appendPath ICONS_DIR "mdt_48.png"
+ICON_NO_PRVIEW_FILE = pathConfig.appendPath SOURCE_DIR "mdt_no_preview.png"
+ICON_MDT_FILE = pathConfig.appendPath SOURCE_DIR "mdt_48.png"
 
 -- Инфо
 author = "Зайцев Павел"
@@ -43,7 +47,7 @@ DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
 -- Списки
 STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
-TASK_INNER_DIRS = #("Task", "InWork")
+TASK_INNER_DIRS = #("Task", "InWork", "InWork/Saved")
 MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
 ADD_LIST_COLUMNS_1 = #("Parts", "Material", "Textures")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
@@ -53,7 +57,9 @@ TASK_PARAMS_LIST = #("New", "Incorrect", "Completed", "Deleted")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
-TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga")
+TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_ARD.tga", "_E.tga", "_SSS.tga", "_ICON.tga")
+HELPER_OBJECTS = #("_bbox_", "_arrow_", "_pivot_", "_icon_")
+SELECTION_SET_NAMES = #("Left_side", "Right_side", "Front_side", "Back_side")
 CLR_PALETTE_1 = #(
     color 87 53 255,
     color 255 53 53,
@@ -67,7 +73,10 @@ CLR_PALETTE_1 = #(
     color 255 170 53,
     color 255 114 53,
     color 53 255 194)
-    
+
+ICON_THICKNESS = 0.4 -- Толщина декали в см
+MAX_TEX_SIZE = 4096
+
 -- Интерфейс
 global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
 MAIN_RLT_WIDTH = 240
@@ -80,6 +89,7 @@ CTRL_HEIGHT_1 = 22
 CTRL_HEIGHT_2 = 32
 PREVIEW_SIZE = MAIN_RLT_WIDTH - 12
 SAVED_PREVIEW_SIZE = 384
+CTRL_MANIP_SIZE = 29
 V_MARGIN = -2
 EMPTY_TEXT = "-----"
 DN_CLR_DEFAULT = DN_Lib.dnColor 0 0 0 255
@@ -99,16 +109,24 @@ CLR_BBOX_PIVOT = color 14 255 2
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
 mdt_temp_layer = "_mdt_temp_"
-TRANS_POSTFIX = "trans"
+icon_temp_layer = "_icon_template_"
+TRANS_POSTFIX = "_trans"
+ICON_POSTFIX = "_icon"
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018
 
--- Разделители для задания параметров запуска утилиты "md_client.exe"
+-- http-клиента
+URL_AUTH = "https://stanzza-api.aicrobotics.ru/api/auth/login"
+URL_STORAGE = "https://stanzza-api.aicrobotics.ru/api/storage/upload"
+URL_CATALOG = "https://stanzza-api.aicrobotics.ru/api/v1/catalog"
+URL_PROJECTS = "https://stanzza-api.aicrobotics.ru/api/projects"
+URL_CHAT = "https://stanzza-api.aicrobotics.ru/api/chat"
+URL_USERS = "https://stanzza-api.aicrobotics.ru/api/chat/users"
 SEPAR_1 = "%"
 SEPAR_2 = "$"
 
--- Роллауты
+-- Диалоги
 dlg_configure
 dlg_check_tasks
 dlg_pivot_params
@@ -117,23 +135,30 @@ dlg_export
 dlg_request
 dlg_load_textures
 
+-- Роллауты
 global rlt_make_design
 rlt_settings
 rlt_info_catalog
 rlt_info_projects
 rlt_tasks
+rlt_general_catalog
+rlt_general_projects
 rlt_tools_catalog
-rlt_tools_projects
 rlt_about
 
 -- Базовые структуры
 MD_Log
+Client_Log
 MD_Tooltips
 MD_Data
 MD_UI
 MD_BBox
 MD_Callbacks
 MD_Client
+MD_Icon
 
 global CheckExistTaskLayer
 InitExistTextures
+FullUpdate
+cur_view_tm = undefined
+cur_view_type = undefined

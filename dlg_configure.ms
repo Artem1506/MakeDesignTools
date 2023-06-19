@@ -93,7 +93,7 @@ rollout dlg_configure "Configure" width:400 height:164
                 (
                     local exist_task_index = undefined
 
-                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.Tasks.Name (MD_UI.ListMain.name + "_selection")) + 1) catch()
+                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.TasksRoll.Name (MD_UI.ListMain.name + "_selection")) + 1) catch()
 
                     if exist_task_index != undefined and exist_task_index > 0 then
                     (
@@ -111,7 +111,7 @@ rollout dlg_configure "Configure" width:400 height:164
                     )
 
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    if MD_UI.Settings.ckbx_load_last.checked then
+                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
                     (
                         try(
                             if MD_Data.WorkLayerNodes.count == 0 then

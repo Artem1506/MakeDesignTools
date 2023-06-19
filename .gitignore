@@ -1,6 +1,4 @@
 data/
-icons/
-md_client/
+md_client/md_client.config
+develop/mdt.ms
 mdt.config
-print_data.ms
-Описание.txt

@@ -1,11 +1,11 @@
-rollout dlg_load_textures "" width:320 height:212
+rollout dlg_load_textures "" width:320 height:270
 (
-    groupBox 'grp_01' " Textures: " width:(dlg_load_textures.width - 20) height:134 align:#left offset:[-3, 2]
+    groupBox 'grp_01' " Textures: " width:(dlg_load_textures.width - 20) height:188 align:#left offset:[-3, 2]
 	-- groupBox 'grp_02' " Tools: " width:(dlg_load_textures.width - 170) height:70 align:#left offset:[-3, -2]
 
-    label 'lbl_01' "Diffuse:" width:70 height:18 align:#left offset:[8, -114] across:3
-	button 'btn_d' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, -118]
-        checkbox 'ckbx_d' "" width:20 offset:[-3, -114] align:#right checked:false enabled:false
+    label 'lbl_01' "Diffuse:" width:70 height:18 align:#left offset:[8, -166] across:3
+	button 'btn_d' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, -170]
+        checkbox 'ckbx_d' "" width:20 offset:[-3, -166] align:#right checked:false enabled:false
 
     label 'lbl_02' "Metallic:" width:70 height:18 align:#left offset:[7, 4] across:3
 	button 'btn_m' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
@@ -18,15 +18,23 @@ rollout dlg_load_textures "" width:320 height:212
     label 'lbl_04' "ARD:" width:70 height:18 align:#left offset:[20, 4] across:3
 	button 'btn_ard' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
         checkbox 'ckbx_ard' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
+
+    label 'lbl_05' "Emission:" width:70 height:18 align:#left offset:[1, 4] across:3
+	button 'btn_e' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
+        checkbox 'ckbx_e' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
+
+    label 'lbl_06' "SSS:" width:70 height:18 align:#left offset:[22, 4] across:3
+	button 'btn_sss' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
+        checkbox 'ckbx_sss' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
 	
 	button 'btn_auto_load' "Package Load" width:((dlg_load_textures.width - 23)/2) height:CTRL_HEIGHT_1 align:#center offset:[-2, 10] across:2
     button 'btn_delete' "Delete" width:((dlg_load_textures.width - 23)/2) height:CTRL_HEIGHT_1 align:#center offset:[2, 10] enabled:false
 	
 	button 'btn_load' "Add Textures To Material" width:(dlg_load_textures.width - 20) height:CTRL_HEIGHT_2 align:#center offset:[0, -2] enabled:false
     
-    local controls_arr = #(#(btn_d, ckbx_d), #(btn_m, ckbx_m), #(btn_n, ckbx_n), #(btn_ard, ckbx_ard))
-    local textures = #(undefined, undefined, undefined, undefined)
-    local source_files = #(undefined, undefined, undefined, undefined)
+    local controls_arr = #(#(btn_d, ckbx_d), #(btn_m, ckbx_m), #(btn_n, ckbx_n), #(btn_ard, ckbx_ard), #(btn_e, ckbx_e), #(btn_sss, ckbx_sss))
+    local textures = #(undefined, undefined, undefined, undefined, undefined, undefined)
+    local source_files = #(undefined, undefined, undefined, undefined, undefined, undefined)
 
     fn ChangeMaterial =
     (
@@ -62,6 +70,24 @@ rollout dlg_load_textures "" width:320 height:212
             bm.reload()
         )
         else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = undefined
+
+        if textures[5] != undefined then 
+        (
+            bm = Bitmaptexture fileName:textures[5]
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMapEnable = off
+            bm.reload()
+        )
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = undefined
+
+        if textures[6] != undefined then 
+        (
+            bm = Bitmaptexture fileName:textures[6]
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = bm
+            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMapEnable = off
+            bm.reload()
+        )
+        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = undefined
 
         -- append MatLib MD_Data.InWorkTask.Material
         MD_Data.ActiveTask.MatLib[1] = MD_Data.ActiveTask.Material
@@ -114,11 +140,11 @@ rollout dlg_load_textures "" width:320 height:212
                 if DoesFileExist lib_tex_file then
                 (
                     controls_arr[i][1].text = text_name
-                    controls_arr[i][2].checked = true
+                    controls_arr[i][2].checked = false
                     controls_arr[i][2].enabled = true
                     textures[i] = lib_tex_file
-                    btn_delete.enabled = true
-                    btn_load.enabled = true
+                    btn_delete.enabled = false
+                    btn_load.enabled = false
                 )
                 else
                 (
@@ -150,6 +176,8 @@ rollout dlg_load_textures "" width:320 height:212
                 "Metallic":(suffix = TEXTURES_SIFFIXES[2]; textures[2] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[2] = file)
                 "Normal":(suffix = TEXTURES_SIFFIXES[3]; textures[3] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[3] = file)
                 "ARD":(suffix = TEXTURES_SIFFIXES[4]; textures[4] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[4] = file)
+                "Emissive":(suffix = TEXTURES_SIFFIXES[5]; textures[5] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[5] = file)
+                "SSS":(suffix = TEXTURES_SIFFIXES[6]; textures[6] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[6] = file)
             )
 
             text_name = "T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix
@@ -221,6 +249,18 @@ rollout dlg_load_textures "" width:320 height:212
         else (btn_delete.enabled = true; btn_load.enabled = true)
     )
 
+    on ckbx_e changed arg do (
+        if (GetCheckedItems()).count == 0 
+        then (btn_delete.enabled = false; btn_load.enabled = false)
+        else (btn_delete.enabled = true; btn_load.enabled = true)
+    )
+
+    on ckbx_sss changed arg do (
+        if (GetCheckedItems()).count == 0 
+        then (btn_delete.enabled = false; btn_load.enabled = false)
+        else (btn_delete.enabled = true; btn_load.enabled = true)
+    )
+
     on btn_d pressed do OpenFile btn_d ckbx_d "Diffuse"
 
     on btn_m pressed do OpenFile btn_m ckbx_m "Metallic"
@@ -229,7 +269,11 @@ rollout dlg_load_textures "" width:320 height:212
 
     on btn_ard pressed do OpenFile btn_ard ckbx_ard "ARD"
 
-    on btn_load pressed do 
+    on btn_e pressed do OpenFile btn_e ckbx_e "Emissive"
+
+    on btn_sss pressed do OpenFile btn_sss ckbx_sss "SSS"
+
+    on btn_load pressed do
     (
         CopyTextsToLib()
         ChangeMaterial()

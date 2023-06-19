@@ -8,9 +8,11 @@ rollout rlt_tasks "Tasks"
     button 'btn_get' "Get" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[29, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_02_a
     button 'btn_clear' "Clear" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[19, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_03_a
     dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:176 align:#center offset:[1, 0] enabled:true
-    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, V_MARGIN] enabled:true
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
+    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
+    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07
     
     on rlt_tasks open do
     (
@@ -44,6 +46,7 @@ rollout rlt_tasks "Tasks"
             
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -68,6 +71,10 @@ rollout rlt_tasks "Tasks"
 
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+            
+            MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+			local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			MD_Data.ActiveCategoryIcon.SetIcon icon_file
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
@@ -89,8 +96,17 @@ rollout rlt_tasks "Tasks"
 
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
+
+            MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+			local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			MD_Data.ActiveCategoryIcon.SetIcon icon_file
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        try (
+			if MD_Data.ActiveCategoryIcon.Icon != undefined then
+			MD_UI.ToolsCatalogRoll.btn_mode.text = "Edit Icon"
+			else MD_UI.ToolsCatalogRoll.btn_mode.text = "Create Icon"			
+		)catch()
     )
 
     on lst_sub_catalog rightClick do
@@ -325,7 +341,7 @@ rollout rlt_tasks "Tasks"
                 -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
                 MD_Data.ActiveTaskAddIndex = undefined
 
-                if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.file == MD_Data.InWorkTask.file then
+                if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
                     MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
                     MD_Data.InWorkTask.ActiveMesh = 1
@@ -336,7 +352,7 @@ rollout rlt_tasks "Tasks"
                         (
                             MD_Data.InWorkTask.Mesh = obj
                         )
-                        if obj.name == (MD_Data.InWorkTask.Article + "_" + TRANS_POSTFIX) then
+                        if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
                         (
                             MD_Data.InWorkTask.AddMesh = obj
                             MD_Data.InWorkTask.AddMesh.isHidden = true
@@ -394,6 +410,7 @@ rollout rlt_tasks "Tasks"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
+            MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogToolsRlt()
         )
@@ -421,6 +438,7 @@ rollout rlt_tasks "Tasks"
                 try ClearTrashLayers() catch()
                 
                 MD_Data.CreateWorkState()
+                -- MD_Icon.Create()
 
                 -- Если имеются ранее сохранённые рабочие файлы
                 if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.SavedWorks.count != 0 then
@@ -429,7 +447,7 @@ rollout rlt_tasks "Tasks"
                     dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
 
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    if MD_UI.Settings.ckbx_load_last.checked then
+                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
                     (
                         if MD_Data.WorkLayerNodes.count != 0 then
                         (
@@ -446,13 +464,11 @@ rollout rlt_tasks "Tasks"
                 )
             )
             "Update Work State":(
-
                 -- Создать рабочее состояние
-                MD_Data.CreateWorkState()
+                MD_Data.UpdateWorkState()
             )
         )
         try FullUpdate() catch()
-        -- MD_Data.VisibleLayers = false
         MD_Data.ShowLayers mode:#work_only
     )
 
@@ -472,5 +488,16 @@ rollout rlt_tasks "Tasks"
     on lv_add ColumnClick s e do
     (
 
+    )
+
+    on btn_assign_mat_id pressed do
+    (
+        MD_Data.AssignMatID selection[1]
+    )
+
+    on btn_assign_texts pressed do
+    (
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        CreateDialog MD_UI.Dialogs.LoadTextures modal:false
     )
 )
