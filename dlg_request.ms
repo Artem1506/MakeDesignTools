@@ -1,5 +1,5 @@
 
-rollout dlg_request MD_Client.request_dlg_title width:350 height:100
+rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
 (
     local dots = "."
     local index = 1
@@ -17,9 +17,9 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 		process.StartInfo.RedirectStandardOutput = true
 		process.StartInfo.RedirectStandardError = true
 
-        MD_Client.response_data = #()
+        MD_Client.ResponseData = #()
 
-        if MD_Client.dialog_mode == false then 
+        if MD_Client.RequestDialogShow == false then 
         (
             dlg_request.visible = false
             dlg_request.height = 0
@@ -43,9 +43,9 @@ rollout dlg_request MD_Client.request_dlg_title width:350 height:100
 
             try resp = (FilterString (getclipboardText()) SEPAR_1) catch()
             
-            try MD_Client.response_status = resp[1] catch()
-            try MD_Client.response_msg = resp[2] catch()
-            try MD_Client.response_data = (execute resp[3]) catch()
+            try MD_Client.ResponseStatus = resp[1] catch()
+            try MD_Client.ResponseMessage = resp[2] catch()
+            try MD_Client.ResponseData = (execute resp[3]) catch()
             try MD_Data.TempArticlesList = MD_Client.ExistTasksFilter() catch()
 
             destroyDialog dlg_request

@@ -2,7 +2,6 @@ rollout dlg_configure "Configure" width:400 height:164
 (
     local login, password
     local result_sum = 0
-    local connection = false
     local cur_md_lib
 
     Label 'lbl_6' "Directory: " width:62 offset:[8, 20] align:#left across:3
@@ -40,9 +39,11 @@ rollout dlg_configure "Configure" width:400 height:164
 
         -- Инициализация логина и пароля
         try(
-            login = getINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" forceUTF16:false
-            password = getINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" forceUTF16:false
+            login = GetUserEnvVar "MD_USER_LOGIN"
             etxt_log.text = login
+        )catch()
+        try(
+            password = GetUserEnvVar "MD_USER_PASS"
             etxt_pass.text = password
         )catch()
 
@@ -54,6 +55,8 @@ rollout dlg_configure "Configure" width:400 height:164
     (
         -- Сохранить положение диалога
         SetINISetting MDT_CONFIG_FILE dlg_configure.name "pos" ((GetDialogPos dlg_configure) as string)
+        SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
+        SetUserEnvVar "MD_USER_PASS" etxt_pass.text
     )
 
     on btn_md_lib_dir pressed do
@@ -132,89 +135,92 @@ rollout dlg_configure "Configure" width:400 height:164
 
     on etxt_log entered arg do
     (
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" arg forceUTF16:false)catch()
+        -- SetUserEnvVar "MD_USER_LOGIN" arg
     )
 
     on etxt_pass entered arg do
     (
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" arg forceUTF16:false)catch()
+        -- SetUserEnvVar "MD_USER_PASS" arg
     )
 
     on btn_test pressed do
     (
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
+        SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
+        SetUserEnvVar "MD_USER_PASS" etxt_pass.text
 
         MD_Client.Request "test_request" "" "Authorization Test"
-        MD_Client.Log MD_Client.response_msg
-
-        if MD_Client.response_status == "200" then 
+        
+        if MD_Client.ResponseStatus == "200" then 
         (
-            lbl_info.text = "INFO: " + MD_Client.response_msg
-            connection = true
+            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
+            Client_Log.Info MD_Client.ResponseMessage
         )
-        else lbl_info.text = "ERROR: " + MD_Client.response_msg
+        else 
+        (
+            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
+            Client_Log.Error MD_Client.ResponseMessage
+        )
     )
 
     on btn_get_struct pressed do 
     (
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" etxt_log.text forceUTF16:false)catch()
-        try(setINISetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" etxt_pass.text forceUTF16:false)catch()
+        SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
+        SetUserEnvVar "MD_USER_PASS" etxt_pass.text
 
         lbl_connect.text = ""
 
         MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
 
-        if MD_Client.response_status == "200" then 
+        if MD_Client.ResponseStatus == "200" then 
         (
             msg = "Загружены данные о пользователях."
-            MD_Client.Log msg
+            Client_Log.Info msg
             lbl_info.text = "INFO: " + msg
             result_sum += 1
         )
         else
         (
             msg = "Не удалось загрузить данные о пользователях."
-            MD_Client.Log msg
+            Client_Log.Error msg
             lbl_info.text = "ERROR: " + msg
         )
 
         MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Data"
 
-        if MD_Client.response_status == "200" then 
+        if MD_Client.ResponseStatus == "200" then 
         (
             msg = "Загружены данные о каталоге объектов."
-            MD_Client.Log msg
+            Client_Log.Info msg
             lbl_info.text = "INFO: " + msg
             result_sum += 1
         )
         else
         (
             msg = "Не удалось загрузить данные о каталоге объектов."
-            MD_Client.Log msg
+            Client_Log.Error msg
             lbl_info.text = "ERROR: " + msg
         )
 
         MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Data"
 
-        if MD_Client.response_status == "200" then 
+        if MD_Client.ResponseStatus == "200" then 
         (
             msg = "Загружены данные о проектах."
-            MD_Client.Log msg
+            Client_Log.Info msg
             lbl_info.text = "INFO: " + msg
             result_sum += 1
         )
         else
         (
             msg = "Не удалось загрузить данные о проектах."
-            MD_Client.Log msg
+            Client_Log.Error msg
             lbl_info.text = "ERROR: " + msg
         )
 
         if result_sum == 3 then 
         (
             msg = "Успешно! Все данные загружены."
-            MD_Client.Log msg
+            Client_Log.Info msg
             lbl_info.text = "INFO: " + msg
 
             MD_Callbacks.Destruct()
@@ -231,11 +237,15 @@ rollout dlg_configure "Configure" width:400 height:164
         )
         else if result_sum > 0 then
         (
-            lbl_info.text = "WARNING: Не удалось загрузить некоторые данные."
+            msg = "Не удалось загрузить некоторые данные."
+            lbl_info.text = "WARNING: " + msg
+            Client_Log.Warning msg
         ) 
         else
         (
-            lbl_info.text = "ERROR: Данные не были загружены."
+            msg = "Данные не были загружены."
+            lbl_info.text = "ERROR: " + msg
+            Client_Log.Error msg
         )
     )
 )

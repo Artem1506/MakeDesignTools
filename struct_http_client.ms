@@ -1,12 +1,12 @@
 
 struct HTTPClient
 (
-	response_status,
-	response_msg,
-	response_data,
+	ResponseStatus,
+	ResponseMessage,
+	ResponseData,
 	ActiveCheckParam = 1,
-	request_dlg_title,
-	dialog_mode = True,
+	RequestDialogTitle,
+	RequestDialogShow = True,
 
 	fn ExistTasksFilter =
 	(
@@ -23,7 +23,7 @@ struct HTTPClient
 		)
 		
 		-- Перебор списка из ответа от http-client
-		for rd in response_data do 
+		for rd in this.ResponseData do 
 		(
 			local resp = FilterString rd SEPAR_2
 			-- resp[1] = артикул
@@ -53,46 +53,23 @@ struct HTTPClient
 		return filter_articles
 	),
 
-    fn Request request args title dialog:True =
+    fn Request request args title show:True =
     (
-		response_status = undefined
-		response_msg = undefined
-		response_data = undefined
+		this.ResponseStatus = undefined
+		this.ResponseMessage = undefined
+		this.ResponseData = undefined
 
 		if DoesFileExist HTTP_CLIENT then
 		(
-			this.dialog_mode = dialog
-			request_dlg_title = title
+			this.RequestDialogShow = show
+			this.RequestDialogTitle = title
 			shellLaunch HTTP_CLIENT (request + " " + args)
 			CreateDialog MD_UI.Dialogs.Request modal:true
 		)
 		else 
 		(
-			response_msg = "Не удалось обнаружить http-клиент."
-			MD_Log.Error response_msg
+			this.ResponseMessage = "Не удалось обнаружить http-клиент."
+			Client_Log.Error this.ResponseMessage
 		)
-    ),
-
-	fn Log msg =
-	(
-		if MD_Client.response_status == "200" then
-        (
-            msg = "Код ответа: " + MD_Client.response_status + " | " + msg
-            Client_Log.Info msg
-        )
-        
-        if MD_Client.response_status == "401" then
-        (
-			response_msg = "Проблемы с авторизацией."
-            msg = "Код ответа: " + MD_Client.response_status + " | " + response_msg
-            Client_Log.Error msg
-        )
-
-		if MD_Client.response_status == "400" then
-		(
-			response_msg = "Что-то пошло не так. Возможно, проблемы на сервере."
-            msg = "Код ответа: " + MD_Client.response_status + " | " + response_msg
-            Client_Log.Error msg
-        )
-	)
+    )
 )

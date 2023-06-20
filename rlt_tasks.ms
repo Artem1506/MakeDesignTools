@@ -138,7 +138,7 @@ rollout rlt_tasks "Tasks"
 
                 for i in MD_Data.CheckedTasks do
                 (
-                    local split = FilterString MD_Client.response_data[i] SEPAR_2
+                    local split = FilterString MD_Client.ResponseData[i] SEPAR_2
                     article = split[1]
                     msg = split[3]
                     user_id = split[4]
@@ -155,8 +155,8 @@ rollout rlt_tasks "Tasks"
                 args = "\"" + (trimRight args SEPAR_2) + "\""
 
                 MD_Client.Request "send_message" args "Sending Messages"
-                msg = "Отправлено сообщений: " + MD_Client.response_msg as string
-                MD_Client.Log msg
+                msg = "Отправлено сообщений: " + MD_Client.ResponseMessage as string
+                Client_Log.Info msg
             )
             "Update":(
                 -- Обновить отмеченные задания
@@ -171,8 +171,8 @@ rollout rlt_tasks "Tasks"
                 args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
 
                 MD_Client.Request "download_tasks" args "Updating Tasks"
-                msg = "Обновлено заданий: " + MD_Client.response_msg + " из " + MD_Data.CheckedTasks.count as string
-                MD_Client.Log msg
+                msg = "Обновлено заданий: " + MD_Client.ResponseMessage + " из " + MD_Data.CheckedTasks.count as string
+                Client_Log.Info msg
             )
             default:(
                 -- Скачать задания в локальную базу
@@ -187,7 +187,7 @@ rollout rlt_tasks "Tasks"
 
                 MD_Client.Request "download_tasks" args "Downloading Tasks"
                 msg = "Скачано заданий: " + MD_Data.CheckedTasks.count as string
-                MD_Client.Log msg
+                Client_Log.Info msg
             )
         )
         -- Обновить

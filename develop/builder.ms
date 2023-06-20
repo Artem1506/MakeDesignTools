@@ -78,12 +78,5 @@ dosCommand ("xcopy " + (pathConfig.appendPath main_dir "source") + " " + (pathCo
 dosCommand ("xcopy " + (pathConfig.appendPath main_dir "md_client") + " " + (pathConfig.appendPath release_dir "md_client") + " /S /E /I /Y /R /C")
 copyFile out_file_encrypt (pathConfig.appendPath release_dir "mdt.mse")
 
--- Удалить данные пользователя
--- HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath (pathConfig.appendPath release_dir "md_client") "md_client.config"
--- try (setIniSetting HTTP_CLIENT_CONFIG_FILE "Authorization" "login" "" forceUTF16:false) catch()
--- try (setIniSetting HTTP_CLIENT_CONFIG_FILE "Authorization" "password" "" forceUTF16:false) catch()
--- try (setIniSetting HTTP_CLIENT_CONFIG_FILE "Authorization" "access_token" "" forceUTF16:false) catch()
--- try (setIniSetting HTTP_CLIENT_CONFIG_FILE "Authorization" "time_limit" "" forceUTF16:false) catch()
-
 -- Удалить оригинальный закодированный файл
 deleteFile out_file_encrypt
