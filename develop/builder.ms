@@ -79,4 +79,4 @@ dosCommand ("xcopy " + (pathConfig.appendPath main_dir "md_client") + " " + (pat
 copyFile out_file_encrypt (pathConfig.appendPath release_dir "mdt.mse")
 
 -- Удалить оригинальный закодированный файл
-deleteFile out_file_encrypt
+deleteFile out_file

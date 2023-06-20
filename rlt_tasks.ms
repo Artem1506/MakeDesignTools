@@ -43,7 +43,8 @@ rollout rlt_tasks "Tasks"
             MD_UI.SwitchRollouts()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
-            
+            MD_BBox.Update()
+    
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
 
@@ -68,7 +69,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.Update()
             MD_UI.FillCategoriesLists()
             try FullUpdate() catch()
-
+            MD_BBox.Update()
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
             
@@ -93,7 +94,7 @@ rollout rlt_tasks "Tasks"
             MD_Data.ActiveTaskAddIndex = undefined
             MD_Data.Update()
             try FullUpdate() catch()
-
+            MD_BBox.Update()
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
 
@@ -154,7 +155,7 @@ rollout rlt_tasks "Tasks"
                 )
                 args = "\"" + (trimRight args SEPAR_2) + "\""
 
-                MD_Client.Request "send_message" args "Sending Messages"
+                MD_Client.Request "send_message" args:args title:"Sending Messages"
                 msg = "Отправлено сообщений: " + MD_Client.ResponseMessage as string
                 Client_Log.Info msg
             )
@@ -170,7 +171,7 @@ rollout rlt_tasks "Tasks"
                 MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
                 args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
 
-                MD_Client.Request "download_tasks" args "Updating Tasks"
+                MD_Client.Request "download_tasks" args:args title:"Updating Tasks"
                 msg = "Обновлено заданий: " + MD_Client.ResponseMessage + " из " + MD_Data.CheckedTasks.count as string
                 Client_Log.Info msg
             )
@@ -185,7 +186,7 @@ rollout rlt_tasks "Tasks"
                 lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
                 args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
 
-                MD_Client.Request "download_tasks" args "Downloading Tasks"
+                MD_Client.Request "download_tasks" args:args title:"Downloading Tasks"
                 msg = "Скачано заданий: " + MD_Data.CheckedTasks.count as string
                 Client_Log.Info msg
             )
@@ -198,7 +199,7 @@ rollout rlt_tasks "Tasks"
         MD_UI.UpdateCatalogTasksRlt()
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogToolsRlt()
-        WithoutRedraw MD_BBox.Update
+        MD_BBox.Update()
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
     )
@@ -250,7 +251,7 @@ rollout rlt_tasks "Tasks"
         MD_UI.UpdateCatalogTasksRlt()
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogToolsRlt()
-        WithoutRedraw MD_BBox.Update
+        MD_BBox.Update()
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
     )
@@ -365,19 +366,18 @@ rollout rlt_tasks "Tasks"
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Material catch()
                         completeRedraw()
                     )
-                    WithoutRedraw MD_BBox.Update
+                    MD_BBox.Update()
                     MD_Data.ShowLayers mode:#work_only
                 )
                 else 
                 (
-                    WithoutRedraw MD_BBox.Update
-
                     if MD_Data.InWorkTask != undefined and \
                     MD_Data.InWorkTask != undefined and \
                     MD_Data.InWorkTask.Article != undefined and \
                     MD_Data.ActiveTask.Group != undefined and \
                     MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
                     (
+                        MD_BBox.Update()
                         MD_Data.ShowLayers mode:#work_only
                         try MD_Data.InWorkTask.Mesh.Material = MD_Data.ActiveTask.Material catch()
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Material catch()
@@ -385,6 +385,7 @@ rollout rlt_tasks "Tasks"
                     )
                     else 
                     (
+                        MD_BBox.Update()
                         try(destroyDialog MD_UI.Dialogs.Export)catch()
                         MD_Data.ShowLayers mode:#scene_only
                     )
@@ -469,6 +470,7 @@ rollout rlt_tasks "Tasks"
             )
         )
         try FullUpdate() catch()
+        MD_BBox.Update()
         MD_Data.ShowLayers mode:#work_only
     )
 
@@ -482,6 +484,7 @@ rollout rlt_tasks "Tasks"
         -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
         try FullUpdate() catch()
+        MD_BBox.Update()
         MD_Data.ShowLayers mode:#scene_only
     )
 

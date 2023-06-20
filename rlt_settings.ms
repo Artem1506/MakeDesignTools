@@ -34,25 +34,18 @@ rollout rlt_settings "Settings"
     
     on ckbx_show_bb changed arg do 
     (
-        MD_BBox.Layer.IsHidden = not ckbx_show_bb.checked
-        completeRedraw()
+        MD_BBox.Update()
     )
 
     on ckbx_show_icon changed arg do 
-    (
-        if MD_Data.ActiveTask == MD_Data.InWorkTask then
-        (
-            try MD_Data.ActiveCategoryIcon.icon.isHidden = not arg catch()
-            completeRedraw()            
-        )else(
-            try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
-        )
+    (               
+        MD_BBox.Update()
     )
 
     on ckbx_auto_pivot changed arg do 
     (
         MD_BBox.Update()
-    ) 
+    )
 
     on ckbx_tooltips changed arg do 
     (

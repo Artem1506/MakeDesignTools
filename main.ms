@@ -51,7 +51,7 @@
             MD_UI.UpdateCatalogToolsRlt()
 
             -- Обновить габаритный контейнер
-            try WithoutRedraw MD_BBox.Update catch()
+            try MD_BBox.Update() catch()
 
             -- Создать рабочий слой, если есть задание в работе
             try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
@@ -130,13 +130,15 @@
         MD_UI.UpdateCatalogInfoRlt()
 
         -- Обновить габаритный контейнер
-        try WithoutRedraw MD_BBox.Update catch()
+        try MD_BBox.Update() catch()
 
         -- Создать рабочий слой, если есть задание в работе
         try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
 
         -- Обновить рабочий слой, если он есть
-        try WithoutRedraw MD_Data.SwitchWorkLayer catch()
+        if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
+        MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
 
         -- Попытаться выбрать первый элемент в списке
         if MD_Data.ActiveTaskIndex == undefined then try MD_UI.ListMain.Items.Item[0].selected = true catch()

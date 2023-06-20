@@ -41,7 +41,7 @@ rollout dlg_check_tasks "Check Available Tasks" width:250 height:180
             4:(args = MD_Data.active_catalog_article + SEPAR_1 + "1"; clr = DN_CLR_TEMP) -- Изменить 1 на 4 !!!!!!!!!!!!!!!!!
         )
 
-        MD_Client.Request "get_catalog_branch_ids" args "Available Tasks Checkings" 
+        MD_Client.Request "get_catalog_branch_ids" args:args title:"Available Tasks Checkings" 
         msg = "Доступно заданий: " + (MD_Data.TempArticlesList.count as string) + " из " + MD_Client.ResponseMessage
         Client_Log.Info msg
 

@@ -62,7 +62,10 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
         MD_UI.UpdateCatalogTasksRlt()
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogToolsRlt()
-        WithoutRedraw MD_BBox.Update
-        MD_Data.SwitchWorkLayer()
+        MD_BBox.Update()
+
+        if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
+        MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
     )
 )

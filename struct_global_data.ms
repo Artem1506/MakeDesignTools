@@ -182,22 +182,6 @@ struct GlobalData
 		)catch()
 	),
 
-	fn SwitchWorkLayer =
-	(
-		try (
-			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then 
-			(
-				this.ShowLayers mode:#work_only
-			)
-			else 
-			(
-				this.ShowLayers mode:#scene_only
-			)
-			
-			CompleteRedraw()
-		)catch()
-	),
-
     fn ShowLayers mode:#work_only =
     (
 		-- #all
@@ -229,7 +213,12 @@ struct GlobalData
 						lr.on = false
 						else 
 						(
-							if lr == MD_BBox.Layer then lr.on = MD_UI.SettingsRoll.ckbx_show_bb.checked
+							if lr == MD_BBox.Layer then 
+							(
+								if MD_UI.SettingsRoll.ckbx_show_bb.checked or MD_UI.SettingsRoll.ckbx_show_icon.checked or \
+								(MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked) then
+								lr.on = true
+							)
 							else
 							(
 								lr.on = true
@@ -360,9 +349,7 @@ struct GlobalData
 		catch ()
         
 		-- Обновить
-		-- SwitchWorkLayer()
 		ActiveTask.Update()
-        -- try FullUpdate() catch()
         
 		local work_tasks = #()
 
@@ -461,7 +448,7 @@ struct GlobalData
 			catch ()
 			MD_BBox.Init()
 			MD_BBox.Update()
-			this.SwitchWorkLayer()
+MD_UI.UpdateCatalogTasksRlt()
 			MD_Callbacks.Add()
 
 			-- Иконка

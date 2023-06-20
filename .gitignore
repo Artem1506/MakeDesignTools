@@ -2,3 +2,4 @@ data/
 md_client/md_client.config
 develop/mdt.ms
 mdt.config
+release/
