@@ -154,8 +154,8 @@ struct TaskIcon
         try MD_Callbacks.Destruct() catch()
         try this.Destruct() catch()
         -- MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
-        try this.Create icon_file catch()
-		try MD_Callbacks.Add() catch()
+        this.Create icon_file
+		-- try MD_Callbacks.Add() catch()
 
         completeRedraw()
     ),
@@ -195,7 +195,7 @@ struct TaskIcon
 				completeRedraw()
 
 				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = false
-				for ctrl in MD_UI.TasksRoll.Controls do ctrl.enabled = false
+				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = false
 				for ctrl in MD_UI.GeneralCatalogRoll.Controls do ctrl.enabled = false
 			)
 			false:(
@@ -211,11 +211,11 @@ struct TaskIcon
 				MD_Data.ShowLayers mode:#work_only else MD_Data.ShowLayers mode:#scene_only
 
 				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
-				for ctrl in MD_UI.TasksRoll.Controls do ctrl.enabled = true
+				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = true
 				MD_UI.UpdateCatalogTasksRlt()
-				MD_UI.UpdateCatalogToolsRlt()
+				MD_UI.UpdateCatalogGeneralRlt()
 
-				MD_Callbacks.Add()
+				-- MD_Callbacks.Add()
 			)
 		)
 	)

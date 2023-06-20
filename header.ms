@@ -136,19 +136,22 @@ dlg_request
 dlg_load_textures
 
 -- Роллауты
-global rlt_make_design
+global rlt_make_design_tools
 rlt_settings
-rlt_info_catalog
-rlt_info_projects
-rlt_tasks
-rlt_general_catalog
-rlt_general_projects
-rlt_tools_catalog
+rlt_catalog_info
+rlt_projects_info
+rlt_catalog_tasks
+rlt_projects_tasks
+rlt_catalog_general
+rlt_projects_general
+rlt_catalog_tools
 rlt_about
 
 -- Базовые структуры
 MD_Log
 Client_Log
+UI_Tooltips_Full
+UI_Tooltips_Empty
 MD_Tooltips
 MD_Data
 MD_UI
@@ -159,6 +162,5 @@ MD_Icon
 
 global CheckExistTaskLayer
 InitExistTextures
-FullUpdate
 cur_view_tm = undefined
 cur_view_type = undefined

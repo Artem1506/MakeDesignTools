@@ -53,7 +53,7 @@ struct HTTPClient
 		return filter_articles
 	),
 
-    fn Request request args title show:True =
+    fn Request request args:"" title:"" show_dialog:True =
     (
 		this.ResponseStatus = undefined
 		this.ResponseMessage = undefined
@@ -61,7 +61,7 @@ struct HTTPClient
 
 		if DoesFileExist HTTP_CLIENT then
 		(
-			this.RequestDialogShow = show
+			this.RequestDialogShow = show_dialog
 			this.RequestDialogTitle = title
 			shellLaunch HTTP_CLIENT (request + " " + args)
 			CreateDialog MD_UI.Dialogs.Request modal:true

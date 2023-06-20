@@ -5,7 +5,7 @@ struct Callback
 
 	fn UpdateUI ev nd = 
 	(
-		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogGeneralRlt()
 		MD_UI.UpdateCatalogTasksRlt()
 
 		if not MD_UI.SettingsRoll.ckbx_show_icon.checked then
@@ -18,7 +18,7 @@ struct Callback
 
 	fn UpdateUI2 ev nd = 
 	(
-		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogGeneralRlt()
 		MD_UI.UpdateCatalogTasksRlt()
 	),
 
@@ -43,7 +43,7 @@ struct Callback
 				obj.Material = undefined
 			)
 		)catch()
-		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogGeneralRlt()
 	),
 
 	fn DeleteObject = 
@@ -60,7 +60,7 @@ struct Callback
 			
 		)catch()
 		try (if obj == MD_Data.ActiveCategoryIcon.Icon then MD_Data.ActiveCategoryIcon.Icon = undefined) catch()
-		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogGeneralRlt()
 	),
 
 	fn LayerChange = 
@@ -98,7 +98,7 @@ struct Callback
 
 			completeRedraw()
 		)catch()
-		MD_UI.UpdateCatalogToolsRlt()
+		MD_UI.UpdateCatalogGeneralRlt()
 	),
 
 	fn CheckExistTaskLayer =
@@ -115,7 +115,7 @@ struct Callback
 				MD_Data.WorkLayer = undefined
 				MD_Data.ActiveTask.Update()
 				
-				try FullUpdate() catch()
+				MD_Data.FullUpdate()
 			)
 		)
 	),
@@ -137,7 +137,7 @@ struct Callback
 	-- 		)		
 	-- 	) catch()
 
-	-- 	MD_UI.UpdateCatalogToolsRlt()
+	-- 	MD_UI.UpdateCatalogGeneralRlt()
 	-- ),
 
 	fn UpdateState =
@@ -147,7 +147,7 @@ struct Callback
 			if MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
 				MD_Data.Update()
-				try FullUpdate() catch()
+				MD_Data.FullUpdate()
 			)	
 		) catch()
 	),
@@ -173,7 +173,7 @@ struct Callback
 		callbacks.addScript #nodePreDelete DeleteObject id:#md_callbacks
 		callbacks.addScript #nodeLayerChanged LayerChange id:#md_callbacks
 		-- callbacks.addScript #nodeLayerChanged RemoveFromTempLayer id:#md_callbacks
-		-- callbacks.addScript #selectionSetChanged MD_UI.UpdateCatalogToolsRlt id:#md_callbacks
+		-- callbacks.addScript #selectionSetChanged MD_UI.UpdateCatalogGeneralRlt id:#md_callbacks
 
 		ToolsUIUpdate = NodeEventCallback mouseUp:false delay:250 \
 		materialOtherEvent:MatChange \

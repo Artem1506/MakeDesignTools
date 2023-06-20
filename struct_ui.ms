@@ -1,68 +1,79 @@
 
 struct UI
 (
-	MainRoll = rlt_make_design,
+	MainRoll = rlt_make_design_tools,
 	SettingsRoll = rlt_settings,
-	TasksRoll = rlt_tasks,
-	InfoCatalogRoll = rlt_info_catalog,
-	InfoProjectsRoll = rlt_info_projects,
-	GeneralCatalogRoll = rlt_general_catalog,
-	GeneralProjectsRoll = rlt_general_projects,
-	ToolsCatalogRoll = rlt_tools_catalog,
-	HelpRoll = rlt_about,
+	AboutRoll = rlt_about,
 	Dialogs = UI_Dialogs(),
-	Sections = rlt_tasks.lst_sections,
-	Categories = rlt_tasks.lst_basic_catalog,
-	SubCategories = rlt_tasks.lst_sub_catalog,
-	ListMain = rlt_tasks.lv_main,
-	ListAdd = rlt_tasks.lv_add,
-	InfoCatalogPreview = rlt_info_catalog.img_prev,
-	InfoCatalogWeb = rlt_info_catalog.hpl_site,
-	InfoCatalogSize = rlt_info_catalog.lbl_size_txt,
+	-- Catalog UI
+	TasksCatalogRoll = rlt_catalog_tasks,
+	InfoCatalogRoll = rlt_catalog_info,
+	ToolsCatalogRoll = rlt_catalog_tools,
+	GeneralCatalogRoll = rlt_catalog_general,
+	Sections = rlt_catalog_tasks.lst_sections,
+	Categories = rlt_catalog_tasks.lst_basic_catalog,
+	SubCategories = rlt_catalog_tasks.lst_sub_catalog,
+	CatalogListMain = rlt_catalog_tasks.lv_main,
+	CatalogListAdd = rlt_catalog_tasks.lv_add,
+	InfoCatalogPreview = rlt_catalog_info.img_prev,
+	InfoCatalogWeb = rlt_catalog_info.hpl_site,
+	InfoCatalogSize = rlt_catalog_info.lbl_size_txt,
+	-- Projects UI
+	TasksProjectsRoll = rlt_projects_tasks,
+	InfoProjectsRoll = rlt_projects_info,
+	GeneralProjectsRoll = rlt_projects_general,
+	ProjectsListMain = rlt_projects_tasks.lv_main,
+	ProjectsListAdd = rlt_projects_tasks.lv_add,
+
 	EMPTY_PREVIEW = undefined,
-	size_txt = "",
-	size_add_txt = "",
+	LabelSizeText = "",
+	LabelAddSizeText = "",
 	Sort = False,
 
-	fn InitLists = 
+	fn SetListViewParams list_view CheckBoxes:true= (
+		list_view.BorderStyle = list_view.BorderStyle.None
+		list_view.gridLines = true
+		list_view.View = (dotNetClass "System.Windows.Forms.View").Details
+		list_view.fullRowSelect = true
+		list_view.MultiSelect = false
+		list_view.HideSelection = false
+		list_view.HoverSelection  = false
+		list_view.CheckBoxes = CheckBoxes
+	),
+
+	-- Добавляет колонки в листвью
+	fn AddListViewColumns list_view columns widths:#() = (
+		for i = 1 to columns.count do
+		try(list_view.Columns.add columns[i] widths[i])
+		catch(list_view.Columns.add columns[i])
+	),
+
+	fn InitCatalogLists = 
 	(
-		-- Инициализирует основной и доп. списки, исходя из выбранного раздела
-		-- Устанавливает параметры для контрола листвью
-		fn SetListViewParams list_view CheckBoxes:true= (
-			list_view.BorderStyle = list_view.BorderStyle.None
-			list_view.gridLines = true
-			list_view.View = (dotNetClass "System.Windows.Forms.View").Details
-			list_view.fullRowSelect = true
-			list_view.MultiSelect = false
-			list_view.HideSelection = false
-			list_view.HoverSelection  = false
-			list_view.CheckBoxes = CheckBoxes
-		)
+		CatalogListMain.Columns.Clear()
+		CatalogListAdd.Columns.Clear()
 
-		-- Добавляет колонки в листвью
-		fn AddListViewColumns list_view columns widths:#() = (
-			for i = 1 to columns.count do
-			try(list_view.Columns.add columns[i] widths[i])
-			catch(list_view.Columns.add columns[i])
-		)
+		SetListViewParams CatalogListMain
+		SetListViewParams CatalogListAdd CheckBoxes:false
 
-		ListMain.Columns.Clear()
-		ListAdd.Columns.Clear()
-		SetListViewParams ListMain
-		SetListViewParams ListAdd CheckBoxes:false
+		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 60, 60, 120)
+		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 100, 55)
 
-		case MD_Data.ActiveSection of
-		(
-			1:(
-				AddListViewColumns ListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 60, 60, 120)
-				AddListViewColumns ListAdd ADD_LIST_COLUMNS_1 widths:#(70, 100, 55)
-			)
-			2:(
-				AddListViewColumns ListMain MAIN_LIST_COLUMNS_2 widths:#(206)
-				AddListViewColumns ListAdd ADD_LIST_COLUMNS_2 widths:#(206)
-			)
-		)
-		setFocus ListMain
+		setFocus CatalogListMain
+	),
+
+	fn InitProjectsLists = 
+	(
+		ProjectsListMain.Columns.Clear()
+		ProjectsListAdd.Columns.Clear()
+
+		SetListViewParams ProjectsListMain
+		SetListViewParams ProjectsListAdd CheckBoxes:false
+
+		AddListViewColumns ProjectsListMain MAIN_LIST_COLUMNS_2 widths:#(206)
+		AddListViewColumns ProjectsListAdd ADD_LIST_COLUMNS_2 widths:#(206)
+
+		setFocus ProjectsListMain
 	),
 
 	fn FillMainList =
@@ -77,10 +88,10 @@ struct UI
 				local cur_sel = undefined
 
 				-- Индекс выделенного элемента в стике
-				if ListMain.SelectedItems.Count != 0 then cur_sel = ListMain.SelectedItems.Item[0].Index
+				if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
 				
 				-- Проверка сортировки
-				-- if this.Sort then task_list = MD_Data.SortTasks
+				-- if Sort then task_list = MD_Data.SortTasks
 				-- else task_list = MD_Data.Tasks
 
 				for task in MD_Data.Tasks do
@@ -127,9 +138,9 @@ struct UI
 				)
 
 				-- Заполнить основной список панели Tasks (задания)
-				ListMain.Items.Clear()
-				ListMain.Items.AddRange main_items
-				ListMain.Update()
+				CatalogListMain.Items.Clear()
+				CatalogListMain.Items.AddRange main_items
+				CatalogListMain.Update()
 
 				main_items = #()
 				free main_items
@@ -140,8 +151,8 @@ struct UI
 				Categories.Items = MD_Data.proj_main_categs
 				SubCategories.Items = MD_Data.proj_sub_categs
 				try SubCategories.Items = MD_Data.proj_sub_categs[Categories.Selection] catch()
-				ListMain.Items.Clear()
-				ListMain.Update()
+				CatalogListMain.Items.Clear()
+				CatalogListMain.Update()
 			)
 		)
 	),
@@ -162,16 +173,16 @@ struct UI
 		)
 	),
 	
-	fn UpdateCatalogToolsRlt =
+	fn UpdateCatalogGeneralRlt =
 	(
 		try
 		(
-			this.GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
-			this.GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
-			this.GeneralCatalogRoll.btn_vis_switch.text = "Show Scene Objects"
+			GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
+			GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
+			GeneralCatalogRoll.btn_vis_switch.text = "Show Scene Objects"
 
-			for ctrl in this.GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in this.GeneralProjectsRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 
 			local objs = #()
 
@@ -179,40 +190,41 @@ struct UI
 			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
-				this.GeneralCatalogRoll.btn_vis_switch.enabled = true
+				GeneralCatalogRoll.btn_vis_switch.enabled = true
 				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
 				objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
 
 				-- Пивот
-				this.GeneralCatalogRoll.btn_set_pivot.enabled = true
+				GeneralCatalogRoll.btn_set_pivot.enabled = true
 
 				-- Режим редактирования иконки
 				if MD_Data.ActiveCategoryIcon.Icon != undefined then
-				this.GeneralCatalogRoll.btn_edit_icon.enabled = true
+				GeneralCatalogRoll.btn_edit_icon.enabled = true
 
 				-- Основной меш
 				if MD_Data.InWorkTask.Mesh != undefined and not MD_Data.InWorkTask.Mesh.IsDeleted then
 				(
-					this.GeneralCatalogRoll.btn_main_mesh.text = "  Main Mesh •"
-					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then this.GeneralCatalogRoll.btn_assign_mat.enabled = true
-					try this.GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
+					GeneralCatalogRoll.btn_main_mesh.text = "  Main Mesh •"
+					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
+					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
 				)
 				else
 				(
-					this.GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
-					this.GeneralCatalogRoll.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
+					GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
+					if SettingsRoll.ckbx_tooltips.Checked == true then
+					GeneralCatalogRoll.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
 				)
 
 				-- Если задание имеет поле трансформации
 				if MD_Data.InWorkTask.SizeTrans != undefined then 
 				(
 
-					this.GeneralCatalogRoll.btn_mesh_switch.enabled = true
+					GeneralCatalogRoll.btn_mesh_switch.enabled = true
 
 					if MD_Data.InWorkTask.ActiveMesh == 2 then
-					this.GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"	
-					else this.GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+					GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"	
+					else GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
@@ -220,28 +232,29 @@ struct UI
 					(
 						if MD_Data.InWorkTask.ActiveMesh == 2 then
 						(
-							this.GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
-							this.GeneralCatalogRoll.btn_add_mesh.enabled = true		
+							GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
+							GeneralCatalogRoll.btn_add_mesh.enabled = true		
 						)
 						else
 						(
-							this.GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
-							this.GeneralCatalogRoll.btn_main_mesh.enabled = true
+							GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
+							GeneralCatalogRoll.btn_main_mesh.enabled = true
 							if MD_Data.InWorkTask.AddMesh == undefined or MD_Data.InWorkTask.AddMesh.IsDeleted then
-							this.GeneralCatalogRoll.btn_add_mesh.enabled = true
+							GeneralCatalogRoll.btn_add_mesh.enabled = true
 						)
 					)
 
 					-- Доп. меш
 					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
-						this.GeneralCatalogRoll.btn_add_mesh.text = "  Additional Mesh •"
-						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then this.GeneralCatalogRoll.btn_assign_mat.enabled = true
-						try this.GeneralCatalogRoll.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name + "\nДля удаления статуса дополнительного объекта необходимо повторно нажать на кнопку.") catch()
+						GeneralCatalogRoll.btn_add_mesh.text = "  Additional Mesh •"
+						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
+						try GeneralCatalogRoll.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name + "\nДля удаления статуса дополнительного объекта необходимо повторно нажать на кнопку.") catch()
 					)
 					else(
-						this.GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
-						this.GeneralCatalogRoll.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
+						GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
+						if SettingsRoll.ckbx_tooltips.Checked == true then
+						GeneralCatalogRoll.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
 					)
 				)
 				-- Если задание НЕ имеет поле трансформации
@@ -253,16 +266,16 @@ struct UI
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						this.GeneralCatalogRoll.btn_main_mesh.enabled = true
-						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then this.GeneralCatalogRoll.btn_assign_mat.enabled = true
+						GeneralCatalogRoll.btn_main_mesh.enabled = true
+						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
 					)
 				)
 				
 				-- Сохранить работу
 				if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
 				(
-					this.GeneralCatalogRoll.btn_save_work.enabled = true
-					this.GeneralCatalogRoll.btn_export.enabled = true
+					GeneralCatalogRoll.btn_save_work.enabled = true
+					GeneralCatalogRoll.btn_export.enabled = true
 				)
 
 				-- Добавить к рабочему слою
@@ -276,14 +289,14 @@ struct UI
 
 					for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
 					if obj_outside then
-					this.GeneralCatalogRoll.btn_attach_to_task.enabled = true
+					GeneralCatalogRoll.btn_attach_to_task.enabled = true
 				)
 
 				-- Загрузить работу
 				if MD_Data.InWorkTask.SavedWorks.count != 0 then
 				(
-					this.GeneralCatalogRoll.btn_load_work.enabled = true
-					this.GeneralCatalogRoll.btn_work_list.enabled = true
+					GeneralCatalogRoll.btn_load_work.enabled = true
+					GeneralCatalogRoll.btn_work_list.enabled = true
 				)
 			)
 
@@ -292,9 +305,16 @@ struct UI
 		)catch()
 	),
 
+	fn UpdateCatalogToolsRlt = 
+	(
+		-- for ctrl in ToolsCatalogRoll.Controls do ctrl.enabled = false
+		if TasksCatalogRoll.lst_sub_catalog.selection != 0 then
+		ToolsCatalogRoll.btn_create_icon.enabled = true
+	),
+
 	fn FillAddList =
 	(
-		case Sections.Selection of
+		case MD_Data.ActiveSection of
 		(
 			1:(
 				local add_items = #()
@@ -320,16 +340,16 @@ struct UI
 				catch()
 
 				-- Заполнить доп. список панели Tasks (материалы)
-				ListAdd.Items.Clear()
-				ListAdd.Items.AddRange add_items
-				ListAdd.Update()
+				CatalogListAdd.Items.Clear()
+				CatalogListAdd.Items.AddRange add_items
+				CatalogListAdd.Update()
 
 				add_items = #()
 				free add_items
 			)
 			2:(
-				ListAdd.Items.Clear()
-				ListAdd.Update()
+				CatalogListAdd.Items.Clear()
+				CatalogListAdd.Update()
 			)
 		)
 	),
@@ -339,7 +359,7 @@ struct UI
 		case MD_Data.ActiveList of
 		(
 			1:(
-				this.InfoCatalogRoll.title = "Info"
+				InfoCatalogRoll.title = "Info"
 
 				if MD_Data.ActiveTask != undefined then
 				(
@@ -357,173 +377,182 @@ struct UI
 					catch()
 
 					try (
-						size_txt = ""
-						size_txt += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
-						size_txt += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
-						size_txt += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
+						LabelSizeText = ""
+						LabelSizeText += ("W: " + (MD_Data.ActiveTask.Size[1] as float) as string + "    ")
+						LabelSizeText += ("D: " + (MD_Data.ActiveTask.Size[2] as float) as string + "    ")
+						LabelSizeText += ("H: " + (MD_Data.ActiveTask.Size[3] as float) as string)
 						
 					) catch()
 
 					try (
-						size_add_txt = ""
-						size_add_txt += ("W: " + (MD_Data.ActiveTask.SizeTrans[1] as float) as string + "    ")
-						size_add_txt += ("D: " + (MD_Data.ActiveTask.SizeTrans[2] as float) as string + "    ")
-						size_add_txt += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
+						LabelAddSizeText = ""
+						LabelAddSizeText += ("W: " + (MD_Data.ActiveTask.SizeTrans[1] as float) as string + "    ")
+						LabelAddSizeText += ("D: " + (MD_Data.ActiveTask.SizeTrans[2] as float) as string + "    ")
+						LabelAddSizeText += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
 					) catch()
 
-					this.InfoCatalogRoll.lbl_size.visible = true
-					this.InfoCatalogRoll.lbl_size_txt.visible = true
-					this.InfoCatalogRoll.lbl_site.visible = true
-					this.InfoCatalogRoll.hpl_site.visible = true
-					this.InfoCatalogRoll.hpl_site.text = ""
-					try (this.InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.WebSite) catch()
+					InfoCatalogRoll.lbl_size.visible = true
+					InfoCatalogRoll.lbl_size_txt.visible = true
+					InfoCatalogRoll.lbl_site.visible = true
+					InfoCatalogRoll.hpl_site.visible = true
+					InfoCatalogRoll.hpl_site.text = ""
+					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.WebSite) catch()
 
 					case MD_Data.ActiveTask.ActiveMesh of
 					(
 						1:(
-							this.InfoCatalogRoll.lbl_size_txt.text = size_txt
+							InfoCatalogRoll.lbl_size_txt.text = LabelSizeText
 						)
 						2:(
-							this.InfoCatalogRoll.lbl_size_txt.text = size_add_txt
+							InfoCatalogRoll.lbl_size_txt.text = LabelAddSizeText
 						)
 					)
 
-					try (this.InfoCatalogRoll.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
-					this.InfoCatalogRoll.title = MD_Data.ActiveTask.Article
-					this.InfoCatalogRoll.height = 280					
+					try (InfoCatalogRoll.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
+					InfoCatalogRoll.title = MD_Data.ActiveTask.Article
+					InfoCatalogRoll.height = 280					
 				)
 			)
 			2:(
 				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-				this.InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].PartName + "]"
-				this.InfoCatalogRoll.height = 280
+				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].PartName + "]"
+				InfoCatalogRoll.height = 280
 			)
 		)
 	),
 
 	fn UpdateCatalogTasksRlt =
 	(
-		this.TasksRoll.btn_get.enabled = false
-		this.TasksRoll.btn_clear.enabled = false
-		this.TasksRoll.btn_assign_mat_id.enabled = false	
-		this.TasksRoll.btn_assign_texts.enabled = false
+		TasksCatalogRoll.btn_get.enabled = false
+		TasksCatalogRoll.btn_clear.enabled = false
+		TasksCatalogRoll.btn_assign_mat_id.enabled = false	
+		TasksCatalogRoll.btn_assign_texts.enabled = false
 
 		if MD_Data.ActiveTask == undefined then
 		(
-			for ctrl in this.TasksRoll.Controls do ctrl.enabled = false
-			for ctrl in this.InfoCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in this.GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in this.GeneralProjectsRoll.Controls do ctrl.enabled = false
+			for ctrl in TasksCatalogRoll.Controls do ctrl.enabled = false
+			for ctrl in InfoCatalogRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 
-			this.TasksRoll.btn_work_state.text = "Set Work State"
+			TasksCatalogRoll.btn_work_state.text = "Set Work State"
 			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
 			InfoCatalogWeb.text = ""
 			InfoCatalogWeb.address = ""
 			InfoCatalogSize.text = ""
 
-			this.TasksRoll.lst_sections.enabled = true
-			this.TasksRoll.lst_basic_catalog.enabled = true
-			this.TasksRoll.lst_sub_catalog.enabled = true
-			ListMain.enabled = true
-			ListAdd.enabled = true
+			TasksCatalogRoll.lst_sections.enabled = true
+			TasksCatalogRoll.lst_basic_catalog.enabled = true
+			TasksCatalogRoll.lst_sub_catalog.enabled = true
+			CatalogListMain.enabled = true
+			CatalogListAdd.enabled = true
 		)
 		else
 		(
-			this.TasksRoll.btn_work_state.enabled = true
+			TasksCatalogRoll.btn_work_state.enabled = true
 			if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article != MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == undefined) or \
 			(MD_Data.InWorkTask == undefined and (MD_Data.ActiveTask.Group == undefined or MD_Data.ActiveTask.Group != undefined)) or \
 			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != MD_Data.InWorkTask and MD_Data.ActiveTask.Group != MD_Data.InWorkTask.Group) then
 			(
-				this.TasksRoll.btn_work_state.text = "Set Work State"
-				this.TasksRoll.btn_exit_work_state.enabled = false
-				for ctrl in this.GeneralCatalogRoll.Controls do ctrl.enabled = false
-				for ctrl in this.GeneralProjectsRoll.Controls do ctrl.enabled = false
+				TasksCatalogRoll.btn_work_state.text = "Set Work State"
+				TasksCatalogRoll.btn_exit_work_state.enabled = false
+				for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
+				for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 			)
 			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == undefined) or \
 			
 			(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			(
-				this.TasksRoll.btn_work_state.text = "Update Work State"
-				this.TasksRoll.btn_work_state.enabled = true
-				this.TasksRoll.btn_exit_work_state.enabled = true
-				this.TasksRoll.btn_get.enabled = false
-				this.TasksRoll.btn_clear.enabled = false
-				this.TasksRoll.btn_get.text = "Get"
-				this.TasksRoll.btn_clear.text = "Clear"
-				this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_a
-				this.TasksRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_a
+				TasksCatalogRoll.btn_work_state.text = "Update Work State"
+				TasksCatalogRoll.btn_work_state.enabled = true
+				TasksCatalogRoll.btn_exit_work_state.enabled = true
+				TasksCatalogRoll.btn_get.enabled = false
+				TasksCatalogRoll.btn_clear.enabled = false
+				TasksCatalogRoll.btn_get.text = "Get"
+				TasksCatalogRoll.btn_clear.text = "Clear"
+				if SettingsRoll.ckbx_tooltips.Checked == true then
+				TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_a
+				if SettingsRoll.ckbx_tooltips.Checked == true then
+				TasksCatalogRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 				
 				-- Material ID и текстуры
 				if MD_Data.ActiveList == 2 then
 				(
-					this.TasksRoll.btn_assign_texts.enabled = true
-					if subobjectLevel == 4 or subobjectLevel == 5 then this.TasksRoll.btn_assign_mat_id.enabled = true			
-					else if subobjectLevel == 0 or subobjectLevel == undefined then this.TasksRoll.btn_assign_mat_id.enabled = false
+					TasksCatalogRoll.btn_assign_texts.enabled = true
+					if subobjectLevel == 4 or subobjectLevel == 5 then TasksCatalogRoll.btn_assign_mat_id.enabled = true			
+					else if subobjectLevel == 0 or subobjectLevel == undefined then TasksCatalogRoll.btn_assign_mat_id.enabled = false
 				)
 			)
 			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article != MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
 			(
-				this.TasksRoll.btn_work_state.text = "Set Work State"
-				this.TasksRoll.btn_work_state.enabled = true
-				this.TasksRoll.btn_exit_work_state.enabled = true
+				TasksCatalogRoll.btn_work_state.text = "Set Work State"
+				TasksCatalogRoll.btn_work_state.enabled = true
+				TasksCatalogRoll.btn_exit_work_state.enabled = true
 			)
-			for ctrl in this.InfoCatalogRoll.Controls do ctrl.enabled = true
+			for ctrl in InfoCatalogRoll.Controls do ctrl.enabled = true
 			
-			try (ListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
+			try (CatalogListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
 		)
 
 		if MD_Data.TempArticlesList.count != 0 then
 		(
-			this.TasksRoll.btn_work_state.enabled = false
-			this.TasksRoll.btn_exit_work_state.enabled = false
+			TasksCatalogRoll.btn_work_state.enabled = false
+			TasksCatalogRoll.btn_exit_work_state.enabled = false
 
-			for ctrl in this.GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in this.GeneralProjectsRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
+			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 
 			case MD_Client.ActiveCheckParam of
 			(
 				1:(
-					this.TasksRoll.btn_get.text = "Get"
-					this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_a
+					TasksCatalogRoll.btn_get.text = "Get"
+					if SettingsRoll.ckbx_tooltips.Checked == true then
+					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_a
 				)
 				2:(
-					this.TasksRoll.btn_get.text = "Send"
-					this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_b
+					TasksCatalogRoll.btn_get.text = "Send"
+					if SettingsRoll.ckbx_tooltips.Checked == true then
+					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_b
 				)
 				3:(
-					this.TasksRoll.btn_get.text = "Backup"
-					this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_c
+					TasksCatalogRoll.btn_get.text = "Backup"
+					if SettingsRoll.ckbx_tooltips.Checked == true then
+					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_c
 				)
 				4:
 				(
-					this.TasksRoll.btn_get.text = "Restore"
-					this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_d
+					TasksCatalogRoll.btn_get.text = "Restore"
+					if SettingsRoll.ckbx_tooltips.Checked == true then
+					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_d
 				)
 			)
-			this.TasksRoll.btn_clear.text = "Clear"
-			this.TasksRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_a
+			TasksCatalogRoll.btn_clear.text = "Clear"
+			if SettingsRoll.ckbx_tooltips.Checked == true then
+			TasksCatalogRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_a
 		)
 		else
 		(
-			this.TasksRoll.btn_get.text = "Update"
-			this.TasksRoll.btn_get.tooltip = MD_Tooltips.tasks_02_e
-			this.TasksRoll.btn_clear.text = "Delete"
-			this.TasksRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_b
+			TasksCatalogRoll.btn_get.text = "Update"
+			if SettingsRoll.ckbx_tooltips.Checked == true then
+			TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_e
+			TasksCatalogRoll.btn_clear.text = "Delete"
+			if SettingsRoll.ckbx_tooltips.Checked == true then
+			TasksCatalogRoll.btn_clear.tooltip = MD_Tooltips.tasks_03_b
 		)
 
 		if MD_Data.CheckedTasks.Count > 0 then
 		(
-			this.TasksRoll.btn_get.enabled = true
-			this.TasksRoll.btn_clear.enabled = true
-			this.TasksRoll.btn_work_state.enabled = false
-			this.TasksRoll.btn_exit_work_state.enabled = false
+			TasksCatalogRoll.btn_get.enabled = true
+			TasksCatalogRoll.btn_clear.enabled = true
+			TasksCatalogRoll.btn_work_state.enabled = false
+			TasksCatalogRoll.btn_exit_work_state.enabled = false
 		)
 
 		if SubCategories.Items.Count != 0 then
 		(
-			this.TasksRoll.lst_basic_catalog.enabled = true
-			this.TasksRoll.lst_sub_catalog.enabled = true
-			this.TasksRoll.btn_check.enabled = true
+			TasksCatalogRoll.lst_basic_catalog.enabled = true
+			TasksCatalogRoll.lst_sub_catalog.enabled = true
+			TasksCatalogRoll.btn_check.enabled = true
 		)
 
 		-- Обновить текст веб ссылки (баг макса)
@@ -554,47 +583,63 @@ struct UI
 			append main_items dn_list_item
 		)
 
-		ListMain.Items.Clear()
-		ListMain.Items.AddRange main_items
-		ListMain.Update()
+		CatalogListMain.Items.Clear()
+		CatalogListMain.Items.AddRange main_items
+		CatalogListMain.Update()
 
-		ListAdd.Items.Clear()
-		ListAdd.Update()
+		CatalogListAdd.Items.Clear()
+		CatalogListAdd.Update()
 	),
 
 	fn SwitchRollouts = (
 		-- Переключает роллоуты в зависимости от того, какой раздел выбран
+		try MD_Callbacks.Destruct() catch()
+		-- windows.sendmessage (windows.getmaxhwnd()) 0x000B 0 0
 
-        removeSubRollout this.MainRoll.sub_rlt HelpRoll
-        case Sections.Selection of
+        removeSubRollout MainRoll.sub_rlt AboutRoll
+        case MD_Data.ActiveSection of
         (
             1:(
-                removeSubRollout this.MainRoll.sub_rlt this.GeneralProjectsRoll
-				-- removeSubRollout this.MainRoll.sub_rlt this.InfoProjectsRoll
-                AddSubRollout this.MainRoll.sub_rlt this.InfoCatalogRoll rolledUp:false
-				AddSubRollout this.MainRoll.sub_rlt this.GeneralCatalogRoll rolledUp:false
+				removeSubRollout MainRoll.sub_rlt GeneralProjectsRoll
+                removeSubRollout MainRoll.sub_rlt InfoProjectsRoll
+                removeSubRollout MainRoll.sub_rlt TasksProjectsRoll
+
+                AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:false
+                AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
+                try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
+				AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
+				MD_Data.FullUpdate()
+
             )
             2:(
-                removeSubRollout this.MainRoll.sub_rlt this.GeneralCatalogRoll
-                removeSubRollout this.MainRoll.sub_rlt this.InfoCatalogRoll
-                -- AddSubRollout this.MainRoll.sub_rlt this.InfoProjectsRoll rolledUp:false
-                AddSubRollout this.MainRoll.sub_rlt this.GeneralProjectsRoll rolledUp:false
+                removeSubRollout MainRoll.sub_rlt GeneralCatalogRoll
+                removeSubRollout MainRoll.sub_rlt InfoCatalogRoll
+				removeSubRollout MainRoll.sub_rlt TasksCatalogRoll
+                try removeSubRollout MainRoll.sub_rlt ToolsCatalogRoll catch()
+				
+                AddSubRollout MainRoll.sub_rlt TasksProjectsRoll rolledUp:false
+                AddSubRollout MainRoll.sub_rlt InfoProjectsRoll rolledUp:true
+                AddSubRollout MainRoll.sub_rlt GeneralProjectsRoll rolledUp:true
             )
         )
-        AddSubRollout this.MainRoll.sub_rlt HelpRoll rolledUp:True
-
+        AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:True
+		
 		-- Выравнить подроллаут
-		this.MainRoll.sub_rlt.height = (MAIN_RLT_HEIGHT - 28)
-		this.MainRoll.sub_rlt.pos = [2, 4]
+		MainRoll.sub_rlt.height = (MAIN_RLT_HEIGHT - 28)
+		MainRoll.sub_rlt.pos = [2, 4]
 
-		InitLists()
+		-- windows.sendmessage (windows.getmaxhwnd()) 0x000B 1 0
+
+		updateRolloutLayout TasksProjectsRoll forceUpdate:true
+		updateRolloutLayout TasksCatalogRoll forceUpdate:true
+
 	),
 
 	fn Close = (
 		-- Удаляет главный роллаут, если он ткрыт
 
-		try(cui.UnRegisterDialogBar ::rlt_make_design)catch()
-		try(destroyDialog ::rlt_make_design)catch()
+		try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
+		try(destroyDialog ::rlt_make_design_tools)catch()
 	),
 
 	fn SetColorScheme =
@@ -626,31 +671,35 @@ struct UI
 		-- Установить цветовую схему
 		SetColorScheme()
 
-		createdialog this.MainRoll width:(MAIN_RLT_WIDTH + 8) height:(MAIN_RLT_HEIGHT - 20) autoLayoutOnResize:true scrollBar:#on lockHeight:false
+		createdialog MainRoll width:(MAIN_RLT_WIDTH + 8) height:(MAIN_RLT_HEIGHT - 20) autoLayoutOnResize:true scrollBar:#on lockHeight:false
 
-		AddSubRollout this.MainRoll.sub_rlt this.SettingsRoll rolledUp:true
-		AddSubRollout this.MainRoll.sub_rlt this.TasksRoll rolledUp:true
-		AddSubRollout this.MainRoll.sub_rlt this.InfoCatalogRoll rolledUp:true
-		AddSubRollout this.MainRoll.sub_rlt this.ToolsCatalogRoll rolledUp:true
-		AddSubRollout this.MainRoll.sub_rlt this.GeneralCatalogRoll rolledUp:true
-		
-		AddSubRollout this.MainRoll.sub_rlt HelpRoll rolledUp:true
+		AddSubRollout MainRoll.sub_rlt SettingsRoll rolledUp:true
+		AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:true
+		AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
+		try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
+		AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
+
+		AddSubRollout MainRoll.sub_rlt TasksProjectsRoll rolledUp:true
+		AddSubRollout MainRoll.sub_rlt InfoProjectsRoll rolledUp:true
+		AddSubRollout MainRoll.sub_rlt GeneralProjectsRoll rolledUp:true
+
+		AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:true
 
 		-- Инициализация входных значений
         try(
-            GetINISettings this.SettingsRoll MDT_CONFIG_FILE this.SettingsRoll.name
-            GetINISettings this.TasksRoll MDT_CONFIG_FILE this.TasksRoll.name include_list:#(this.TasksRoll.lst_basic_catalog, this.TasksRoll.lst_sub_catalog)
-            GetINISettings this.InfoCatalogRoll MDT_CONFIG_FILE this.InfoCatalogRoll.name onlyRollState:true
-            GetINISettings this.ToolsCatalogRoll MDT_CONFIG_FILE this.ToolsCatalogRoll.name onlyRollState:true
-            GetINISettings this.GeneralCatalogRoll MDT_CONFIG_FILE this.GeneralCatalogRoll.name onlyRollState:true
+            GetINISettings SettingsRoll MDT_CONFIG_FILE SettingsRoll.name
+            GetINISettings TasksCatalogRoll MDT_CONFIG_FILE TasksCatalogRoll.name include_list:#(TasksCatalogRoll.lst_basic_catalog, TasksCatalogRoll.lst_sub_catalog)
+            GetINISettings InfoCatalogRoll MDT_CONFIG_FILE InfoCatalogRoll.name onlyRollState:true
+            try GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name onlyRollState:true catch()
+            GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
         )catch ()
 
-		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE this.TasksRoll.Name "lst_basic_catalog_selection")) catch()
-		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE this.TasksRoll.Name "lst_sub_catalog_selection")) catch()
+		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_basic_catalog_selection")) catch()
+		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_sub_catalog_selection")) catch()
 
 		-- Try select active task
 		try (
-			exist_task_index = execute (GetINISetting MDT_CONFIG_FILE this.TasksRoll.Name (this.ListMain.name + "_selection")) + 1
+			exist_task_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name (CatalogListMain.name + "_selection")) + 1
 			MD_Data.ActiveTaskIndex = exist_task_index
 			MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
 		) catch()
@@ -672,24 +721,32 @@ struct UI
 		try (MD_Data.ActiveSection = Sections.Selection) catch()
 
 		-- Тултипы
-		if this.SettingsRoll.ckbx_tooltips.Checked == false then
+		if SettingsRoll.ckbx_tooltips.Checked == false then
 		(
-			for ctrl in this.SettingsRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in this.TasksRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in this.InfoCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in this.ToolsCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in this.GeneralCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in this.GeneralProjectsRoll.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in SettingsRoll.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in TasksCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in InfoCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
+			try (for ctrl in ToolsCatalogRoll.Controls do try(ctrl.tooltip = "")catch()) catch()
+			for ctrl in GeneralCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
+			for ctrl in GeneralProjectsRoll.Controls do try(ctrl.tooltip = "")catch()
 		)
+		SettingsRoll.ckbx_tooltips.tooltip = "Требуется перезагрузка."
 
-		SwitchRollouts()
 		MD_Data.Update()
+		
+		InitCatalogLists()
 		FillCategoriesLists()
 		FillMainList()
 		FillAddList()
-		UpdateCatalogTasksRlt()
-		UpdateCatalogInfoRlt()
-		UpdateCatalogToolsRlt()
+
+		InitProjectsLists()
+
+		SwitchRollouts()
+		MD_Data.LoadState = true
+		MD_Data.ProjectsRollLoadState = true
+		-- UpdateCatalogTasksRlt()
+		-- UpdateCatalogInfoRlt()
+		-- UpdateCatalogGeneralRlt()
 	),
 	
 	on create do Init()

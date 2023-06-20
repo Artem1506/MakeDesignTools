@@ -9,13 +9,13 @@ rollout dlg_configure "Configure" width:400 height:164
     Button 'btn_md_lib_dir' "Browse" width:64 height:CTRL_HEIGHT_1 offset:[0, 16] align:#right
 
     Label 'lbl_8' "Login:" width:32 offset:[-132, 34] align:#right across:2
-    editText 'etxt_log' "" width:160 height:20 offset:[-160, 32] align:#right
+    editText 'etxt_log' "" width:160 height:20 offset:[-160, 32] align:#right multiLine:false
 
     Label 'lbl_9' "Password:" width:48 offset:[-136, 2] align:#right across:2
-    editText 'etxt_pass' "" width:160 height:20 offset:[-160, 0] align:#right
+    editText 'etxt_pass' "" width:160 height:20 offset:[-160, 0] align:#right multiLine:false
 
-    button 'btn_test' "Authorization Test" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:true
-    button 'btn_get_struct' "Get MakeDesign Data" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:true
+    button 'btn_test' "Authorization Test" width:150 height:CTRL_HEIGHT_1 offset:[-2, -51] align:#right enabled:false
+    button 'btn_get_struct' "Get MakeDesign Data" width:150 height:CTRL_HEIGHT_1 offset:[-2, -2] align:#right enabled:false
 
     Label 'lbl_info' "" width:388 offset:[-4, 12] align:#left across:3
     Label 'lbl_connect' "" width:388 offset:[168, 12] align:#left
@@ -49,6 +49,24 @@ rollout dlg_configure "Configure" width:400 height:164
 
         -- Текущая директория локальной базы
         cur_md_lib = lbl_md_lib_dir.text
+
+        MD_Client.Request "check_connection" show_dialog:false title:"Check Internet Connection"
+        
+        if MD_Client.ResponseStatus == "200" then 
+        (
+            if etxt_log.text != "" and etxt_pass.text != "" then
+            -- btn_test.enabled = true
+            Client_Log.Info MD_Client.ResponseMessage
+        )
+        else(
+            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
+            Client_Log.Error MD_Client.ResponseMessage
+            -- btn_test.enabled = false
+            btn_get_struct.enabled = false
+        )
+
+        if etxt_log.text != "" and etxt_pass.text != "" then
+        btn_test.enabled = true
     )
 
     on dlg_configure close do
@@ -87,16 +105,19 @@ rollout dlg_configure "Configure" width:400 height:164
                 try MD_Data.DeleteWorkLayer() catch()
                 MD_Data.Init()
                 MD_Data.Update()
-                MD_Callbacks.Add()
-                MD_Data.SwitchWorkLayer()
-                MD_UI.UpdateCatalogTasksRlt()
+                -- MD_Callbacks.Add()
+                try MD_UI.UpdateCatalogTasksRlt() catch()
 
+                if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
+                MD_Data.ShowLayers mode:#work_only
+                else MD_Data.ShowLayers mode:#scene_only
+                
                 -- Попытаться выбрать последнее активное задание
                 if MD_Data.Tasks.Count != 0 then
                 (
                     local exist_task_index = undefined
 
-                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.TasksRoll.Name (MD_UI.ListMain.name + "_selection")) + 1) catch()
+                    try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.TasksCatalogRoll.Name (MD_UI.CatalogListMain.name + "_selection")) + 1) catch()
 
                     if exist_task_index != undefined and exist_task_index > 0 then
                     (
@@ -126,7 +147,7 @@ rollout dlg_configure "Configure" width:400 height:164
                         ) catch()            
                     )
                 )
-                try FullUpdate() catch()
+                MD_Data.FullUpdate()
 
                 MD_Log.Info ("Путь к локальной базе MakeDesign = " + result)
             )
@@ -135,12 +156,19 @@ rollout dlg_configure "Configure" width:400 height:164
 
     on etxt_log entered arg do
     (
-        -- SetUserEnvVar "MD_USER_LOGIN" arg
+        if etxt_log.text != "" and etxt_pass.text != "" then
+        btn_test.enabled = true
+        else btn_test.enabled = false
+        updateRolloutLayout dlg_configure forceUpdate:true
     )
 
     on etxt_pass entered arg do
     (
-        -- SetUserEnvVar "MD_USER_PASS" arg
+        if etxt_log.text != "" and etxt_pass.text != "" then
+        btn_test.enabled = true
+        else btn_test.enabled = false
+
+        updateRolloutLayout dlg_configure forceUpdate:true
     )
 
     on btn_test pressed do
@@ -148,12 +176,13 @@ rollout dlg_configure "Configure" width:400 height:164
         SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
         SetUserEnvVar "MD_USER_PASS" etxt_pass.text
 
-        MD_Client.Request "test_request" "" "Authorization Test"
+        MD_Client.Request "test_request" title:"Authorization Test"
         
         if MD_Client.ResponseStatus == "200" then 
         (
             lbl_info.text = "INFO: " + MD_Client.ResponseMessage
             Client_Log.Info MD_Client.ResponseMessage
+            btn_get_struct.enabled = true
         )
         else 
         (
@@ -169,71 +198,67 @@ rollout dlg_configure "Configure" width:400 height:164
 
         lbl_connect.text = ""
 
-        MD_Client.Request "get_users_tree" ("\"" + MD_USERS_DATA_FILE + "\"") "Get Users Data"
+        MD_Client.Request "get_users_tree" args:("\"" + MD_USERS_DATA_FILE + "\"") title:"Get Users Data"
 
         if MD_Client.ResponseStatus == "200" then 
         (
-            msg = "Загружены данные о пользователях."
-            Client_Log.Info msg
-            lbl_info.text = "INFO: " + msg
+            Client_Log.Info MD_Client.ResponseMessage
+            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
             result_sum += 1
         )
         else
         (
-            msg = "Не удалось загрузить данные о пользователях."
-            Client_Log.Error msg
-            lbl_info.text = "ERROR: " + msg
+            Client_Log.Error MD_Client.ResponseMessage
+            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
         )
 
-        MD_Client.Request "get_catalog_tree" ("\"" + MD_CATALOG_DATA_FILE + "\"") "Get Objects Catalog Data"
+        MD_Client.Request "get_catalog_tree" args:("\"" + MD_CATALOG_DATA_FILE + "\"") title:"Get Objects Catalog Data"
 
         if MD_Client.ResponseStatus == "200" then 
         (
-            msg = "Загружены данные о каталоге объектов."
-            Client_Log.Info msg
-            lbl_info.text = "INFO: " + msg
+            Client_Log.Info MD_Client.ResponseMessage
+            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
             result_sum += 1
         )
         else
         (
-            msg = "Не удалось загрузить данные о каталоге объектов."
-            Client_Log.Error msg
-            lbl_info.text = "ERROR: " + msg
+            Client_Log.Error MD_Client.ResponseMessage
+            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
         )
 
-        MD_Client.Request "get_projects_tree" ("\"" + MD_PROJECTS_DATA_FILE + "\"") "Get Projects Data"
+        MD_Client.Request "get_projects_tree" args:("\"" + MD_PROJECTS_DATA_FILE + "\"") title:"Get Projects Data"
 
         if MD_Client.ResponseStatus == "200" then 
         (
-            msg = "Загружены данные о проектах."
-            Client_Log.Info msg
-            lbl_info.text = "INFO: " + msg
+            Client_Log.Info MD_Client.ResponseMessage
+            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
             result_sum += 1
         )
         else
         (
-            msg = "Не удалось загрузить данные о проектах."
-            Client_Log.Error msg
-            lbl_info.text = "ERROR: " + msg
+            Client_Log.Error MD_Client.ResponseMessage
+            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
         )
 
         if result_sum == 3 then 
         (
-            msg = "Успешно! Все данные загружены."
-            Client_Log.Info msg
-            lbl_info.text = "INFO: " + msg
-
-            MD_Callbacks.Destruct()
-            try MD_Data.ClearWorkLayer() catch()
-            try MD_Data.DeleteWorkLayer() catch()
-            MD_Data.Init()
-            MD_Data.Update()
-            MD_Callbacks.Add()
-            MD_Data.SwitchWorkLayer()
-            try FullUpdate() catch()
-            MD_UI.UpdateCatalogTasksRlt()
-
             destroyDialog dlg_configure
+
+            if MD_Data.ActiveSection == 1 then
+            (
+                MD_Callbacks.Destruct()
+                MD_Data.Init()
+                MD_Data.CheckedTasks = #()
+                MD_Data.ActiveList = 1
+                MD_Data.ActiveTaskAddIndex = undefined
+                MD_Data.Update()
+                MD_UI.FillCategoriesLists()
+                MD_Data.FullUpdate()
+                MD_BBox.Update()
+                
+                if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+                else MD_Data.ShowLayers mode:#scene_only
+            )
         )
         else if result_sum > 0 then
         (

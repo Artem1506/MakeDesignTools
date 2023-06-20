@@ -19,15 +19,15 @@ struct GlobalData
 	ActiveSection = 1, --> [int] Активная категория
 	ActiveCategory = undefined, --> [int] Активная подкатегория
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
-	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.ListMain
-	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.ListMain
-	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.ListAdd
+	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
+	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
+	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
 	active_catalog_dir = undefined, --> [str] "01-01-001"
 	active_catalog_article = undefined, --> [str] "01-01-001"
 	ActiveList = 1, --> [int] Активный список
 	InWorkTask = undefined, --> [task] Задание, находящееся в данный момент в рабочем состоянии
 	InWorkTaskFile = undefined, --> [str] Задание, находящееся в данный момент в рабочем состоянии
-	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.ListMain
+	CheckedTasks = #(), -- Отмеченные задания в списке MD_UI.CatalogListMain
 	WorkLayerNodes = #(),
 	TempLayerNodes = #(),
 	ActiveCategoryIcon = TaskIcon(),
@@ -38,7 +38,8 @@ struct GlobalData
 	proj_sub_categs = #(),
 	proj_sub_categ_ids = #(),
 	VisibleLayers = false,
-
+	LoadState = false, -- Был ли загружен rlt_catalog_tasks
+	ProjectsRollLoadState = false, -- Был ли загружен rlt_projects_tasks
 	Users = #(),
 
 	fn AssignMatID obj =
@@ -182,22 +183,6 @@ struct GlobalData
 		)catch()
 	),
 
-	fn SwitchWorkLayer =
-	(
-		try (
-			if ActiveTask != undefined and ActiveTask.Article == InWorkTask.Article then 
-			(
-				this.ShowLayers mode:#work_only
-			)
-			else 
-			(
-				this.ShowLayers mode:#scene_only
-			)
-			
-			CompleteRedraw()
-		)catch()
-	),
-
     fn ShowLayers mode:#work_only =
     (
 		-- #all
@@ -205,7 +190,7 @@ struct GlobalData
 		-- #work_only
 		-- #none
 
-		MD_BBox.Layer.lock = true
+		try(MD_BBox.Layer.lock = true)catch()
 		try(
 			case mode of
 			(
@@ -229,7 +214,12 @@ struct GlobalData
 						lr.on = false
 						else 
 						(
-							if lr == MD_BBox.Layer then lr.on = MD_UI.SettingsRoll.ckbx_show_bb.checked
+							if lr == MD_BBox.Layer then 
+							(
+								if MD_UI.SettingsRoll.ckbx_show_bb.checked or MD_UI.SettingsRoll.ckbx_show_icon.checked or \
+								(MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked) then
+								lr.on = true
+							)
 							else
 							(
 								lr.on = true
@@ -360,9 +350,7 @@ struct GlobalData
 		catch ()
         
 		-- Обновить
-		-- SwitchWorkLayer()
 		ActiveTask.Update()
-        -- try FullUpdate() catch()
         
 		local work_tasks = #()
 
@@ -384,7 +372,7 @@ struct GlobalData
 				
 			)else t.CreateMaterial()			
 		)
-		try MD_Callbacks.Add() catch()
+		-- try MD_Callbacks.Add() catch()
 
 		-- Иконка
 		local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME
@@ -461,8 +449,8 @@ struct GlobalData
 			catch ()
 			MD_BBox.Init()
 			MD_BBox.Update()
-			this.SwitchWorkLayer()
-			MD_Callbacks.Add()
+			MD_UI.UpdateCatalogTasksRlt()
+			-- MD_Callbacks.Add()
 
 			-- Иконка
 			local icon_file = pathconfig.appendpath this.InWorkTask.InWorkDir TASK_ICON_NAME
@@ -669,7 +657,7 @@ struct GlobalData
 			data["to_import"] = dict
 			WriteDataFile MD_LIB_DATA_FILE
 
-			MD_Callbacks.Add()
+			-- MD_Callbacks.Add()
 			CompleteRedraw()
 		)
 	),
@@ -794,6 +782,46 @@ struct GlobalData
 		if not doesDirectoryExist task_dir then result = true
 
 		result
+	),
+
+	fn FullUpdate =
+	(
+		-- Обновить данные
+		try MD_UI.Sort = false catch()
+		try this.ActiveList = 1 catch()
+		try this.ActiveTask = this.Tasks[this.ActiveTaskIndex] catch()
+
+		-- Обновить интерфейс
+		try MD_UI.FillMainList() catch()
+		try MD_UI.FillAddList() catch()
+		try MD_UI.UpdateCatalogTasksRlt() catch()
+		try MD_UI.UpdateCatalogInfoRlt() catch()
+		try MD_UI.UpdateCatalogGeneralRlt() catch()
+		try MD_UI.UpdateCatalogToolsRlt() catch()
+
+		-- Обновить габаритный контейнер
+		try MD_BBox.Update() catch()
+
+		-- Создать рабочий слой, если есть задание в работе
+		try if this.InWorkTask.file != undefined and this.WorkLayer == undefined then this.CreateWorkLayer() catch()
+
+		-- Обновить рабочий слой, если он есть
+		try this.SwitchWorkLayer catch()
+
+		-- Попытаться выбрать первый элемент в списке
+		if this.ActiveTaskIndex == undefined then try MD_UI.CatalogListMain.Items.Item[0].selected = true catch()
+
+		-- Артикль текущей категории
+		try this.active_catalog_article = (this.main_categ_ids[this.ActiveCategory][this.ActiveSubCategory]) catch()
+
+		-- -- Попытаться установить иконку
+		-- if this.ActiveCategoryIcon.Icon == undefined then
+		-- (
+		-- 	try (
+		-- 		icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (this.active_catalog_article + (ICON_POSTFIX + ".max"))
+		-- 		this.ActiveCategoryIcon.SetIcon icon_file
+		-- 	)catch()
+		-- )
 	),
 
 	fn Init = (

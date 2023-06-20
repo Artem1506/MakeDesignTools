@@ -136,7 +136,7 @@ struct Task
 		
 		completeRedraw()
 
-		MD_Callbacks.Add()
+		-- MD_Callbacks.Add()
 
 		return load_result
 	),

@@ -14,6 +14,7 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
 
     on dlg_request open do
     (
+        MD_Data.TempArticlesList = #()
 		process.StartInfo.RedirectStandardOutput = true
 		process.StartInfo.RedirectStandardError = true
 
@@ -39,8 +40,6 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
 
         if proc.count == 0 then 
         (
-            MD_Data.TempArticlesList = #()
-
             try resp = (FilterString (getclipboardText()) SEPAR_1) catch()
             
             try MD_Client.ResponseStatus = resp[1] catch()
@@ -57,12 +56,18 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
 
     on dlg_request close do
     (
-        MD_UI.FillTempData()
-        MD_Data.ActiveTask = undefined
-        MD_UI.UpdateCatalogTasksRlt()
-        MD_UI.UpdateCatalogInfoRlt()
-        MD_UI.UpdateCatalogToolsRlt()
-        WithoutRedraw MD_BBox.Update
-        MD_Data.SwitchWorkLayer()
+        if MD_Data.TempArticlesList.count != 0 then
+        (
+            MD_UI.FillTempData()
+            MD_Data.ActiveTask = undefined
+            MD_UI.UpdateCatalogTasksRlt()
+            MD_UI.UpdateCatalogInfoRlt()
+            MD_UI.UpdateCatalogGeneralRlt()
+            MD_BBox.Update()
+
+            if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
+            MD_Data.ShowLayers mode:#work_only
+            else MD_Data.ShowLayers mode:#scene_only            
+        )
     )
 )
