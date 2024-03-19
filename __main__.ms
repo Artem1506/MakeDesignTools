@@ -48,6 +48,34 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
+        -- Инициализация пути к локальной базе
+        try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
+
+        -- Инициализация артикула текущего проекта
+        try (
+            MD_CURRENT_PROJECT = GetUserEnvVar "MD_CURRENT_PROJECT"
+            MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR (MD_CURRENT_PROJECT + "_catalog_data.json")
+        )catch ()
+
+        -- Инициализация логина и пароля
+        try(
+            login = GetUserEnvVar "MD_USER_LOGIN"
+            etxt_log.text = login
+        )catch()
+        try(
+            password = GetUserEnvVar "MD_USER_PASS"
+            etxt_pass.text = password
+        )catch()
+
+        MD_Callbacks.Destruct()
+        MD_Data.Init()
+        MD_Data.CheckedTasks = #()
+        -- MD_Data.ActiveList = 1
+        -- MD_Data.ActiveTaskAddIndex = undefined
+        MD_Data.Update()
+        MD_UI.FillCategoriesLists()
+        try MD_BBox.Update() catch()
+
         MD_Data.ShowLayers mode:#none
         for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
 
@@ -120,6 +148,8 @@
                 MD_Data.ShowLayers mode:#work_only
             )
         )catch()
+
+
     )
     else
     (

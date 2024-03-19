@@ -295,11 +295,12 @@ struct Task
 				(
 					local mat = TaskMaterial()
 
-					mat.Article = data["finishing_materials"][i]["article"]
-					mat.PartName = data["finishing_materials"][i]["name_part_object"]
-					mat.Material = data["finishing_materials"][i]["finishing_components"]
-					mat.RefFile = mat_ref_files[i]
-					mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE
+					try mat.Article = data["finishing_materials"][i]["article"] catch()
+					try mat.PartName = data["finishing_materials"][i]["name_part_object"] catch()
+					try mat.Material = data["finishing_materials"][i]["finishing_components"] catch()
+					try mat.RefFile = mat_ref_files[i] catch()
+					try (mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE)
+					catch (mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
 					try (mat.WebSite = data["finishing_materials"][i]["web_site"]) catch()
 
 					-- Проверка наличия текстур
@@ -353,7 +354,8 @@ struct Task
 						sort SavedWorks
 					)	
 				)
-				RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE
+				try (RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE)
+				catch(RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
 
 				-- Создать материал
 				if not DoesFileExist MatLibFile then CreateMaterial()

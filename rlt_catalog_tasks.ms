@@ -1,8 +1,9 @@
 
-rollout rlt_catalog_tasks "Tasks"
+rollout rlt_catalog_tasks "Catalog"
 (
-    dropdownlist 'lst_sections' "" items:MD_CATEGS[1] width:CTRL_WIDTH_1 offset:[1, V_MARGIN] align:#center selection:1 enabled:true
-    dropdownlist 'lst_basic_catalog' "" items:#() width:CTRL_WIDTH_1 height:50 offset:[1, V_MARGIN] align:#center selection:1 enabled:true
+    --dropdownlist 'lst_sections' "" items:MD_CATEGS[1] width:CTRL_WIDTH_1 offset:[1, V_MARGIN] align:#center selection:1 enabled:true
+
+    dropdownlist 'lst_basic_catalog' "" items:#() width:CTRL_WIDTH_1 height:50 offset:[0, V_MARGIN] align:#center selection:1 enabled:true
     dropdownlist 'lst_sub_catalog' "" items:#() width:CTRL_WIDTH_1 height:50 offset:[1, V_MARGIN] align:#center selection:1 enabled:true
     button 'btn_check' "Check tasks" width:(CTRL_WIDTH_1/2 - 3) height:CTRL_HEIGHT_1 align:#center offset:[11, V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tasks_01
     button 'btn_get' "Get" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[29, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_02_a
@@ -10,6 +11,9 @@ rollout rlt_catalog_tasks "Tasks"
     dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:176 align:#center offset:[1, 0] enabled:true
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
+    
+    -- Label 'lbl_vars' "Finishing Variations:" width:100 offset:[8, 2] align:#left across:2
+    -- dropdownlist 'lst_vars' "" items:#() width:(CTRL_WIDTH_1 - 114) height:50 offset:[12, V_MARGIN] align:#right selection:1 enabled:true
     dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
     button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06
     button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07
@@ -22,7 +26,7 @@ rollout rlt_catalog_tasks "Tasks"
         (
             try lst_basic_catalog.Items = MD_Data.main_categs catch()
             try lst_sub_catalog.Items = MD_Data.sub_categs[MD_Data.ActiveCategory] catch()
-            try lst_sections.selection = MD_Data.ActiveSection catch()
+            --try lst_sections.selection = MD_Data.ActiveSection catch()
             try lst_basic_catalog.selection = MD_Data.ActiveCategory catch()
             try lst_sub_catalog.selection = MD_Data.ActiveSubCategory catch()
             try MD_UI.InitCatalogLists() catch()
@@ -37,13 +41,16 @@ rollout rlt_catalog_tasks "Tasks"
                 MD_Data.ActiveCategoryIcon.SetIcon icon_file
             )catch(MD_Data.ActiveCategoryIcon.Icon = undefined)
         )
+
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
     )
     
     on rlt_catalog_tasks close do
     (
   
     )
-
+/*
     on lst_sections selected arg do 
     (
         if MD_Data.ActiveSection != arg then
@@ -59,14 +66,14 @@ rollout rlt_catalog_tasks "Tasks"
             MD_UI.SwitchRollouts()
             MD_UI.FillCategoriesLists()
             MD_Data.FullUpdate()
-            MD_BBox.Update()
+            try MD_BBox.Update() catch()
     
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
         )
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
     )
-
+*/
     on lst_basic_catalog selected arg do
     (
         if MD_Data.ActiveCategory != arg then
@@ -85,7 +92,7 @@ rollout rlt_catalog_tasks "Tasks"
             MD_Data.Update()
             -- MD_UI.FillCategoriesLists()
             MD_Data.FullUpdate()
-            MD_BBox.Update()
+            try MD_BBox.Update() catch()
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
             try (
@@ -111,7 +118,7 @@ rollout rlt_catalog_tasks "Tasks"
             MD_Data.ActiveTaskAddIndex = undefined
             MD_Data.Update()
             MD_Data.FullUpdate()
-            MD_BBox.Update()
+            try MD_BBox.Update() catch()
             
             if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
             else MD_Data.ShowLayers mode:#scene_only
@@ -145,6 +152,7 @@ rollout rlt_catalog_tasks "Tasks"
     (
         local args = ""
         local msg = ""
+        local download_articles = ""
         MD_Data.ShowLayers mode:#none
 
         case btn_get.text of
@@ -159,51 +167,69 @@ rollout rlt_catalog_tasks "Tasks"
 
                 for i in MD_Data.CheckedTasks do
                 (
-                    local split = FilterString MD_Client.ResponseData[i] SEPAR_2
+                    local split = FilterString MD_Client.ResponseData[i] SEPAR2
                     article = split[1]
                     msg = split[3]
                     user_id = split[4]
-                    args += user_id + SEPAR_2
+                    args += user_id + SEPAR2
                     append temp_txt (article + " | " + msg)
                 )
-                args = trimRight args SEPAR_2
-                args += SEPAR_1
+                args = trimRight args SEPAR2
+                args += SEPAR
 
                 for txt in temp_txt do
                 (
-                    args += (txt + SEPAR_2)
+                    args += (txt + SEPAR2)
                 )
-                args = "\"" + (trimRight args SEPAR_2) + "\""
+                args = "\"" + (trimRight args SEPAR2) + "\""
 
                 MD_Client.Request "send_message" args:args title:"Sending Messages"
                 Client_Log.Info MD_Client.ResponseMessage
             )
+
             "Update":(
                 -- Обновить отмеченные задания
-
+                
                 for i in MD_Data.CheckedTasks do
                 (
-                    args += MD_Data.Tasks[i].Article + SEPAR_1
+                    download_articles += MD_Data.Tasks[i].Article + SEPAR1
                 )
-                args = trimRight args SEPAR_1
+                download_articles = trimRight download_articles SEPAR1
                 lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
                 MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
-                args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
+                args = MD_Data.active_catalog_article + SEPAR + lib_path + SEPAR + download_articles
 
                 MD_Client.Request "download_tasks" args:args title:"Updating Tasks"
                 msg = "Обновлено заданий: " + MD_Client.ResponseMessage + " из " + MD_Data.CheckedTasks.count as string
                 Client_Log.Info msg
             )
-            default:(
-                -- Скачать задания в локальную базу
 
+            "Backup":(
+                -- Скачать файлы контента в локальную базу
+                
                 for i in MD_Data.CheckedTasks do
                 (
-                    args += MD_Data.TempArticlesList[i] + SEPAR_1
+                    download_articles += MD_Data.TempArticlesList[i] + SEPAR1
                 )
-                args = trimRight args SEPAR_1
+                download_articles = trimRight download_articles SEPAR1
                 lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
-                args = MD_Data.active_catalog_article + SEPAR_1 + lib_path + SEPAR_1 + args
+
+                args = "1" + SEPAR + download_articles + SEPAR + lib_path
+                MD_Client.Request "download_items_content" args:args title:"Backup Content"
+                msg = "Загружено контента: " + MD_Client.ResponseMessage + " из " + MD_Data.CheckedTasks.count as string
+                Client_Log.Info msg
+                MD_Data.CheckedTasks = #()          
+            )
+
+            default:(
+                -- Скачать задания в локальную базу
+                for i in MD_Data.CheckedTasks do
+                (
+                    download_articles += MD_Data.TempArticlesList[i] + SEPAR1
+                )
+                download_articles = trimRight download_articles SEPAR1
+                lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+                args = MD_Data.active_catalog_article + SEPAR + lib_path + SEPAR + download_articles
 
                 MD_Client.Request "download_tasks" args:args title:"Downloading Tasks"
                 msg = "Скачано заданий: " + MD_Data.CheckedTasks.count as string
@@ -218,7 +244,7 @@ rollout rlt_catalog_tasks "Tasks"
         MD_UI.UpdateCatalogTasksRlt()
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogGeneralRlt()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
     )
@@ -270,7 +296,7 @@ rollout rlt_catalog_tasks "Tasks"
         MD_UI.UpdateCatalogTasksRlt()
         MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogGeneralRlt()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
     )
@@ -385,7 +411,7 @@ rollout rlt_catalog_tasks "Tasks"
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Material catch()
                         completeRedraw()
                     )
-                    MD_BBox.Update()
+                    try MD_BBox.Update() catch()
                     MD_Data.ShowLayers mode:#work_only
                 )
                 else 
@@ -396,7 +422,7 @@ rollout rlt_catalog_tasks "Tasks"
                     MD_Data.ActiveTask.Group != undefined and \
                     MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
                     (
-                        MD_BBox.Update()
+                        try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
                         try MD_Data.InWorkTask.Mesh.Material = MD_Data.ActiveTask.Material catch()
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Material catch()
@@ -404,7 +430,7 @@ rollout rlt_catalog_tasks "Tasks"
                     )
                     else 
                     (
-                        MD_BBox.Update()
+                        try MD_BBox.Update() catch()
                         try(destroyDialog MD_UI.Dialogs.Export)catch()
                         MD_Data.ShowLayers mode:#scene_only
                     )
@@ -489,7 +515,7 @@ rollout rlt_catalog_tasks "Tasks"
             )
         )
         MD_Data.FullUpdate()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
         MD_Data.ShowLayers mode:#work_only
     )
 
@@ -503,7 +529,7 @@ rollout rlt_catalog_tasks "Tasks"
         -- Выход из рабочего состояния
         MD_Data.ExitWorkState()
         MD_Data.FullUpdate()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
         MD_Data.ShowLayers mode:#scene_only
     )
 

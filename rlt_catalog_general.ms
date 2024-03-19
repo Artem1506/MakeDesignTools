@@ -58,7 +58,7 @@ rollout rlt_catalog_general "General"
     (
         MD_Data.SetMesh selection[1]
         MD_UI.UpdateCatalogGeneralRlt()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on btn_add_mesh pressed do
@@ -76,7 +76,7 @@ rollout rlt_catalog_general "General"
         )
         
         MD_UI.UpdateCatalogGeneralRlt()
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on btn_mesh_switch pressed do
@@ -103,7 +103,7 @@ rollout rlt_catalog_general "General"
             )
 
             MD_UI.UpdateCatalogGeneralRlt()
-            MD_BBox.Update()
+            try MD_BBox.Update() catch()
             MD_UI.UpdateCatalogInfoRlt()
         )
     )
@@ -112,7 +112,7 @@ rollout rlt_catalog_general "General"
     (
         try destroyDialog MD_UI.Dialogs.PivotParams catch()
         createDialog MD_UI.Dialogs.PivotParams 340 100 modal:false
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on btn_set_pivot rightclick do
@@ -193,7 +193,7 @@ rollout rlt_catalog_general "General"
                 -- try (polyop.setVertSelection MD_Data.ActiveCategoryIcon.Icon #{}) catch()
 			)
 			false:(
-                MD_BBox.Update()
+                try MD_BBox.Update() catch()
 
                 try MD_Data.ActiveCategoryIcon.Icon.IsHidden = not MD_UI.SettingsRoll.ckbx_show_icon.checked catch()
 

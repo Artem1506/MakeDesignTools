@@ -1,7 +1,7 @@
 
 rollout rlt_projects_tasks "Tasks"
 (
-    dropdownlist 'lst_sections' "" items:MD_CATEGS[1] width:CTRL_WIDTH_1 offset:[1, V_MARGIN] align:#center selection:2 enabled:true
+    -- dropdownlist 'lst_sections' "" items:MD_CATEGS[1] width:CTRL_WIDTH_1 offset:[1, V_MARGIN] align:#center selection:2 enabled:true
     dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:176 align:#center offset:[1, 0] enabled:true
     dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
   
@@ -25,7 +25,7 @@ rollout rlt_projects_tasks "Tasks"
             MD_UI.InitProjectsLists()
         )
     )
-
+/*
     on lst_sections selected arg do 
     (
         if MD_Data.ActiveSection != arg then
@@ -44,4 +44,5 @@ rollout rlt_projects_tasks "Tasks"
             MD_Callbacks.Add()
         )
     )
+    */
 )

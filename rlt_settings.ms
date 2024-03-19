@@ -1,7 +1,7 @@
 
 rollout rlt_settings "Settings"
 (
-    button 'btn_paths' "Configure" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN]
+    button 'btn_paths' "Configure User Data" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN]
     button 'btn_fbx_sets' "FBX Settings" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN]
     checkbox 'ckbx_show_bb' "Show Bounding Box" width:120 offset:[0, 0] align:#left checked:true across:4 tooltip:MD_Tooltips.settings_01_a
     colorpicker 'clr_bb_main' fieldWidth:36 color:CLR_BBOX_MAIN height:16 align:#center offset:[62, 0] modal:false tooltip:MD_Tooltips.settings_01_b
@@ -34,17 +34,17 @@ rollout rlt_settings "Settings"
     
     on ckbx_show_bb changed arg do 
     (
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on ckbx_show_icon changed arg do 
     (               
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on ckbx_auto_pivot changed arg do 
     (
-        MD_BBox.Update()
+        try MD_BBox.Update() catch()
     )
 
     on ckbx_tooltips changed arg do 

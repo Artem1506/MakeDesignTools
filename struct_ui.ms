@@ -10,7 +10,7 @@ struct UI
 	InfoCatalogRoll = rlt_catalog_info,
 	ToolsCatalogRoll = rlt_catalog_tools,
 	GeneralCatalogRoll = rlt_catalog_general,
-	Sections = rlt_catalog_tasks.lst_sections,
+	-- Sections = rlt_catalog_tasks.lst_sections,
 	Categories = rlt_catalog_tasks.lst_basic_catalog,
 	SubCategories = rlt_catalog_tasks.lst_sub_catalog,
 	CatalogListMain = rlt_catalog_tasks.lv_main,
@@ -79,7 +79,7 @@ struct UI
 	fn FillMainList =
 	(
 		case MD_Data.ActiveSection of
-		(
+		(	/*
 			1:(
 				-- Заполнить данными список заданий панели Tasks
 				local task_list = #()
@@ -125,8 +125,78 @@ struct UI
 					else dn_list_item.SubItems.add ""
 
 					-- User name
-					dn_list_item.SubItems.add task.UserName
+					if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
+					else dn_list_item.SubItems.add ""
+					
+					-- Отметить элемент как выделенный
+					if cur_sel == item_index then dn_list_item.Selected = true
 
+					-- Добавить к основному списку элементов
+					append main_items dn_list_item
+
+					item_index += 1
+					try dn_list_item.tag = item_index catch()
+				)
+
+				-- Заполнить основной список панели Tasks (задания)
+				CatalogListMain.Items.Clear()
+				CatalogListMain.Items.AddRange main_items
+				CatalogListMain.Update()
+
+				main_items = #()
+				free main_items
+				task_list = #()
+				free task_list
+			)
+			*/
+			1:(
+				-- Заполнить данными список заданий панели Tasks
+				local task_list = #()
+				local main_items = #()
+				local item_index = 0
+				local cur_sel = undefined
+
+				-- Индекс выделенного элемента в стике
+				if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
+				
+				-- Проверка сортировки
+				-- if Sort then task_list = MD_Data.SortTasks
+				-- else task_list = MD_Data.Tasks
+
+				for task in MD_Data.Tasks do
+				(
+					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
+					dn_list_item.Checked = false
+					dn_list_item.ForeColor = DN_CLR_DEFAULT
+
+					if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
+					(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
+					(
+						dn_list_item.ForeColor = DN_CLR_INWORK
+						dn_list_item.Font = DN_FNT_GRP
+						dn_list_item.SubItems.add STATES[2]
+
+						if task.Article == MD_Data.ActiveTask.Article then
+						(
+							MD_Data.InWorkTask = task
+							MD_Data.CreateWorkLayer()							
+						)
+					)
+					else dn_list_item.SubItems.add ""
+
+					-- Group
+					if task.Group != undefined then dn_list_item.SubItems.add task.Group
+					else dn_list_item.SubItems.add ""
+
+					-- Transformation
+					if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
+					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
+					else dn_list_item.SubItems.add ""
+
+					-- User name
+					if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
+					else dn_list_item.SubItems.add ""
+					
 					-- Отметить элемент как выделенный
 					if cur_sel == item_index then dn_list_item.Selected = true
 
@@ -159,18 +229,23 @@ struct UI
 
 	fn FillCategoriesLists =
 	(
-		case MD_Data.ActiveSection of
-		(
-			1:(
-				-- Заполнить данными панель Info
-				Categories.Items = MD_Data.main_categs
-				try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
-				catch(SubCategories.Items = #())
-			)
-			2:(
+		Categories.Items = MD_Data.main_categs
+		try Categories.selection = 1 catch()
+		try SubCategories.Items = MD_Data.sub_categs[Categories.Selection]
+		catch(SubCategories.Items = #())
+		
+		-- case MD_Data.ActiveSection of
+		-- (
+		-- 	1:(
+		-- 		-- Заполнить данными панель Info
+		-- 		Categories.Items = MD_Data.main_categs
+		-- 		try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
+		-- 		catch(SubCategories.Items = #())
+		-- 	)
+		-- 	2:(
 
-			)
-		)
+		-- 	)
+		-- )
 	),
 	
 	fn UpdateCatalogGeneralRlt =
@@ -409,8 +484,8 @@ struct UI
 					)
 
 					try (InfoCatalogRoll.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
-					InfoCatalogRoll.title = MD_Data.ActiveTask.Article
-					InfoCatalogRoll.height = 280					
+					try InfoCatalogRoll.title = MD_Data.ActiveTask.Article catch()
+					try InfoCatalogRoll.height = 280 catch()				
 				)
 			)
 			2:(
@@ -441,7 +516,7 @@ struct UI
 			InfoCatalogWeb.address = ""
 			InfoCatalogSize.text = ""
 
-			TasksCatalogRoll.lst_sections.enabled = true
+			-- TasksCatalogRoll.lst_sections.enabled = true
 			TasksCatalogRoll.lst_basic_catalog.enabled = true
 			TasksCatalogRoll.lst_sub_catalog.enabled = true
 			CatalogListMain.enabled = true

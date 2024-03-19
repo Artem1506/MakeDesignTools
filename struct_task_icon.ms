@@ -202,7 +202,7 @@ struct TaskIcon
 				viewport.SetType cur_view_type
 				viewport.SetTM cur_view_tm
 
-				MD_BBox.Update()
+				try MD_BBox.Update() catch()
 				MD_BBox.bb.wireColor = CLR_BBOX_MAIN
 				MD_BBox.arrow.wireColor = CLR_BBOX_MAIN
 				completeRedraw()

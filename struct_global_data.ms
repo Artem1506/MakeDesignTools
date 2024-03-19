@@ -17,7 +17,7 @@ struct GlobalData
 	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
 	sub_categ_lib_dirs = #(), -- #(#("D:\MakeDesignLib\Catalog\06-02-013", ...), ...) Пути к категориям в локальной базе
 	ActiveSection = 1, --> [int] Активная категория
-	ActiveCategory = undefined, --> [int] Активная подкатегория
+	ActiveCategory = undefined, --> [int] Активная категория
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
@@ -324,8 +324,10 @@ struct GlobalData
 		catch ()
 		if ActiveTask != InWorkTask then DeleteWorkLayer()
 		MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
-		local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
-		MD_Data.ActiveCategoryIcon.SetIcon icon_file
+		try (
+			local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			MD_Data.ActiveCategoryIcon.SetIcon icon_file
+		) catch()
 	),
 
 	fn CreateWorkState =
@@ -448,7 +450,7 @@ struct GlobalData
 			)
 			catch ()
 			MD_BBox.Init()
-			MD_BBox.Update()
+			try MD_BBox.Update() catch()
 			MD_UI.UpdateCatalogTasksRlt()
 			-- MD_Callbacks.Add()
 
@@ -484,11 +486,37 @@ struct GlobalData
 			(
 				local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
 				task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+				if (doesFileExist task_file) then
+				(
+					task_file = substituteString task_file "\\" "/"
+					append Tasks (Task File:task_file)
+				)
+			)
+		)
+	),
+
+	/*
+	fn GetTasksInActiveCategory =
+	(
+		Tasks = #()
+
+		local activ_dir = sub_categ_lib_dirs[ActiveCategory][ActiveSubCategory]
+		local tasks_dirs = GetDirectories (activ_dir + "\\*")
+
+		for dir in tasks_dirs do
+		(
+			-- Валидация имени папки. (Для исключения папок для групп)
+			local f = trimRight (filenameFromPath dir) "\\"
+			if (filterstring f "-").count >= 4 then
+			(
+				local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
+				task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
 				task_file = substituteString task_file "\\" "/"
 				append Tasks (Task File:task_file)
 			)
 		)
 	),
+	*/
 
 	fn SetMesh obj =
 	(
@@ -828,15 +856,18 @@ struct GlobalData
 		-- Инициализирует исходные глобальные данные
 
 		MD_LIB_DIR = ""
+		MD_CURRENT_PROJECT = ""
 		MD_LIB_DATA_FILE = ""
 		MD_LIB_TRASH_DIR = ""
 		Tasks = #()
 		sub_categs = #()
 		main_categ_id = #()
 		sub_categ_lib_dirs = #()
+		main_categs = #()
 
 		try (
 			MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR"
+			MD_CURRENT_PROJECT = GetUserEnvVar "MD_CURRENT_PROJECT"
 			MD_LIB_DATA_FILE = pathConfig.appendPath MD_LIB_DIR COMMON_DATA_FILE_NAME
 			MD_LIB_TRASH_DIR = pathConfig.appendPath MD_LIB_DIR "trash"
 		)
@@ -856,6 +887,7 @@ struct GlobalData
 		)
 
 		-- Инициализация списков категорий
+
 		if DoesDirectoryExist MD_LIB_DIR then
 		(
 			-- Импорт данных каталога объектов
@@ -866,38 +898,34 @@ struct GlobalData
 				local arr_names = #()
 				local arr_ids = #()
 				local arr_tasks = #()
+				local local_catalog_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
 
 				for i in data as array do 
 				(
-					
-					for k in i["children"] as array do 
+					-- Парсинг артикула
+					local parse_article = filterString i["Article"] "-"
+					local categ_article_part = parse_article[1] + "-" + parse_article[2]
+					local sub_categ_article_part = parse_article[3]
+					local sub_categ_option = sub_categ_article_part + " - " + i["SubCategory"]
+					local sub_categ_dir = pathConfig.AppendPath local_catalog_dir i["Article"]
+
+					locaL categ_option = categ_article_part + " - " + i["Category"]
+					local categ_arr_index = findItem main_categs categ_option
+
+					if categ_arr_index == 0 then
 					(
-						append main_categs (k["article"] + " - " + (subString i["name"] 1 12) + " - " + k["name"])
-						-- append main_categ_ids k["article"]
-
-						arr_names = #()
-						arr_ids = #()
-						arr_tasks = #()
-						arr_idss = #()
-
-						for j in k["children"] as array do 
-						(
-							append arr_names ((filterString j["article"] "-")[3] + " - " + j["name"])
-							sub_categ_dir = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
-							sub_categ_dir = pathConfig.AppendPath sub_categ_dir j["article"]
-							append arr_ids sub_categ_dir
-							append arr_tasks undefined
-							append arr_idss j["article"]
-						)
-						append sub_categs arr_names
-						append main_categ_ids arr_idss
-						append sub_categ_lib_dirs arr_ids
+						append main_categs categ_option
+						append main_categ_ids #(i["Article"])
+						append sub_categs #(sub_categ_option)
+						append sub_categ_lib_dirs #(sub_categ_dir)
+					)
+					else if categ_arr_index > 0 then
+					(
+						append main_categ_ids[categ_arr_index] i["Article"]
+						append sub_categs[categ_arr_index] sub_categ_option
+						append sub_categ_lib_dirs[categ_arr_index] sub_categ_dir
 					)
 				)
-				arr_names = #()
-				arr_ids = #()
-				arr_tasks = #()
-				arr_idss = #()
 			)
 			else MD_Log.Error "Отсутствуют данные о каталоге объектов."
 			
@@ -918,7 +946,7 @@ struct GlobalData
 			)
 			else MD_Log.Error "Отсутствуют данные о пользователях."
 		)
-	),
+	)
 
-	on create do Init()
+	-- on create do Init()
 )

@@ -8,7 +8,24 @@ struct HTTPClient
 	RequestDialogTitle,
 	RequestDialogShow = True,
 
-	fn ExistTasksFilter =
+	fn GetResposeArticlesList =
+	(
+		local resp_articles = #()
+
+		for rd in this.ResponseData do 
+		(
+			local resp = FilterString rd SEPAR2
+			-- resp[1] = артикул
+			-- resp[2] = дата создания
+			-- resp[3] = сообщение
+			-- resp[4] = ID пользователя
+
+			append resp_articles resp[1]
+		)
+		return resp_articles
+	),
+
+	fn GetResposeArticlesListWithFilter =
 	(
 		-- Фильтрует список артикулов для загрузки в локальную базу
 		local filter_articles = #()
@@ -21,11 +38,11 @@ struct HTTPClient
 		   local categ = pathConfig.stripPathToLeaf (trimRight dir "\\/")
 		   append exist_articles categ
 		)
-		
+	
 		-- Перебор списка из ответа от http-client
 		for rd in this.ResponseData do 
 		(
-			local resp = FilterString rd SEPAR_2
+			local resp = FilterString rd SEPAR2
 			-- resp[1] = артикул
 			-- resp[2] = дата создания
 			-- resp[3] = сообщение

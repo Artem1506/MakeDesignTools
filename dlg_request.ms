@@ -7,7 +7,7 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
     local resp = #()
     local proc
 
-    label 'lbl_01' "Waiting " align:#left offset:[30, 37] across:2
+    label 'lbl_01' "In Progress " align:#left offset:[30, 37] across:2
     label 'lbl_02' "." align:#left offset:[-90, 37]
 
     timer clock "Clock" interval:250
@@ -40,12 +40,13 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
 
         if proc.count == 0 then 
         (
-            try resp = (FilterString (getclipboardText()) SEPAR_1) catch()
+            try resp = (FilterString (getclipboardText()) SEPAR) catch()
             
             try MD_Client.ResponseStatus = resp[1] catch()
             try MD_Client.ResponseMessage = resp[2] catch()
             try MD_Client.ResponseData = (execute resp[3]) catch()
-            try MD_Data.TempArticlesList = MD_Client.ExistTasksFilter() catch()
+            try MD_Data.TempArticlesList = MD_Client.GetResposeArticlesList() catch()
+            -- try MD_Data.TempArticlesList = MD_Client.GetResposeArticlesListWithFilter() catch()
 
             destroyDialog dlg_request
         )
@@ -63,7 +64,7 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
             MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
-            MD_BBox.Update()
+            try MD_BBox.Update() catch()
 
             if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
             MD_Data.ShowLayers mode:#work_only

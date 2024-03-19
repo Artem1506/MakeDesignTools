@@ -1,6 +1,7 @@
 
 -- Расположение локальной базы MD
 global MD_LIB_DIR = ""
+global MD_CURRENT_PROJECT = ""
 global MAX_UI_BG_COLOR = ""
 global PY_BUILTINS = Python.Import "builtins"
 global data = PY_BUILTINS.dict()
@@ -25,11 +26,11 @@ MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 
 -- Файлы для хранения данных
 MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
-MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR "md_catalog_data.json"
+MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR (MD_CURRENT_PROJECT + "_catalog_data.json")
 MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
 MD_LIB_DATA_FILE = ""
 COMMON_DATA_FILE_NAME = "lib_data.json"
-TASK_FILE_NAME = "data.json"
+TASK_FILE_NAME = "task_data.json"
 SAVED_FILE_NAME = "Saving"
 TASK_MAT_NAME = "Material.mat"
 TASK_ICON_NAME = "Icon.max"
@@ -40,8 +41,8 @@ ICON_NO_PRVIEW_FILE = pathConfig.appendPath SOURCE_DIR "mdt_no_preview.png"
 ICON_MDT_FILE = pathConfig.appendPath SOURCE_DIR "mdt_48.png"
 
 -- Инфо
-author = "Зайцев Павел"
-version = "1.0.0"
+author = "Zaitsev Pavel"
+version = "0.1"
 DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
 
 -- Списки
@@ -53,7 +54,7 @@ ADD_LIST_COLUMNS_1 = #("Parts", "Material", "Textures")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
 SAVED_WORKS_LIST_COLUMNS = #("File Name", "Save Date")
-TASK_PARAMS_LIST = #("New", "Incorrect", "Completed", "Deleted")
+TASK_PARAMS_LIST = #("New Valid Tasks", "Incorrect Tasks", "Completed Tasks")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
@@ -123,8 +124,9 @@ URL_CATALOG = "https://stanzza-api.aicrobotics.ru/api/v1/catalog"
 URL_PROJECTS = "https://stanzza-api.aicrobotics.ru/api/projects"
 URL_CHAT = "https://stanzza-api.aicrobotics.ru/api/chat"
 URL_USERS = "https://stanzza-api.aicrobotics.ru/api/chat/users"
-SEPAR_1 = "%"
-SEPAR_2 = "$"
+SEPAR = "%"
+SEPAR1 = ","
+SEPAR2 = "$"
 
 -- Диалоги
 dlg_configure
