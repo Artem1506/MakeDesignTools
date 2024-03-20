@@ -8,7 +8,7 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
     local proc
 
     label 'lbl_01' "In Progress " align:#left offset:[30, 37] across:2
-    label 'lbl_02' "." align:#left offset:[-90, 37]
+    label 'lbl_02' "." align:#left offset:[-70, 37]
 
     timer clock "Clock" interval:250
 
@@ -45,8 +45,20 @@ rollout dlg_request MD_Client.RequestDialogTitle width:350 height:100
             try MD_Client.ResponseStatus = resp[1] catch()
             try MD_Client.ResponseMessage = resp[2] catch()
             try MD_Client.ResponseData = (execute resp[3]) catch()
-            try MD_Data.TempArticlesList = MD_Client.GetResposeArticlesList() catch()
-            -- try MD_Data.TempArticlesList = MD_Client.GetResposeArticlesListWithFilter() catch()
+            -- try (
+            --     local exist_dirs = GetDirectories (MD_Data.active_catalog_dir + "\\*")
+                
+            --     -- MD_Data.TempArticlesList = MD_Client.GetResposeArticlesList()
+            --     for a in MD_Client.GetResposeArticlesList() do
+            --     (
+            --         local dir = pathConfig.AppendPath MD_Data.active_catalog_dir a
+            --         if not (doesDirectoryExist dir) then
+            --         (
+            --             MD_Data.TempArticlesList = MD_Client.GetResposeArticlesList()
+            --         )else ()
+            --     )
+            -- ) catch()
+            try MD_Data.TempArticlesList = MD_Client.GetResposeArticlesListWithFilter() catch()
 
             destroyDialog dlg_request
         )

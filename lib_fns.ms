@@ -121,20 +121,28 @@ fn hex_to_rgb hex_value =
 fn get_max_ui_bg_color =
 (
     -- Возвращает цвет интерфейса 3ds max
+	-- Парсим ini файл 3ds max, ищем поле
+	MAX_UI_BG_COLOR = color 0 0 0
 
-    py_code = "import pymxs" + "\n"
-	py_code += "import xml.etree.ElementTree as ET" + "\n"
-	py_code += "rt = pymxs.runtime" + "\n"
-	py_code += "tree = ET.parse(rt.MAX_CLRX_CONFIG_FILE)" + "\n"
-	py_code += "root = tree.getroot()" + "\n"
-	py_code += "for item in root.iter('color'):" + "\n"
-	py_code += "\t" + "item_attr_list = list(item.attrib.values())" + "\n"
-	py_code += "\t" + "if item_attr_list[2] == 'Background Odd':" + "\n"
-	py_code += "\t\t" + "rt.MAX_UI_BG_COLOR = item_attr_list[1]"
+	global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
+	
+	if MAX_CLRX_CONFIG_FILE != "" then
+	(
+		py_code = "import pymxs" + "\n"
+		py_code += "import xml.etree.ElementTree as ET" + "\n"
+		py_code += "rt = pymxs.runtime" + "\n"
+		py_code += "tree = ET.parse(rt.MAX_CLRX_CONFIG_FILE)" + "\n"
+		py_code += "root = tree.getroot()" + "\n"
+		py_code += "for item in root.iter('color'):" + "\n"
+		py_code += "\t" + "item_attr_list = list(item.attrib.values())" + "\n"
+		py_code += "\t" + "if item_attr_list[2] == 'Background Odd':" + "\n"
+		py_code += "\t\t" + "rt.MAX_UI_BG_COLOR = item_attr_list[1]"
 
-	python.Execute py_code
+		python.Execute py_code
 
-	MAX_UI_BG_COLOR = hex_to_rgb MAX_UI_BG_COLOR
+		MAX_UI_BG_COLOR = hex_to_rgb MAX_UI_BG_COLOR		
+	)
+	MAX_UI_BG_COLOR
 )
 
 fn SetUserEnvVar var val =
@@ -254,6 +262,7 @@ fn ConvertSysUnitsToCentimeters val =
 (
 	local factor = case units.systemType of
 	(
+		#inches:2.54
 		#Millimeters: 0.1
 		#Centimeters: 1.0
 		#Meters: 100.0
@@ -267,6 +276,7 @@ fn ConvertCentimeterToSysUnits val =
 (
 	local factor = case units.systemType of
 	(
+		#inches:2.54
 		#Millimeters: 0.1
 		#Centimeters: 1.0
 		#Meters: 100.0

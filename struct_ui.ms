@@ -77,175 +77,80 @@ struct UI
 	),
 
 	fn FillMainList =
-	(
-		case MD_Data.ActiveSection of
-		(	/*
-			1:(
-				-- Заполнить данными список заданий панели Tasks
-				local task_list = #()
-				local main_items = #()
-				local item_index = 0
-				local cur_sel = undefined
+	(			
+		-- Заполнить данными список заданий панели Tasks
+		local task_list = #()
+		local main_items = #()
+		local item_index = 0
+		local cur_sel = undefined
 
-				-- Индекс выделенного элемента в стике
-				if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
-				
-				-- Проверка сортировки
-				-- if Sort then task_list = MD_Data.SortTasks
-				-- else task_list = MD_Data.Tasks
+		-- Индекс выделенного элемента в стике
+		if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
+		
+		-- Проверка сортировки
+		-- if Sort then task_list = MD_Data.SortTasks
+		-- else task_list = MD_Data.Tasks
 
-				for task in MD_Data.Tasks do
+		for task in MD_Data.Tasks do
+		(
+			dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
+			dn_list_item.Checked = false
+			dn_list_item.ForeColor = DN_CLR_DEFAULT
+
+			if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
+			(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
+			(
+				dn_list_item.ForeColor = DN_CLR_INWORK
+				-- dn_list_item.Font = DN_FNT_GRP
+				dn_list_item.SubItems.add STATES[2]
+
+				if task.Article == MD_Data.ActiveTask.Article then
 				(
-					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
-					dn_list_item.Checked = false
-					dn_list_item.ForeColor = DN_CLR_DEFAULT
-
-					if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
-					(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
-					(
-						dn_list_item.ForeColor = DN_CLR_INWORK
-						dn_list_item.Font = DN_FNT_GRP
-						dn_list_item.SubItems.add STATES[2]
-
-						if task.Article == MD_Data.ActiveTask.Article then
-						(
-							MD_Data.InWorkTask = task
-							MD_Data.CreateWorkLayer()							
-						)
-					)
-					else dn_list_item.SubItems.add ""
-
-					-- Group
-					if task.Group != undefined then dn_list_item.SubItems.add task.Group
-					else dn_list_item.SubItems.add ""
-
-					-- Transformation
-					if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
-					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
-					else dn_list_item.SubItems.add ""
-
-					-- User name
-					if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
-					else dn_list_item.SubItems.add ""
-					
-					-- Отметить элемент как выделенный
-					if cur_sel == item_index then dn_list_item.Selected = true
-
-					-- Добавить к основному списку элементов
-					append main_items dn_list_item
-
-					item_index += 1
-					try dn_list_item.tag = item_index catch()
+					MD_Data.InWorkTask = task
+					MD_Data.CreateWorkLayer()							
 				)
-
-				-- Заполнить основной список панели Tasks (задания)
-				CatalogListMain.Items.Clear()
-				CatalogListMain.Items.AddRange main_items
-				CatalogListMain.Update()
-
-				main_items = #()
-				free main_items
-				task_list = #()
-				free task_list
 			)
-			*/
-			1:(
-				-- Заполнить данными список заданий панели Tasks
-				local task_list = #()
-				local main_items = #()
-				local item_index = 0
-				local cur_sel = undefined
+			else dn_list_item.SubItems.add ""
 
-				-- Индекс выделенного элемента в стике
-				if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
-				
-				-- Проверка сортировки
-				-- if Sort then task_list = MD_Data.SortTasks
-				-- else task_list = MD_Data.Tasks
+			-- Group
+			if task.Group != undefined then dn_list_item.SubItems.add task.Group
+			else dn_list_item.SubItems.add ""
 
-				for task in MD_Data.Tasks do
-				(
-					dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
-					dn_list_item.Checked = false
-					dn_list_item.ForeColor = DN_CLR_DEFAULT
+			-- Transformation
+			-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
+			if task.SizeTrans != undefined then dn_list_item.SubItems.add "True"
+			else dn_list_item.SubItems.add ""
 
-					if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
-					(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
-					(
-						dn_list_item.ForeColor = DN_CLR_INWORK
-						dn_list_item.Font = DN_FNT_GRP
-						dn_list_item.SubItems.add STATES[2]
+			-- User name
+			if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
+			else dn_list_item.SubItems.add ""
+			
+			-- Отметить элемент как выделенный
+			if cur_sel == item_index then dn_list_item.Selected = true
 
-						if task.Article == MD_Data.ActiveTask.Article then
-						(
-							MD_Data.InWorkTask = task
-							MD_Data.CreateWorkLayer()							
-						)
-					)
-					else dn_list_item.SubItems.add ""
+			-- Добавить к основному списку элементов
+			append main_items dn_list_item
 
-					-- Group
-					if task.Group != undefined then dn_list_item.SubItems.add task.Group
-					else dn_list_item.SubItems.add ""
-
-					-- Transformation
-					if task.SizeTrans != undefined then dn_list_item.SubItems.add "•" -- alt+0149
-					-- if task.SizeTrans != undefined then dn_list_item.SubItems.add "YES"
-					else dn_list_item.SubItems.add ""
-
-					-- User name
-					if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
-					else dn_list_item.SubItems.add ""
-					
-					-- Отметить элемент как выделенный
-					if cur_sel == item_index then dn_list_item.Selected = true
-
-					-- Добавить к основному списку элементов
-					append main_items dn_list_item
-
-					item_index += 1
-					try dn_list_item.tag = item_index catch()
-				)
-
-				-- Заполнить основной список панели Tasks (задания)
-				CatalogListMain.Items.Clear()
-				CatalogListMain.Items.AddRange main_items
-				CatalogListMain.Update()
-
-				main_items = #()
-				free main_items
-				task_list = #()
-				free task_list
-			)
-			2:(
-				Categories.Items = MD_Data.proj_main_categs
-				SubCategories.Items = MD_Data.proj_sub_categs
-				try SubCategories.Items = MD_Data.proj_sub_categs[Categories.Selection] catch()
-				CatalogListMain.Items.Clear()
-				CatalogListMain.Update()
-			)
+			item_index += 1
+			try dn_list_item.tag = item_index catch()
 		)
+
+		-- Заполнить основной список панели Tasks (задания)
+		CatalogListMain.Items.Clear()
+		CatalogListMain.Items.AddRange main_items
+		CatalogListMain.Update()
+
+		main_items = #()
+		free main_items
+		task_list = #()
+		free task_list
 	),
 
 	fn FillCategoriesLists =
 	(
 		Categories.Items = MD_Data.main_categs
-		try Categories.selection = 1 catch()
 		try SubCategories.Items = MD_Data.sub_categs[Categories.Selection]
 		catch(SubCategories.Items = #())
-		
-		-- case MD_Data.ActiveSection of
-		-- (
-		-- 	1:(
-		-- 		-- Заполнить данными панель Info
-		-- 		Categories.Items = MD_Data.main_categs
-		-- 		try SubCategories.Items = MD_Data.sub_categs[Categories.Selection] 
-		-- 		catch(SubCategories.Items = #())
-		-- 	)
-		-- 	2:(
-
-		-- 	)
-		-- )
 	),
 	
 	fn UpdateCatalogGeneralRlt =
@@ -258,7 +163,10 @@ struct UI
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
 			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
-
+			GeneralCatalogRoll.grp_01.enabled = true
+			GeneralCatalogRoll.grp_02.enabled = true
+			GeneralCatalogRoll.grp_03.enabled = true
+			
 			local objs = #()
 
 			if (MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2]) or \
@@ -389,44 +297,35 @@ struct UI
 
 	fn FillAddList =
 	(
-		case MD_Data.ActiveSection of
+		local add_items = #()
+		local tex_count = 0
+		-- Материалы
+		try
 		(
-			1:(
-				local add_items = #()
-				local tex_count = 0
-				-- Материалы
-				try
-				(
-					for mat in MD_Data.ActiveTask.Materials do
-					(
-						dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
-						dn_list_item.ForeColor = DN_CLR_DEFAULT
-						dn_list_item.SubItems.add mat.material
+			for mat in MD_Data.ActiveTask.Materials do
+			(
+				dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
+				dn_list_item.ForeColor = DN_CLR_DEFAULT
+				dn_list_item.SubItems.add mat.material
 
-						tex_count = 0
-						
-						for t in mat.textures where t != undefined do tex_count += 1
-						if tex_count != 0 then dn_list_item.SubItems.add (tex_count as string)
+				tex_count = 0
+				
+				for t in mat.textures where t != undefined do tex_count += 1
+				if tex_count != 0 then dn_list_item.SubItems.add (tex_count as string)
 
-						-- Добавить к доп. списку элементов
-						append add_items dn_list_item
-					)					
-				)
-				catch()
-
-				-- Заполнить доп. список панели Tasks (материалы)
-				CatalogListAdd.Items.Clear()
-				CatalogListAdd.Items.AddRange add_items
-				CatalogListAdd.Update()
-
-				add_items = #()
-				free add_items
-			)
-			2:(
-				CatalogListAdd.Items.Clear()
-				CatalogListAdd.Update()
-			)
+				-- Добавить к доп. списку элементов
+				append add_items dn_list_item
+			)					
 		)
+		catch()
+
+		-- Заполнить доп. список панели Tasks (материалы)
+		CatalogListAdd.Items.Clear()
+		CatalogListAdd.Items.AddRange add_items
+		CatalogListAdd.Update()
+
+		add_items = #()
+		free add_items
 	),
 
 	fn UpdateCatalogInfoRlt =
@@ -446,10 +345,10 @@ struct UI
 					
 					try (
 						InfoCatalogWeb.text = ""
-						InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+						InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 28
 						InfoCatalogWeb.address = MD_Data.ActiveTask.Website
-					)
-					catch()
+						
+					) catch()
 
 					try (
 						LabelSizeText = ""
@@ -471,6 +370,7 @@ struct UI
 					InfoCatalogRoll.lbl_site.visible = true
 					InfoCatalogRoll.hpl_site.visible = true
 					InfoCatalogRoll.hpl_site.text = ""
+
 					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.WebSite) catch()
 
 					case MD_Data.ActiveTask.ActiveMesh of
@@ -483,7 +383,7 @@ struct UI
 						)
 					)
 
-					try (InfoCatalogRoll.hpl_site.text = MD_Data.ActiveTask.WebSite) catch()
+					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Website 1 28) catch()
 					try InfoCatalogRoll.title = MD_Data.ActiveTask.Article catch()
 					try InfoCatalogRoll.height = 280 catch()				
 				)
@@ -634,7 +534,7 @@ struct UI
 		try
 		(
 			InfoCatalogWeb.text = ""
-			InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 30
+			InfoCatalogWeb.text = substring MD_Data.ActiveTask.Website 1 28
 		)
 		catch()
 	),
@@ -670,42 +570,25 @@ struct UI
 		-- Переключает роллоуты в зависимости от того, какой раздел выбран
 		try MD_Callbacks.Destruct() catch()
 		-- windows.sendmessage (windows.getmaxhwnd()) 0x000B 0 0
+		removeSubRollout MainRoll.sub_rlt GeneralProjectsRoll
+		removeSubRollout MainRoll.sub_rlt InfoProjectsRoll
+		removeSubRollout MainRoll.sub_rlt TasksProjectsRoll
 
-        removeSubRollout MainRoll.sub_rlt AboutRoll
-        case MD_Data.ActiveSection of
-        (
-            1:(
-				removeSubRollout MainRoll.sub_rlt GeneralProjectsRoll
-                removeSubRollout MainRoll.sub_rlt InfoProjectsRoll
-                removeSubRollout MainRoll.sub_rlt TasksProjectsRoll
-
-                AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:false
-                AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
-                try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
-				AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
-				MD_Data.FullUpdate()
-
-            )
-            2:(
-                removeSubRollout MainRoll.sub_rlt GeneralCatalogRoll
-                removeSubRollout MainRoll.sub_rlt InfoCatalogRoll
-				removeSubRollout MainRoll.sub_rlt TasksCatalogRoll
-                try removeSubRollout MainRoll.sub_rlt ToolsCatalogRoll catch()
-				
-                AddSubRollout MainRoll.sub_rlt TasksProjectsRoll rolledUp:false
-                AddSubRollout MainRoll.sub_rlt InfoProjectsRoll rolledUp:true
-                AddSubRollout MainRoll.sub_rlt GeneralProjectsRoll rolledUp:true
-            )
-        )
-        AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:True
+		AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:false
+		AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
+		try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
+		AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
 		
+        AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:True
+		MD_Data.FullUpdate()
+
 		-- Выравнить подроллаут
 		MainRoll.sub_rlt.height = (MAIN_RLT_HEIGHT - 28)
 		MainRoll.sub_rlt.pos = [2, 4]
 
 		-- windows.sendmessage (windows.getmaxhwnd()) 0x000B 1 0
 
-		updateRolloutLayout TasksProjectsRoll forceUpdate:true
+		-- updateRolloutLayout TasksProjectsRoll forceUpdate:true
 		updateRolloutLayout TasksCatalogRoll forceUpdate:true
 
 	),
@@ -720,21 +603,24 @@ struct UI
 	fn SetColorScheme =
 	(
 		-- Определить текущую тему 3ds Max
-		get_max_ui_bg_color()
+		-- get_max_ui_bg_color()
+		local color_theme = colorMan.getColorTheme()
 
-		DN_MAX_UI_CLR = (dotNetClass "system.Drawing.color").FromArgb 255 MAX_UI_BG_COLOR.r MAX_UI_BG_COLOR.g MAX_UI_BG_COLOR.b
+		-- DN_MAX_UI_CLR = (dotNetClass "system.Drawing.color").FromArgb 255 MAX_UI_BG_COLOR.r MAX_UI_BG_COLOR.g MAX_UI_BG_COLOR.b
 
-		if MAX_UI_BG_COLOR.r > 100 then
+		if color_theme == #light then
 		(
 			-- Если тема светлая
 			DN_CLR_X = (dotNetClass "system.Drawing.color").FromArgb 255 200 50 50
 			DN_CLR_OK = (dotNetClass "system.Drawing.color").FromArgb 255 10 130 10
+			DN_MAX_UI_CLR = (dotNetClass "system.Drawing.color").FromArgb 255 214 214 214
 		)
-		else
+		else if color_theme == #dark then
 		(
 			-- Если тема тёмная
 			DN_CLR_X = (dotNetClass "system.Drawing.color").FromArgb 255 255 90 50
 			DN_CLR_OK = (dotNetClass "system.Drawing.color").FromArgb 255 55 200 55
+			DN_MAX_UI_CLR = (dotNetClass "system.Drawing.color").FromArgb 255 68 68 68
 		)
 	),
 
@@ -769,21 +655,35 @@ struct UI
             GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
         )catch ()
 
-		try (exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_basic_catalog_selection")) catch()
-		try (exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_sub_catalog_selection")) catch()
+		if MD_Data.main_categs.count != 0 then
+		(
+			exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_basic_catalog_selection")
+			if classOf exist_categ_index != Integer then exist_categ_index = 1
+		)
+		if MD_Data.sub_categs.count != 0 then
+		(
+			exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_sub_catalog_selection")
+			if classOf exist_sub_categ_index != Integer then exist_sub_categ_index = 1
+		)
 
 		-- Try select active task
-		try (
-			exist_task_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name (CatalogListMain.name + "_selection")) + 1
-			MD_Data.ActiveTaskIndex = exist_task_index
-			MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]
-		) catch()
+		-- try (
+			exist_task_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name (CatalogListMain.name + "_selection"))
+			if classOf exist_task_index == Integer then
+			(
+				exist_task_index += 1
+				MD_Data.ActiveTaskIndex = exist_task_index
+				MD_Data.ActiveTask = MD_Data.Tasks[exist_task_index]				
+			)
+
+		-- ) catch()
 
 		try (
 			if exist_categ_index > 0 then Categories.Selection = MD_Data.ActiveCategory = exist_categ_index
 			else if exist_categ_index == 0 and MD_Data.main_categs.count != 0 then Categories.Selection = MD_Data.ActiveCategory = 1
+			
 			if exist_sub_categ_index > 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = exist_sub_categ_index
-			else if exist_categ_index == 0 and MD_Data.main_categs.count != 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = 1
+			else if exist_sub_categ_index == 0 and MD_Data.sub_categs.count != 0 then SubCategories.Selection = MD_Data.ActiveSubCategory = 1
 		)
 		catch()
 
@@ -792,8 +692,6 @@ struct UI
 			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
 		)
 		catch (MD_Log.Error "Не удалось загрузить изображение \"NO PREVIEW\".")
-
-		try (MD_Data.ActiveSection = Sections.Selection) catch()
 
 		-- Тултипы
 		if SettingsRoll.ckbx_tooltips.Checked == false then
@@ -809,18 +707,18 @@ struct UI
 
 		MD_Data.Update()
 		
-		InitCatalogLists()
-		FillCategoriesLists()
-		FillMainList()
-		FillAddList()
+		this.InitCatalogLists()
+		this.FillCategoriesLists()
+		this.FillMainList()
+		this.FillAddList()
 
-		InitProjectsLists()
+		this.InitProjectsLists()
 
-		SwitchRollouts()
+		this.SwitchRollouts()
 		MD_Data.LoadState = true
 		MD_Data.ProjectsRollLoadState = true
 		-- UpdateCatalogTasksRlt()
-		-- UpdateCatalogInfoRlt()
+		this.UpdateCatalogInfoRlt()
 		-- UpdateCatalogGeneralRlt()
 	),
 	

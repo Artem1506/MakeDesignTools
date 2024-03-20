@@ -1,4 +1,8 @@
 (
+    units.DisplayType = #metric
+    units.systemType = #centimeters
+    units.MetricType = #centimeters
+
     clearListener()
 
     if ::rlt_make_design_tools == undefined OR ::rlt_make_design_tools.IsDisplayed == false then
@@ -48,20 +52,33 @@
         MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
+        -- try MD_UI.Categories.Selection = 1 catch()
+        -- try MD_UI.SubCategories.Selection = 1 catch()
         -- Инициализация пути к локальной базе
-        try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
+        -- try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
 
         -- Инициализация артикула текущего проекта
-        try (
-            MD_CURRENT_PROJECT = GetUserEnvVar "MD_CURRENT_PROJECT"
-            MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR (MD_CURRENT_PROJECT + "_catalog_data.json")
-        )catch ()
+        -- try (
+        --     MD_CURRENT_PROJECT = GetUserEnvVar "MD_CURRENT_PROJECT"
+        --     MD_CATALOG_DATA_FILE = pathConfig.appendPath MD_LIB_DIR MD_CATEGS[2][2]
+        --     MD_CATALOG_DATA_FILE = pathConfig.appendPath MD_CATALOG_DATA_FILE MD_CURRENT_PROJECT
+        --     MD_CATALOG_DATA_FILE = pathConfig.appendPath MD_CATALOG_DATA_FILE (MD_CURRENT_PROJECT + CATALOG_DATA_FILE_NAME)
+        --     MD_DATA_DIR = pathConfig.appendPath MD_LIB_DIR DATA_DIR_NAME
+        --     if not doesDirectoryExist MD_DATA_DIR then makeDir MD_DATA_DIR
+        --     MD_USERS_DATA_FILE = pathConfig.appendPath MD_DATA_DIR USERS_DATA_FILE_NAME
+        --     MD_PROJECTS_DATA_FILE = pathConfig.appendPath MD_DATA_DIR PROJECTS_DATA_FILE_NAME
+        --     RESOURCES_DIR = pathConfig.appendPath MD_LIB_DIR RESOURCES_DIR_NAME
+        --     if not doesDirectoryExist RESOURCES_DIR then makeDir RESOURCES_DIR
+        --     DECALS_DIR = pathConfig.appendPath RESOURCES_DIR DECALS_DIR_NAME
+        --     if not doesDirectoryExist DECALS_DIR then makeDir DECALS_DIR
+        -- )catch ()
 
         -- Инициализация логина и пароля
         try(
             login = GetUserEnvVar "MD_USER_LOGIN"
             etxt_log.text = login
         )catch()
+
         try(
             password = GetUserEnvVar "MD_USER_PASS"
             etxt_pass.text = password
@@ -70,18 +87,19 @@
         MD_Callbacks.Destruct()
         MD_Data.Init()
         MD_Data.CheckedTasks = #()
-        -- MD_Data.ActiveList = 1
-        -- MD_Data.ActiveTaskAddIndex = undefined
-        MD_Data.Update()
+        MD_Data.ActiveList = 1
+        MD_Data.ActiveTaskAddIndex = undefined
+        -- MD_Data.Update()
+        -- MD_Data.FullUpdate()
         MD_UI.FillCategoriesLists()
         try MD_BBox.Update() catch()
 
         MD_Data.ShowLayers mode:#none
         for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
-
+        
         try (
 			MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
-			icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+			icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
 			-- Установить иконку для текущей категории
 			MD_Data.ActiveCategoryIcon.SetIcon icon_file
 		)catch()
@@ -106,18 +124,18 @@
                     -- Создать рабочее состояние
                     MD_Data.CreateWorkState()
 
-                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
-                    (
-                        try(
-                            if MD_Data.WorkLayerNodes.count == 0 then
-                            (
-                                MD_Data.InWorkTask.LoadWork \
-                                MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                    -- -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                    -- if MD_UI.SettingsRoll.ckbx_load_last.checked then
+                    -- (
+                    --     try(
+                    --         if MD_Data.WorkLayerNodes.count == 0 then
+                    --         (
+                    --             MD_Data.InWorkTask.LoadWork \
+                    --             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                                 
-                            )
-                        ) catch()    
-                    )
+                    --         )
+                    --     ) catch()    
+                    -- )
 
                     MD_UI.UpdateCatalogGeneralRlt()
                     MD_Data.ShowLayers mode:#work_only
@@ -125,8 +143,8 @@
             )
 		)
 
-        -- Обновить состояние
         MD_Data.FullUpdate()
+        MD_UI.Init()
 
         -- Создать рабочий слой, если есть задание в работе
         try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
@@ -148,14 +166,25 @@
                 MD_Data.ShowLayers mode:#work_only
             )
         )catch()
-
-
+        -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+        if MD_UI.SettingsRoll.ckbx_load_last.checked then
+        (
+            try(
+                if MD_Data.WorkLayerNodes.count == 0 then
+                (
+                    MD_Data.InWorkTask.LoadWork \
+                    MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                    
+                )
+            ) catch()    
+        )
     )
     else
     (
         try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
         try(destroyDialog ::rlt_make_design_tools)catch()
     )
-
+    
 	ok
+    
 )

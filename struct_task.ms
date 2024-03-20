@@ -31,25 +31,44 @@ struct Task
 	InWorkDir = undefined,
 	GroupDir = undefined,
 
+	-- fn CreateMaterial =
+	-- (
+    --     local mat = Multimaterial name:Article
+    --     local MatLib = materialLibrary()
+	-- 	local m_name = ""
+
+	-- 	mat.materialList.count = Materials.count
+
+	-- 	for i = 1 to Materials.count do
+	-- 	(
+	-- 		local val = true
+
+	-- 		m_name = "Material_" + (formattedPrint i format:#02d)
+
+	-- 		mat.materialList[i] = Standardmaterial()
+	-- 		mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
+	-- 		mat.materialList[i].Name = m_name
+	-- 		mat.names[i] = Materials[i].PartName
+	-- 	)
+
+	-- 	Material = mat
+    --     append MatLib mat
+	-- 	if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
+    --     saveTempMaterialLibrary MatLib MatLibFile
+    --     -- saveMaterialLibrary MatLibFile
+	-- ),
+
 	fn CreateMaterial =
 	(
         local mat = Multimaterial name:Article
         local MatLib = materialLibrary()
-		local m_name = ""
+		local m_name = "Material_" + (formattedPrint 1 format:#02d)
 
-		mat.materialList.count = Materials.count
-
-		for i = 1 to Materials.count do
-		(
-			local val = true
-
-			m_name = "Material_" + (formattedPrint i format:#02d)
-
-			mat.materialList[i] = Standardmaterial()
-			mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
-			mat.materialList[i].Name = m_name
-			mat.names[i] = Materials[i].PartName
-		)
+		mat.materialList.count = 1
+		mat.materialList[1] = Standardmaterial()
+		mat.materialList[1].Diffuse = CLR_PALETTE_1[1]
+		mat.materialList[1].Name = m_name
+		-- mat.names[1] = ""
 
 		Material = mat
         append MatLib mat

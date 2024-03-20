@@ -16,7 +16,7 @@ struct TaskIcon
 
 	fn Create icon_file =
 	(
-		-- local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (categ_article + (ICON_POSTFIX + ".max"))
+		-- local icon_file = pathConfig.appendPath DECALS_DIR (categ_article + (ICON_POSTFIX + ".max"))
 		mergeMAXFile icon_file #deleteOldDups #useSceneMtlDups #neverReparent
 		this.icon = (getLastMergedNodes())[1]
 		this.icon.IsHidden = true

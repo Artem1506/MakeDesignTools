@@ -170,16 +170,31 @@ rollout rlt_catalog_tools "Tools"
 		case dir of
 		(
 			#left:(
-				if (vcs[1].x +  vcs[1].y +  vcs[1].z) > 0 then
+				if keyboard.shiftPressed then
 				(
-					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) 
-					else if subobjectLevel > 0 then val = (MinOfSelected obj)
-					move_dist = ((bound_box.min * vcs[1])-(val * vcs[1]))
+
 				)
-				else 
+				else if keyboard.controlPressed then
 				(
-					if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
-					move_dist = ((((bound_box.max * vcs[1])-(val * vcs[1]))) * -1)
+
+				)
+				else if keyboard.altPressed then
+				(
+
+				)
+				else
+				(
+					if (vcs[1].x +  vcs[1].y +  vcs[1].z) > 0 then
+					(
+						if subobjectLevel == 0 or subobjectLevel == undefined then val = (MinByGeom obj) 
+						else if subobjectLevel > 0 then val = (MinOfSelected obj)
+						move_dist = ((bound_box.min * vcs[1])-(val * vcs[1]))
+					)
+					else 
+					(
+						if subobjectLevel == 0 or subobjectLevel == undefined then val = (MaxByGeom obj) else val = (MaxOfSelected obj)
+						move_dist = ((((bound_box.max * vcs[1])-(val * vcs[1]))) * -1)
+					)
 				)
 			)
 			#right:(
@@ -267,6 +282,10 @@ rollout rlt_catalog_tools "Tools"
 			)
 		)
 	)
+    on rlt_catalog_tools open do
+    (
+        rlt_catalog_tools.height = 300
+    )
 
     on btn_up pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw()))
 	
@@ -298,7 +317,7 @@ rollout rlt_catalog_tools "Tools"
 			false:(
 				try MD_Data.ActiveCategoryIcon.Destruct() catch()
 				try MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory]) catch()
-				local icon_file = pathConfig.appendPath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+				local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
 				try MD_Data.ActiveCategoryIcon.Create icon_file catch()
 				for ctrl in icon_controls do ctrl.enabled = false
 				try MD_Data.ActiveCategoryIcon.SetEditIconMode arg catch()
@@ -343,7 +362,7 @@ rollout rlt_catalog_tools "Tools"
 
 	on btn_save pressed do (
 		-- Сохранить дефолтную иконку для текущей категории
-		local file_path = (pathconfig.appendpath SOURCE_ICONS_DIR (MD_Data.active_catalog_article + "_icon.max"))
+		local file_path = (pathconfig.appendpath DECALS_DIR (MD_Data.active_catalog_article + "_icon.max"))
 		gc()
 		save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
 	)

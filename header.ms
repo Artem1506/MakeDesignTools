@@ -2,19 +2,26 @@
 -- Расположение локальной базы MD
 global MD_LIB_DIR = ""
 global MD_CURRENT_PROJECT = ""
-global MAX_UI_BG_COLOR = ""
+global MAX_UI_BG_COLOR = color 0 0 0
 global PY_BUILTINS = Python.Import "builtins"
 global data = PY_BUILTINS.dict()
 global data_file = ""
+MD_USERS_DATA_FILE = ""
+MD_CATALOG_DATA_FILE = ""
+MD_PROJECTS_DATA_FILE = ""
+MD_DATA_DIR = ""
+RESOURCES_DIR = ""
+DECALS_DIR = ""
+LIB_TRASH_DIR = ""
 
 -- Основные директории
 MAIN_DIR = pathConfig.removePathLeaf (getThisScriptFilename())
-MD_LIB_TRASH_DIR = ""
 HTTP_CLIENT_DIR = pathConfig.appendPath MAIN_DIR "md_client"
-DATA_DIR = pathConfig.appendPath MAIN_DIR "data"
-if not doesDirectoryExist DATA_DIR then makeDir DATA_DIR
-SOURCE_DIR = pathConfig.appendPath MAIN_DIR "source"
-SOURCE_ICONS_DIR = pathConfig.appendPath SOURCE_DIR "category_icons"
+DATA_DIR_NAME = "Data"
+RESOURCES_DIR_NAME = "Resources"
+DECALS_DIR_NAME = "Decals"
+RESOURCES_DIR = pathConfig.appendPath MAIN_DIR "Resources"
+DECALS_DIR = pathConfig.appendPath RESOURCES_DIR "Decals"
 
 -- HTTP - клиент
 HTTP_CLIENT_NAME = "md_client"
@@ -25,25 +32,27 @@ HTTP_CLIENT_CONFIG_FILE = pathConfig.appendPath HTTP_CLIENT_DIR (HTTP_CLIENT_NAM
 MDT_CONFIG_FILE = pathConfig.appendPath MAIN_DIR "mdt.config"
 
 -- Файлы для хранения данных
-MD_USERS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_users_data.json"
-MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR (MD_CURRENT_PROJECT + "_catalog_data.json")
-MD_PROJECTS_DATA_FILE = pathConfig.appendPath DATA_DIR "md_projects_data.json"
+USERS_DATA_FILE_NAME = "md_users_data.json"
+CATALOG_DATA_FILE_NAME = "_catalog_data.json"
+PROJECTS_DATA_FILE_NAME = "md_projects_data.json"
 MD_LIB_DATA_FILE = ""
+TRASH_DIR_NAME = "Trash"
 COMMON_DATA_FILE_NAME = "lib_data.json"
 TASK_FILE_NAME = "task_data.json"
 SAVED_FILE_NAME = "Saving"
 TASK_MAT_NAME = "Material.mat"
 TASK_ICON_NAME = "Icon.max"
-ICON_TEMPLATE_FILE = pathConfig.appendPath SOURCE_DIR "_icon_template_.max"
+ICON_TEMPLATE_FILE = pathConfig.appendPath RESOURCES_DIR "_icon_template_.max"
 
 -- Файлы иконок
-ICON_NO_PRVIEW_FILE = pathConfig.appendPath SOURCE_DIR "mdt_no_preview.png"
-ICON_MDT_FILE = pathConfig.appendPath SOURCE_DIR "mdt_48.png"
+ICON_NO_PRVIEW_FILE = pathConfig.appendPath RESOURCES_DIR "mdt_no_preview.png"
+ICON_MDT_FILE = pathConfig.appendPath RESOURCES_DIR "mdt_48.png"
 
 -- Инфо
 author = "Zaitsev Pavel"
-version = "0.1"
-DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
+version = "2.0"
+-- DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
+DOCS_FILE = "https://docs.google.com/document/d/14-jr4cs0WKgLgi4kcZE9rmL9bZ2LGde-TA1OQyfQ1Cs/edit#heading=h.ahx5rkfl52u"
 
 -- Списки
 STATES = #("None", "In_Work", "Check", "Done")
@@ -79,7 +88,6 @@ ICON_THICKNESS = 0.4 -- Толщина декали в см
 MAX_TEX_SIZE = 4096
 
 -- Интерфейс
-global MAX_CLRX_CONFIG_FILE = getIniSetting (getMAXIniFile()) "CuiConfiguration" "ColorFileName"
 MAIN_RLT_WIDTH = 240
 MAIN_RLT_HEIGHT = 800
 CTRL_WIDTH_0 = MAIN_RLT_WIDTH - 24

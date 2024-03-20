@@ -4,9 +4,10 @@
     try (close in_stream) catch()
     try (close out_stream) catch()
 
+    dev_dir = pathConfig.removePathLeaf (getThisScriptFileName())
     main_dir = (pathConfig.removePathLeaf (pathConfig.removePathLeaf (getThisScriptFileName())))
     main_file = pathConfig.appendPath main_dir "__main__.ms"
-    release_dir = pathConfig.appendPath main_dir "release"
+    release_dir = pathConfig.appendPath main_dir "Release"
     out_file = pathConfig.appendPath (pathConfig.removePathLeaf (getThisScriptFileName())) "mdt.ms"
     out_file_encrypt = pathConfig.appendPath (pathConfig.removePathLeaf (getThisScriptFileName())) "mdt.mse"
     out_release_file = pathConfig.appendPath release_dir "mdt.mse"
@@ -78,14 +79,19 @@
     close out_stream
 
     encryptScript out_file
+    
 
     -- Скопировать папки
-    dosCommand ("xcopy " + (pathConfig.appendPath main_dir "source") + " " + (pathConfig.appendPath release_dir "source") + " /S /E /I /Y /R /C")
+    dosCommand ("xcopy " + (pathConfig.appendPath main_dir "Resources") + " " + (pathConfig.appendPath release_dir "Resources") + " /S /E /I /Y /R /C")
     dosCommand ("xcopy " + (pathConfig.appendPath main_dir "md_client") + " " + (pathConfig.appendPath release_dir "md_client") + " /S /E /I /Y /R /C")
+    
+    copyFile (pathConfig.appendPath dev_dir "Install.ms") (pathConfig.appendPath release_dir "Install.ms")
     copyFile out_file_encrypt out_release_file
+    encryptScript (pathConfig.appendPath release_dir "Install.ms")
 
     -- Удалить файл .mse
     deleteFile out_file_encrypt
+    deleteFile (pathConfig.appendPath release_dir "Install.ms")
 
     -- Удалить файл .ms
     -- deleteFile out_file

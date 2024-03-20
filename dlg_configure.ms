@@ -34,18 +34,9 @@ rollout dlg_configure "Configure User Data" width:400 height:210
             SetDialogPos dlg_configure dialog_pos
         )catch()
 
-        -- Инициализация пути к локальной базе 
-        try MD_LIB_DIR = GetUserEnvVar "MD_LIB_DIR" catch ()
-        
+        -- MD_Data.Init()
         etxt_local_dir.text = MD_LIB_DIR
         etxt_local_dir.tooltip = MD_LIB_DIR
-
-        -- Инициализация артикула текущего проекта 
-        try (
-            MD_CURRENT_PROJECT = GetUserEnvVar "MD_CURRENT_PROJECT"
-            MD_CATALOG_DATA_FILE = pathConfig.appendPath DATA_DIR (MD_CURRENT_PROJECT + "_catalog_data.json")
-        )catch ()
-        
         etxt_proj_article.text = MD_CURRENT_PROJECT
 
         -- Инициализация логина и пароля
@@ -80,7 +71,11 @@ rollout dlg_configure "Configure User Data" width:400 height:210
         -- Вызов диалогового окна для выбора директории локальной базы
         local dir = getSavePath caption:"Set MakeDesign data folder..." initialDir:MD_LIB_DIR
         
-        if (dir == undefined) then etxt_local_dir.text = "" else etxt_local_dir.text = dir
+        if (dir == undefined) then etxt_local_dir.text = "" else 
+        (
+            SetUserEnvVar "MD_LIB_DIR" dir
+            etxt_local_dir.text = dir
+        )
 
         -- if (dir == undefined) then 
         -- (
@@ -161,6 +156,7 @@ rollout dlg_configure "Configure User Data" width:400 height:210
         btn_test.enabled = true
         else btn_test.enabled = false
         updateRolloutLayout dlg_configure forceUpdate:true
+        SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
     )
 
     on etxt_pass entered arg do
@@ -170,6 +166,17 @@ rollout dlg_configure "Configure User Data" width:400 height:210
         else btn_test.enabled = false
 
         updateRolloutLayout dlg_configure forceUpdate:true
+        SetUserEnvVar "MD_USER_PASS" etxt_pass.text
+    )
+
+    on etxt_local_dir entered arg do
+    (
+        SetUserEnvVar "MD_LIB_DIR" etxt_local_dir.text
+    )
+
+    on etxt_proj_article entered arg do
+    (
+        SetUserEnvVar "MD_CURRENT_PROJECT" etxt_proj_article.text
     )
 
     on btn_confirm pressed do 
@@ -179,6 +186,7 @@ rollout dlg_configure "Configure User Data" width:400 height:210
         SetUserEnvVar "MD_USER_PASS" etxt_pass.text
         SetUserEnvVar "MD_CURRENT_PROJECT" etxt_proj_article.text
 
+        MD_Data.Init()
         lbl_info.text = "Ok"
     )
 
@@ -269,22 +277,25 @@ rollout dlg_configure "Configure User Data" width:400 height:210
         if result_sum == 3 then 
         (
             destroyDialog dlg_configure
-
-            if MD_Data.ActiveSection == 1 then
-            (
-                MD_Callbacks.Destruct()
-                MD_Data.Init()
-                MD_Data.CheckedTasks = #()
-                MD_Data.ActiveList = 1
-                MD_Data.ActiveTaskAddIndex = undefined
-                MD_Data.Update()
-                MD_UI.FillCategoriesLists()
-                MD_Data.FullUpdate()
-                try MD_BBox.Update() catch()
-                
-                if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-                else MD_Data.ShowLayers mode:#scene_only
-            )
+            
+            MD_Data.CheckedTasks = #()
+            MD_Callbacks.Destruct()
+            MD_Data.Init()
+            try (MD_UI.Categories.selection = 1) catch()
+            try MD_Data.ActiveCategory = 1 catch()
+            try MD_Data.ActiveSubCategory = 1 catch()
+            try MD_UI.lst_sub_catalog.Items = MD_Data.sub_categs[MD_Data.ActiveCategory] catch()
+            try MD_UI.lst_sub_catalog.selection = 1 catch()
+            MD_Data.CheckedTasks = #()
+            MD_Data.ActiveList = 1
+            MD_Data.ActiveTaskAddIndex = undefined
+            MD_Data.FullUpdate()
+            MD_UI.FillCategoriesLists()
+            try MD_BBox.Update() catch()
+            try (MD_UI.SubCategories.selection = 1) catch()
+            MD_UI.UpdateCatalogTasksRlt()
+            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+            else MD_Data.ShowLayers mode:#scene_only
         )
         else if result_sum > 0 then
         (

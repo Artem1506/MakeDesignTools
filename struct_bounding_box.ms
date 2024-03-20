@@ -128,100 +128,91 @@ struct BoundingBox
 
 	fn Update =
 	(
-		case MD_Data.ActiveSection of
+		local arrow_offset = ConvertCentimeterToSysUnits 10.0
+		
+		try ReadPivotData() catch()
+		try this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] 
+		catch(
+			Remove()
+			CreateLayer()
+			CreateBBox()
+		)
+		-- this.Layer.on = false
+		arrow_rad = 0.0
+		bbox_size = [0, 0, 0]
+		this.bb.isHidden = true
+		this.arrow.isHidden = true
+		this.pp.isHidden = true
+		this.bb.wireColor = clr_main
+		this.arrow.wireColor = clr_main
+
+		if MD_Data.InWorkTask != undefined then
 		(
-			1:(
-				local arrow_offset = ConvertCentimeterToSysUnits 10.0
-				
-				try ReadPivotData() catch()
-				try this.pp.pos = [pivot_pos[1], pivot_pos[2], pivot_pos[3]] 
-				catch(
-					Remove()
-					CreateLayer()
-					CreateBBox()
+			case MD_Data.InWorkTask.ActiveMesh of
+			(
+				1:(
+					bb_w = MD_Data.InWorkTask.Size[1]
+					bb_d = MD_Data.InWorkTask.Size[2]
+					bb_h = MD_Data.InWorkTask.Size[3]
+
+					bbox_size = [bb_w, bb_d, bb_h]
+
+					this.bb.wireColor = clr_main
+					this.arrow.wireColor = clr_main
 				)
-				-- this.Layer.on = false
-				arrow_rad = 0.0
-				bbox_size = [0, 0, 0]
-				this.bb.isHidden = true
-				this.arrow.isHidden = true
-				this.pp.isHidden = true
-				this.bb.wireColor = clr_main
-				this.arrow.wireColor = clr_main
+				2:(
+					bt_w = MD_Data.InWorkTask.SizeTrans[1]
+					bt_d = MD_Data.InWorkTask.SizeTrans[2]
+					bt_h = MD_Data.InWorkTask.SizeTrans[3]
 
-				if MD_Data.InWorkTask != undefined then
-				(
-					case MD_Data.InWorkTask.ActiveMesh of
-					(
-						1:(
-							bb_w = MD_Data.InWorkTask.Size[1]
-							bb_d = MD_Data.InWorkTask.Size[2]
-							bb_h = MD_Data.InWorkTask.Size[3]
+					bbox_size = [bt_w, bt_d, bt_h]
 
-							bbox_size = [bb_w, bb_d, bb_h]
-
-							this.bb.wireColor = clr_main
-							this.arrow.wireColor = clr_main
-						)
-						2:(
-							bt_w = MD_Data.InWorkTask.SizeTrans[1]
-							bt_d = MD_Data.InWorkTask.SizeTrans[2]
-							bt_h = MD_Data.InWorkTask.SizeTrans[3]
-
-							bbox_size = [bt_w, bt_d, bt_h]
-
-							this.bb.wireColor = clr_add
-							this.arrow.wireColor = clr_add
-						)
-					)
-
-					arrow_rad = ConvertCentimeterToSysUnits 10.0
-					
-					if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Article then
-					(
-						if MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
-						(
-							this.bb.isHidden = false
-							this.arrow.isHidden = false
-							this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-							try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
-						)
-						else if MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
-						(
-							this.bb.isHidden = false
-							this.arrow.isHidden = false
-							this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-							try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
-						)
-						else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
-						(
-							this.bb.isHidden = true
-							this.arrow.isHidden = true
-							this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-							try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
-						)	
-						else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
-						(
-							this.bb.isHidden = true
-							this.arrow.isHidden = true
-							try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
-						)					
-					)
+					this.bb.wireColor = clr_add
+					this.arrow.wireColor = clr_add
 				)
-
-				this.bb.length = bbox_size[1]
-				this.bb.width = bbox_size[2]
-				this.bb.height = bbox_size[3]
-				this.arrow.radius = arrow_rad
-				this.arrow.pos.x = (this.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
-				try (MD_Data.ActiveCategoryIcon.FitSizeToBBox this.bb) catch()
 			)
-			2:(
--- 				this.bb.isHidden = true
--- 				this.arrow.isHidden = true
--- 				this.pp.isHidden = true
+
+			arrow_rad = ConvertCentimeterToSysUnits 10.0
+			
+			if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Article then
+			(
+				if MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
+				(
+					this.bb.isHidden = false
+					this.arrow.isHidden = false
+					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+					try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
+				)
+				else if MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
+				(
+					this.bb.isHidden = false
+					this.arrow.isHidden = false
+					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+					try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
+				)
+				else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
+				(
+					this.bb.isHidden = true
+					this.arrow.isHidden = true
+					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+					try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
+				)	
+				else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
+				(
+					this.bb.isHidden = true
+					this.arrow.isHidden = true
+					try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
+				)					
 			)
 		)
+
+		this.bb.length = bbox_size[1]
+		this.bb.width = bbox_size[2]
+		this.bb.height = bbox_size[3]
+		this.arrow.radius = arrow_rad
+		this.arrow.pos.x = (this.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+		try (MD_Data.ActiveCategoryIcon.FitSizeToBBox this.bb) catch()
+
 		completeRedraw()
 	),
 

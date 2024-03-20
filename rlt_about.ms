@@ -13,5 +13,6 @@ rollout rlt_about "About"
         lbl_author.text = "Author: " + author
         lbl_version.text = "Version: " + version
         lbl_organization.text = "Organization: Faberon Design"
+        rlt_about.height = 140
     )
 )

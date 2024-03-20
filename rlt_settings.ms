@@ -16,7 +16,7 @@ rollout rlt_settings "Settings"
 
     on rlt_settings open do
     (
-      
+        rlt_settings.height = 200
     )
 
     on rlt_settings close do 

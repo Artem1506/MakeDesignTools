@@ -23,7 +23,7 @@ rollout rlt_catalog_general "General"
 
     on rlt_catalog_general open do
     (
-
+        rlt_catalog_general.height = 300
     )
     
     on rlt_catalog_general close do
