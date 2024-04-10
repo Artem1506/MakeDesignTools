@@ -124,18 +124,18 @@
                     -- Создать рабочее состояние
                     MD_Data.CreateWorkState()
 
-                    -- -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    -- if MD_UI.SettingsRoll.ckbx_load_last.checked then
-                    -- (
-                    --     try(
-                    --         if MD_Data.WorkLayerNodes.count == 0 then
-                    --         (
-                    --             MD_Data.InWorkTask.LoadWork \
-                    --             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
+                    (
+                        try(
+                            if MD_Data.WorkLayerNodes.count == 0 then
+                            (
+                                MD_Data.InWorkTask.LoadWork \
+                                MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                                 
-                    --         )
-                    --     ) catch()    
-                    -- )
+                            )
+                        ) catch()    
+                    )
 
                     MD_UI.UpdateCatalogGeneralRlt()
                     MD_Data.ShowLayers mode:#work_only
@@ -157,7 +157,7 @@
         -- Попытаться выбрать первый элемент в списке
         if MD_Data.ActiveTaskIndex == undefined then try MD_UI.CatalogListMain.Items.Item[0].selected = true catch()
 
-        try MD_Callbacks.Add() catch()
+        
 
         try (
             if MD_Data.InWorkTask != undefined then
@@ -166,6 +166,7 @@
                 MD_Data.ShowLayers mode:#work_only
             )
         )catch()
+        
         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
         if MD_UI.SettingsRoll.ckbx_load_last.checked then
         (
@@ -174,10 +175,27 @@
                 (
                     MD_Data.InWorkTask.LoadWork \
                     MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
-                    
+                    MD_Data.FullUpdate()
+                    MD_UI.UpdateCatalogGeneralRlt()
                 )
             ) catch()    
         )
+
+        -- Обновить материал
+        try(
+            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+            ( 
+                MD_Data.InWorkTask.LoadMaterial()  
+                    
+            )else MD_Data.InWorkTask.CreateMaterial()
+            -- Set material
+            
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
+            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+        )catch()
+
+        -- Добавить функции обратного вызова
+        try MD_Callbacks.Add() catch()
     )
     else
     (

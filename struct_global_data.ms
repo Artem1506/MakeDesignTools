@@ -12,16 +12,16 @@ struct GlobalData
 	Tasks = #(), -- Задания для выбранной в данный момент подкатегории 
 	SortTasks = #(), -- Отсортированные задания для выбранной в данный момент подкатегории 
 	-- Catalog 
-	main_categs = #(), -- #("01-01 - Пол - Плитка", ...) 
-	main_categ_ids = #(), -- #(#("01-01-001", ...), ...) 
-	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... ) 
-	sub_categ_lib_dirs = #(), -- #(#("D:\MakeDesignLib\Catalog\01-01-001", ...), ...) Пути к категориям в локальной базе 
-	ActiveCategory = undefined, --> [int] Активная категория 
-	ActiveSubCategory = undefined, --> [int] Активная подкатегория 
-	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain 
-	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain 
-	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd 
-	active_catalog_dir = undefined, --> [str] "D:\MakeDesignLib\Catalog\01-01-001" 
+	main_categs = #(), -- #("01-01 - Пол - Плитка", ...)
+	main_categ_ids = #(), -- #(#("01-01-001", ...), ...)
+	sub_categs = #(), -- #(#("001 - Керамическая плитка", "002 - Керамогранит", "003 - Мозаика", "004 - Неолит"), ... )
+	sub_categ_lib_dirs = #(), -- #(#("D:\MakeDesignLib\Catalog\01-01-001", ...), ...) Пути к категориям в локальной базе
+	ActiveCategory = undefined, --> [int] Активная категория
+	ActiveSubCategory = undefined, --> [int] Активная подкатегория
+	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
+	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
+	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
+	active_catalog_dir = undefined, --> [str] "D:\MakeDesignLib\Catalog\01-01-001"
 	active_catalog_article = undefined, --> [str] "01-01-001" 
 	ActiveList = 1, --> [int] Активный список 
 	InWorkTask = undefined, --> [task] Задание, находящееся в данный момент в рабочем состоянии 
@@ -60,6 +60,68 @@ struct GlobalData
 			CompleteRedraw()  
 		)catch()  
 	), 
+
+	fn UpdateMaterial_old obj = 
+	( 
+		local mat_ids = #() 
+
+		for obj in geometry where (classof obj) == Editable_Poly do 
+		( 
+			local all_faces = polyop.getNumFaces obj 
+
+			for i = 1 to all_faces do
+			( 
+				appendifunique mat_ids (polyop.getFaceMatID obj i) 
+			)
+		)
+
+		try(	
+			MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
+			local m_name = "Material_" + (formattedPrint 1 format:#02d)
+			
+			for i = 1 to mat_ids.count do
+			(
+				mat.materialList[i] = Standardmaterial()
+				mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
+				mat.materialList[i].Name = m_name
+			)
+			obj.Material = MD_Data.ActiveTask.Material 
+		)catch()
+		CompleteRedraw() 
+	), 
+
+	fn UpdateMaterial obj = 
+	(
+		local mat_ids = #() 
+		local all_faces = 0
+
+		if classof obj == Editable_Poly do 
+		( 
+			all_faces = polyop.getNumFaces obj 
+
+			for i = 1 to all_faces do
+			( 
+				mat_id = polyop.getFaceMatID obj i
+				appendifunique mat_ids mat_id
+			)
+		)
+
+		MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
+
+		try(
+			for i = 1 to mat_ids.count do
+			(
+				MD_Data.ActiveTask.Material.materialList[i] = Standardmaterial()
+				MD_Data.ActiveTask.Material.materialList[i].Diffuse = CLR_PALETTE_1[i]
+				m_name = "Material_" + (formattedPrint i format:#02d)
+				MD_Data.ActiveTask.Material.materialList[i].Name = m_name
+			)
+			MD_Data.ActiveTask.Material.materialIDList = mat_ids
+			obj.Material = MD_Data.ActiveTask.Material
+		)catch()
+
+		CompleteRedraw() 
+	),
 
 	fn Validation = 
 	( 
@@ -368,11 +430,11 @@ struct GlobalData
 			MakeDir t.InWorkDir 
 
 			-- Создать материал 
-			if DoesFileExist (pathConfig.appendPath t.InWorkDir TASK_MAT_NAME) then 
-			( 
-				t.LoadMaterial()  
+			-- if DoesFileExist (pathConfig.appendPath t.InWorkDir TASK_MAT_NAME) then 
+			-- ( 
+			-- 	t.LoadMaterial()  
 				 
-			)else t.CreateMaterial()   
+			-- )else t.CreateMaterial()   
 		) 
 		try MD_Callbacks.Add() catch() 
 
@@ -553,7 +615,8 @@ struct GlobalData
 				this.InWorkTask.Mesh = obj 
 				this.InWorkTask.Mesh.Name = mesh_name 
 				this.ActiveTask.ActiveMesh = 1 
-				this.InWorkTask.Mesh.Material = this.InWorkTask.Material 
+				-- this.InWorkTask.Mesh.Material = this.InWorkTask.Material
+				this.InWorkTask.Material = undefined
 			)	 
 
 			if this.InWorkTask.Mesh == this.InWorkTask.AddMesh then 

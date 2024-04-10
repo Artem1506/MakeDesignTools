@@ -339,37 +339,37 @@ rollout rlt_catalog_tasks "Catalog"
                 )
                 MD_UI.UpdateCatalogGeneralRlt()
             )
-            4:(
-                local sel_user = undefined
-                try sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text catch()
-                MD_Data.SortTasks = #()
-                free MD_Data.SortTasks
+            -- 4:(
+            --     local sel_user = undefined
+            --     try sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text catch()
+            --     MD_Data.SortTasks = #()
+            --     free MD_Data.SortTasks
 
-                if NOT MD_UI.Sort and sel_user != undefined then 
-                (
-                    for i = 0 to self.Items.Count - 1 do
-                    (
+            --     if NOT MD_UI.Sort and sel_user != undefined then 
+            --     (
+            --         for i = 0 to self.Items.Count - 1 do
+            --         (
 
-                        if self.Items.Item[i].SubItems.Item[4].text == sel_user then
-                        (
-                            -- append main_items self.Items.Item[i]
-                            append MD_Data.SortTasks MD_Data.Tasks[self.Items.Item[i].Tag]
-                        )
-                    )
+            --             if self.Items.Item[i].SubItems.Item[4].text == sel_user then
+            --             (
+            --                 -- append main_items self.Items.Item[i]
+            --                 append MD_Data.SortTasks MD_Data.Tasks[self.Items.Item[i].Tag]
+            --             )
+            --         )
 
-                    MD_UI.Sort = true                    
-                )
-                else MD_UI.Sort = false
+            --         MD_UI.Sort = true                    
+            --     )
+            --     else MD_UI.Sort = false
 
-                MD_UI.FillMainList()
-                MD_UI.FillAddList()
-                try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
-                MD_UI.UpdateCatalogTasksRlt()
-                MD_UI.UpdateCatalogInfoRlt()
-                MD_UI.UpdateCatalogGeneralRlt()
+            --     MD_UI.FillMainList()
+            --     MD_UI.FillAddList()
+            --     try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+            --     MD_UI.UpdateCatalogTasksRlt()
+            --     MD_UI.UpdateCatalogInfoRlt()
+            --     MD_UI.UpdateCatalogGeneralRlt()
 
-                try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
-            )
+            --     try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
+            -- )
         )
     )
 

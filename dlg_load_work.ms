@@ -46,9 +46,23 @@ rollout dlg_load_work "Saved Works"
       try(
          local load_result = MD_Data.InWorkTask.LoadWork \
          MD_Data.InWorkTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
-         
+         MD_Data.FullUpdate()
+         MD_UI.UpdateCatalogGeneralRlt()
+         try MD_Callbacks.Add() catch()
          if load_result then destroyDialog dlg_load_work
       )catch()
+
+      try(
+         if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+         ( 
+             MD_Data.InWorkTask.LoadMaterial()  
+                 
+         )else MD_Data.InWorkTask.CreateMaterial()
+         -- Set material
+         
+         MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
+         MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+     )catch()
    )
 
    on lv_files ItemChecked self args do 
@@ -72,6 +86,20 @@ rollout dlg_load_work "Saved Works"
        else btn_delete.enabled = false
    )
 
+   on lv_files ColumnClick self arg do 
+   (
+       case arg.column of
+       (
+         0:(
+            for i = 0 to self.Items.count-1 do 
+            (
+               if self.Items.Item[i].Checked == true then self.Items.Item[i].Checked = false
+               else self.Items.Item[i].Checked = true
+            )
+         )
+      )
+   )
+
    on btn_delete pressed do
    (
       -- Удалить отмеченные файлы
@@ -79,14 +107,14 @@ rollout dlg_load_work "Saved Works"
 
       -- Обновить
       MD_UI.Dialogs.InitLoadWork()
+      UpdateTitle()
 
       -- При удалении всех заданий закрыть текущее диалоговое окно
-      if MD_Data.ActiveTask.SavedWorks.Count == 0 then
+      -- if MD_Data.ActiveTask.SavedWorks.Count == 0 then
+      if lv_files.Items.count == 0 then
       (
          destroyDialog dlg_load_work
          MD_UI.UpdateCatalogGeneralRlt()
       )
-
-      UpdateTitle()
    )
 )

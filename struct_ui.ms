@@ -56,7 +56,7 @@ struct UI
 		SetListViewParams CatalogListMain
 		SetListViewParams CatalogListAdd CheckBoxes:false
 
-		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 60, 60, 120)
+		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 84, 60, 150)
 		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 100, 55)
 
 		setFocus CatalogListMain
@@ -159,14 +159,15 @@ struct UI
 		(
 			GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
 			GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
-			GeneralCatalogRoll.btn_vis_switch.text = "Show Scene Objects"
+			GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
 			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 			GeneralCatalogRoll.grp_01.enabled = true
 			GeneralCatalogRoll.grp_02.enabled = true
 			GeneralCatalogRoll.grp_03.enabled = true
-			
+			GeneralCatalogRoll.grp_04.enabled = true
+
 			local objs = #()
 
 			if (MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2]) or \
@@ -189,7 +190,12 @@ struct UI
 				if MD_Data.InWorkTask.Mesh != undefined and not MD_Data.InWorkTask.Mesh.IsDeleted then
 				(
 					GeneralCatalogRoll.btn_main_mesh.text = "  Main Mesh •"
-					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
+					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then 
+					(
+						-- GeneralCatalogRoll.btn_assign_mat.enabled = true
+						GeneralCatalogRoll.btn_update_mat.enabled = true
+						GeneralCatalogRoll.btn_set_texture.enabled = true
+					)
 					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
 				)
 				else
@@ -231,7 +237,12 @@ struct UI
 					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
 						GeneralCatalogRoll.btn_add_mesh.text = "  Additional Mesh •"
-						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
+						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
+						(
+							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
+							GeneralCatalogRoll.btn_update_mat.enabled = true
+							GeneralCatalogRoll.btn_set_texture.enabled = true
+						)
 						try GeneralCatalogRoll.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name + "\nДля удаления статуса дополнительного объекта необходимо повторно нажать на кнопку.") catch()
 					)
 					else(
@@ -250,7 +261,12 @@ struct UI
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						GeneralCatalogRoll.btn_main_mesh.enabled = true
-						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then GeneralCatalogRoll.btn_assign_mat.enabled = true
+						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then 
+						(
+							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
+							GeneralCatalogRoll.btn_update_mat.enabled = true
+							GeneralCatalogRoll.btn_set_texture.enabled = true
+						)
 					)
 				)
 				
@@ -421,6 +437,8 @@ struct UI
 			TasksCatalogRoll.lst_sub_catalog.enabled = true
 			CatalogListMain.enabled = true
 			CatalogListAdd.enabled = true
+			if MD_Data.TempArticlesList.Count != 0 then TasksCatalogRoll.btn_clear.enabled = true
+
 		)
 		else
 		(

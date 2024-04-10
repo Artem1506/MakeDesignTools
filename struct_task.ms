@@ -377,8 +377,8 @@ struct Task
 				catch(RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
 
 				-- Создать материал
-				if not DoesFileExist MatLibFile then CreateMaterial()
-				else LoadMaterial()
+				-- if not DoesFileExist MatLibFile then CreateMaterial()
+				-- else LoadMaterial()
             )
         )
 	),

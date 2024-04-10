@@ -2,18 +2,23 @@
 rollout rlt_catalog_general "General"
 (
     groupBox 'grp_01' " Common: " width:(rlt_catalog_general.width - 8) height:97 align:#center offset:[0, -4]
-    button 'btn_vis_switch' "Show Scene Objects" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -82] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_11_a
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -82] enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_02
-    button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_03
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -82] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
+    button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -82] enabled:false tooltip:MD_Tooltips.tools_cat_11_a
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    -- button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_03
 	checkbutton 'btn_edit_icon' "Edit Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
 
     groupBox 'grp_02' " Mesh: " width:(rlt_catalog_general.width - 8) height:72 align:#center offset:[0, 4]
     button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -57] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
     button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -57] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
+   
+    groupBox 'grp_03' " Material: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 4]
+    button 'btn_update_mat' "Update Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -34] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
+    button 'btn_set_texture' "Set Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    -- button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
 
-    groupBox 'grp_03' " Files: " width:(rlt_catalog_general.width - 8) height:80 align:#center offset:[0, 4]
+    groupBox 'grp_04' " Files: " width:(rlt_catalog_general.width - 8) height:82 align:#center offset:[0, 4]
     button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16, -67] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
     button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
     button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
@@ -23,7 +28,7 @@ rollout rlt_catalog_general "General"
 
     on rlt_catalog_general open do
     (
-        rlt_catalog_general.height = 300
+        rlt_catalog_general.height = 350
     )
     
     on rlt_catalog_general close do
@@ -31,9 +36,19 @@ rollout rlt_catalog_general "General"
         -- SetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name
     )
 
-    on btn_assign_mat pressed do
+    on btn_update_mat pressed do
     (
-        MD_Data.AssignMaterial selection[1]
+        try(
+            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+            ( 
+                MD_Data.InWorkTask.LoadMaterial()  
+                    
+            )else MD_Data.InWorkTask.CreateMaterial()
+            -- Set material
+            
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
+            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+        )catch()
     )
 
     on btn_vis_switch pressed do
@@ -41,14 +56,14 @@ rollout rlt_catalog_general "General"
         MD_Data.CreateWorkLayer()
         case btn_vis_switch.text of
         (
-            "Show Scene Objects":(
+            "Show All Layers":(
                 MD_Data.ShowLayers mode:#all
-                btn_vis_switch.text = "Isolate Task Layer"
+                btn_vis_switch.text = "Show Work Layer"
                 btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_b
             )
-            "Isolate Task Layer":(
+            "Show Work Layer":(
                 MD_Data.ShowLayers mode:#work_only
-                btn_vis_switch.text = "Show Scene Objects"
+                btn_vis_switch.text = "Show All Layers"
                 btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
             )
         )
@@ -59,6 +74,17 @@ rollout rlt_catalog_general "General"
         MD_Data.SetMesh selection[1]
         MD_UI.UpdateCatalogGeneralRlt()
         try MD_BBox.Update() catch()
+        try(
+            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+            ( 
+                MD_Data.InWorkTask.LoadMaterial()  
+                    
+            )else MD_Data.InWorkTask.CreateMaterial()
+            -- Set material
+            
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
+            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+        )catch()
     )
 
     on btn_add_mesh pressed do
@@ -136,7 +162,9 @@ rollout rlt_catalog_general "General"
 
         MD_Data.InWorkTask.LoadWork \
         MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:false
-        MD_UI.UpdateCatalogGeneralRlt()    
+        MD_Data.FullUpdate()
+        MD_UI.UpdateCatalogGeneralRlt()
+        try MD_Callbacks.Add() catch() 
     )
 
     on btn_work_list pressed do
