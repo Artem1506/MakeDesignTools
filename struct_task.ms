@@ -48,7 +48,7 @@ struct Task
 	-- 		mat.materialList[i] = Standardmaterial()
 	-- 		mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
 	-- 		mat.materialList[i].Name = m_name
-	-- 		mat.names[i] = Materials[i].PartName
+	-- 		mat.names[i] = Materials[i].MatIndex
 	-- 	)
 
 	-- 	Material = mat
@@ -310,28 +310,45 @@ struct Task
 				Object = data["object"]
                 Website = data["web_site"]
 
-				for i = 1 to data["finishing_materials"].count do
+				if data["finishing_materials"].count != 0 then
 				(
-					local mat = TaskMaterial()
+					for i = 1 to data["finishing_materials"].count do
+					(
+						mat = TaskMaterial()
+						try mat.Article = data["finishing_materials"][i]["article"] catch()
+						try (f_str = (filterString mat.Article "-"); mat.MatIndex = f_str[f_str.count]) catch()
+						try mat.Material = data["finishing_materials"][i]["finishing_components"] catch()
+						try mat.RefFile = mat_ref_files[i] catch()
+						try (mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE)
+						catch (mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
+						try (mat.WebSite = data["finishing_materials"][i]["link"]) catch()
 
-					try mat.Article = data["finishing_materials"][i]["article"] catch()
-					try mat.PartName = data["finishing_materials"][i]["name_part_object"] catch()
-					try mat.Material = data["finishing_materials"][i]["finishing_components"] catch()
-					try mat.RefFile = mat_ref_files[i] catch()
-					try (mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE)
-					catch (mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
-					try (mat.WebSite = data["finishing_materials"][i]["web_site"]) catch()
-
-					-- Проверка наличия текстур
+						-- Проверка наличия текстур
+						for t = 1 to mat.textures.count do
+						(
+							local tex_file = (pathConfig.appendPath TaskDir ("T_" + mat.Article + TEXTURES_SIFFIXES[t]))
+							if doesFileExist tex_file then (mat.textures[t] = tex_file)
+						)
+						append this.Materials mat
+					)					
+				)
+				else
+				(
+					mat = TaskMaterial()
+					mat.Article = data["article"]
+					mat.MatIndex = "01"
+					mat.Material = ""
+					-- mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE SAVED_PREVIEW_SIZE
+					-- mat.RefBitmap =  this.RefBitmap
 					for t = 1 to mat.textures.count do
 					(
 						local tex_file = (pathConfig.appendPath TaskDir ("T_" + mat.Article + TEXTURES_SIFFIXES[t]))
 						if doesFileExist tex_file then (mat.textures[t] = tex_file)
 					)
-
-					append Materials mat
+					append this.Materials mat
 				)
-
+				
+				
 				State = data["state"]
 				Pivot = #(
 					ConvertCentimeterToSysUnits data["pivot"][1],

@@ -57,7 +57,7 @@ struct UI
 		SetListViewParams CatalogListAdd CheckBoxes:false
 
 		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 84, 60, 150)
-		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 100, 55)
+		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 70, 85)
 
 		setFocus CatalogListMain
 	),
@@ -320,7 +320,7 @@ struct UI
 		(
 			for mat in MD_Data.ActiveTask.Materials do
 			(
-				dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.PartName
+				dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" mat.MatIndex
 				dn_list_item.ForeColor = DN_CLR_DEFAULT
 				dn_list_item.SubItems.add mat.material
 
@@ -405,8 +405,15 @@ struct UI
 				)
 			)
 			2:(
-				InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].PartName + "]"
+				InfoCatalogRoll.hpl_site.text = ""
+				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap != undefined then
+				(
+					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
+					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite) catch()
+					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite 1 28) catch(print MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex])
+				)
+				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [Material " + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex + "]"
+				InfoCatalogRoll.lbl_size_txt.visible = false
 				InfoCatalogRoll.height = 280
 			)
 		)

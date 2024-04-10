@@ -15,7 +15,7 @@ rollout dlg_load_textures "" width:320 height:270
 	button 'btn_n' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
         checkbox 'ckbx_n' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
 
-    label 'lbl_04' "ARD:" width:70 height:18 align:#left offset:[20, 4] across:3
+    label 'lbl_04' "SRM:" width:70 height:18 align:#left offset:[20, 4] across:3
 	button 'btn_ard' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
         checkbox 'ckbx_ard' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
 
@@ -175,7 +175,7 @@ rollout dlg_load_textures "" width:320 height:270
                 "Diffuse":(suffix = TEXTURES_SIFFIXES[1]; textures[1] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[1] = file)
                 "Metallic":(suffix = TEXTURES_SIFFIXES[2]; textures[2] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[2] = file)
                 "Normal":(suffix = TEXTURES_SIFFIXES[3]; textures[3] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[3] = file)
-                "ARD":(suffix = TEXTURES_SIFFIXES[4]; textures[4] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[4] = file)
+                "SRM":(suffix = TEXTURES_SIFFIXES[4]; textures[4] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[4] = file)
                 "Emissive":(suffix = TEXTURES_SIFFIXES[5]; textures[5] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[5] = file)
                 "SSS":(suffix = TEXTURES_SIFFIXES[6]; textures[6] = (pathConfig.appendPath task_dir ("T_" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Article + suffix)); source_files[6] = file)
             )
@@ -267,7 +267,7 @@ rollout dlg_load_textures "" width:320 height:270
 
     on btn_n pressed do OpenFile btn_n ckbx_n "Normal"
 
-    on btn_ard pressed do OpenFile btn_ard ckbx_ard "ARD"
+    on btn_ard pressed do OpenFile btn_ard ckbx_ard "SRM"
 
     on btn_e pressed do OpenFile btn_e ckbx_e "Emissive"
 

@@ -394,6 +394,9 @@ rollout rlt_catalog_tasks "Catalog"
                 -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
                 MD_Data.ActiveTaskAddIndex = undefined
 
+                -- Проверка состояния
+                if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask
+
                 if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
                     MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
@@ -452,6 +455,8 @@ rollout rlt_catalog_tasks "Catalog"
         )
         MD_UI.UpdateCatalogInfoRlt()
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+
+        
     )
 
     on lv_add Click self arg do
