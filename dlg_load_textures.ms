@@ -1,6 +1,6 @@
-rollout dlg_load_textures "" width:320 height:270
+rollout dlg_load_textures "" width:350 height:300
 (
-    groupBox 'grp_01' " Textures: " width:(dlg_load_textures.width - 20) height:188 align:#left offset:[-3, 2]
+    groupBox 'grp_01' " Textures: " width:(dlg_load_textures.width - 10) height:188 align:#center offset:[0, 2]
 	-- groupBox 'grp_02' " Tools: " width:(dlg_load_textures.width - 170) height:70 align:#left offset:[-3, -2]
 
     label 'lbl_01' "Diffuse:" width:70 height:18 align:#left offset:[8, -166] across:3
@@ -27,10 +27,10 @@ rollout dlg_load_textures "" width:320 height:270
 	button 'btn_sss' EMPTY_TEXT width:(dlg_load_textures.width - 108) height:CTRL_HEIGHT_1 align:#center offset:[12, 0]
         checkbox 'ckbx_sss' "" width:20 offset:[-3, 4] align:#right checked:false enabled:false
 	
-	button 'btn_auto_load' "Package Load" width:((dlg_load_textures.width - 23)/2) height:CTRL_HEIGHT_1 align:#center offset:[-2, 10] across:2
-    button 'btn_delete' "Delete" width:((dlg_load_textures.width - 23)/2) height:CTRL_HEIGHT_1 align:#center offset:[2, 10] enabled:false
+	button 'btn_auto_load' "Package Load" width:((dlg_load_textures.width - 13)/2) height:CTRL_HEIGHT_1 align:#center offset:[-5, 10] across:2 enabled:false
+    button 'btn_delete' "Delete" width:((dlg_load_textures.width - 13)/2) height:CTRL_HEIGHT_1 align:#center offset:[5, 10] enabled:false
 	
-	button 'btn_load' "Add Textures To Material" width:(dlg_load_textures.width - 20) height:CTRL_HEIGHT_2 align:#center offset:[0, -2] enabled:false
+	button 'btn_load' "Add Textures To Material" width:(dlg_load_textures.width - 10) height:CTRL_HEIGHT_2 align:#center offset:[0, -2] enabled:false
     
     local controls_arr = #(#(btn_d, ckbx_d), #(btn_m, ckbx_m), #(btn_n, ckbx_n), #(btn_ard, ckbx_ard), #(btn_e, ckbx_e), #(btn_sss, ckbx_sss))
     local textures = #(undefined, undefined, undefined, undefined, undefined, undefined)
@@ -123,10 +123,10 @@ rollout dlg_load_textures "" width:320 height:270
 
     fn InitExistTextures =
     (
-        if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Load Textures")
+        if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Assign Textures")
         else 
         (
-            dlg_load_textures.title = ("Load Textures " + "[" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].Material + "]")
+            dlg_load_textures.title = ("Assign Textures to Material-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex)
 
             btn_delete.enabled = false
             btn_load.enabled = false

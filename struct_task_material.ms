@@ -3,7 +3,6 @@ struct TaskMaterial
 (
 	Article = undefined,
 	MatIndex = undefined,
-	Material = undefined,
     RefFile = undefined,
 	texture_d = undefined,
 	texture_m = undefined,

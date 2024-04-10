@@ -317,7 +317,6 @@ struct Task
 						mat = TaskMaterial()
 						try mat.Article = data["finishing_materials"][i]["article"] catch()
 						try (f_str = (filterString mat.Article "-"); mat.MatIndex = f_str[f_str.count]) catch()
-						try mat.Material = data["finishing_materials"][i]["finishing_components"] catch()
 						try mat.RefFile = mat_ref_files[i] catch()
 						try (mat.RefBitmap = CreatePreviewFromImageFile mat_ref_files[i] PREVIEW_SIZE)
 						catch (mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
@@ -337,9 +336,7 @@ struct Task
 					mat = TaskMaterial()
 					mat.Article = data["article"]
 					mat.MatIndex = "01"
-					mat.Material = ""
-					-- mat.RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE SAVED_PREVIEW_SIZE
-					-- mat.RefBitmap =  this.RefBitmap
+
 					for t = 1 to mat.textures.count do
 					(
 						local tex_file = (pathConfig.appendPath TaskDir ("T_" + mat.Article + TEXTURES_SIFFIXES[t]))
