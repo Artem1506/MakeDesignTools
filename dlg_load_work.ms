@@ -42,6 +42,7 @@ rollout dlg_load_work "Saved Works"
 
    on btn_load pressed do
    (
+      
       -- Загрузить в сцену объекты из выбранного файл
       try(
          local load_result = MD_Data.InWorkTask.LoadWork \
@@ -57,12 +58,14 @@ rollout dlg_load_work "Saved Works"
          ( 
              MD_Data.InWorkTask.LoadMaterial()  
                  
-         )else MD_Data.InWorkTask.CreateMaterial()
+         )--else MD_Data.InWorkTask.CreateMaterial()
          -- Set material
          
          MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
          MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
      )catch()
+
+     print MD_Data.InWorkTask.Material
    )
 
    on lv_files ItemChecked self args do 

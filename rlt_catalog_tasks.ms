@@ -488,7 +488,8 @@ rollout rlt_catalog_tasks "Catalog"
     on btn_work_state pressed do
     ( 
         MD_Data.ShowLayers mode:#none
-
+        try ClearTrashLayers() catch()
+        
         -- Проверка состояния кнопки
         case btn_work_state.text of
         (
@@ -524,6 +525,7 @@ rollout rlt_catalog_tasks "Catalog"
             "Update Work State":(
                 -- Создать рабочее состояние
                 MD_Data.UpdateWorkState()
+                MD_UI.UpdateCatalogTasksRlt()
             )
         )
         MD_Data.FullUpdate()

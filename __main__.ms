@@ -182,17 +182,17 @@
         )
 
         -- Обновить материал
-        try(
-            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
-            ( 
-                MD_Data.InWorkTask.LoadMaterial()  
+        -- try(
+        --     if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+        --     ( 
+        --         MD_Data.InWorkTask.LoadMaterial()  
                     
-            )else MD_Data.InWorkTask.CreateMaterial()
-            -- Set material
+        --     )else MD_Data.InWorkTask.CreateMaterial()
+        --     -- Set material
             
-            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
-            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
-        )catch()
+        --     MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
+        --     MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+        -- )catch()
 
         -- Добавить функции обратного вызова
         try MD_Callbacks.Add() catch()

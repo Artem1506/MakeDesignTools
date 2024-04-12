@@ -58,10 +58,29 @@ struct Task
     --     -- saveMaterialLibrary MatLibFile
 	-- ),
 
+	-- fn CreateMaterial =
+	-- (
+    --     local mat = Multimaterial name:Article
+    --     local MatLib = materialLibrary()
+	-- 	local m_name = "Material_" + (formattedPrint 1 format:#02d)
+
+	-- 	mat.materialList.count = 1
+	-- 	mat.materialList[1] = Standardmaterial()
+	-- 	mat.materialList[1].Diffuse = CLR_PALETTE_1[1]
+	-- 	mat.materialList[1].Name = m_name
+	-- 	-- mat.names[1] = ""
+
+	-- 	Material = mat
+    --     append MatLib mat
+	-- 	if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
+    --     saveTempMaterialLibrary MatLib MatLibFile
+    --     -- saveMaterialLibrary MatLibFile
+	-- ),
+
 	fn CreateMaterial =
 	(
         local mat = Multimaterial name:Article
-        local MatLib = materialLibrary()
+        -- local MatLib = materialLibrary()
 		local m_name = "Material_" + (formattedPrint 1 format:#02d)
 
 		mat.materialList.count = 1
@@ -70,10 +89,10 @@ struct Task
 		mat.materialList[1].Name = m_name
 		-- mat.names[1] = ""
 
-		Material = mat
-        append MatLib mat
-		if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
-        saveTempMaterialLibrary MatLib MatLibFile
+		this.Material = mat
+        -- append MatLib mat
+		-- if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
+        -- saveTempMaterialLibrary MatLib MatLibFile
         -- saveMaterialLibrary MatLibFile
 	),
 
@@ -81,11 +100,11 @@ struct Task
 	(
 		try
 		(
-			-- Material = (loadMaterialLibrary MatLibFile)[1]
-			MatLib = loadTempMaterialLibrary MatLibFile
-			Material = MatLib[1]
+			this.Material = (loadMaterialLibrary MatLibFile)[1]
+			-- MatLib = loadTempMaterialLibrary MatLibFile
+			-- this.Material = MatLib[1]
 		)
-		catch()
+		catch(this.Material = undefined)
 	),
 
 	fn LoadWork saved_file quiet_mode:true =

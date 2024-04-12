@@ -245,9 +245,9 @@ rollout rlt_catalog_general "General"
 		MD_Data.edit_icon_mode = arg
 	)
 
-    -- on btn_assign_texts pressed do
-    -- (
-    --     try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
-    --     CreateDialog MD_UI.Dialogs.LoadTextures modal:false
-    -- )
+    on btn_set_texture pressed do
+    (
+        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        CreateDialog MD_UI.Dialogs.LoadTextures modal:false
+    )
 )

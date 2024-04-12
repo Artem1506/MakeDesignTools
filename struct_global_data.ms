@@ -61,34 +61,34 @@ struct GlobalData
 		)catch()  
 	), 
 
-	fn UpdateMaterial_old obj = 
-	( 
-		local mat_ids = #() 
+	-- fn UpdateMaterial obj = 
+	-- ( 
+	-- 	local mat_ids = #() 
 
-		for obj in geometry where (classof obj) == Editable_Poly do 
-		( 
-			local all_faces = polyop.getNumFaces obj 
+	-- 	for obj in geometry where (classof obj) == Editable_Poly do 
+	-- 	( 
+	-- 		local all_faces = polyop.getNumFaces obj 
 
-			for i = 1 to all_faces do
-			( 
-				appendifunique mat_ids (polyop.getFaceMatID obj i) 
-			)
-		)
+	-- 		for i = 1 to all_faces do
+	-- 		( 
+	-- 			appendifunique mat_ids (polyop.getFaceMatID obj i) 
+	-- 		)
+	-- 	)
 
-		try(	
-			MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
-			local m_name = "Material_" + (formattedPrint 1 format:#02d)
+	-- 	try(	
+	-- 		MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
+	-- 		local m_name = "Material_" + (formattedPrint 1 format:#02d)
 			
-			for i = 1 to mat_ids.count do
-			(
-				mat.materialList[i] = Standardmaterial()
-				mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
-				mat.materialList[i].Name = m_name
-			)
-			obj.Material = MD_Data.ActiveTask.Material 
-		)catch()
-		CompleteRedraw() 
-	), 
+	-- 		for i = 1 to mat_ids.count do
+	-- 		(
+	-- 			mat.materialList[i] = Standardmaterial()
+	-- 			mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
+	-- 			mat.materialList[i].Name = m_name
+	-- 		)
+	-- 		obj.Material = MD_Data.ActiveTask.Material 
+	-- 	)catch()
+	-- 	CompleteRedraw() 
+	-- ), 
 
 	fn UpdateMaterial obj = 
 	(
