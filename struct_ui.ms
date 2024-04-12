@@ -187,16 +187,16 @@ struct UI
 				GeneralCatalogRoll.btn_edit_icon.enabled = true
 
 				-- Основной меш
-				if MD_Data.InWorkTask.Mesh != undefined and not MD_Data.InWorkTask.Mesh.IsDeleted then
+				if MD_Data.InWorkTask.MainMesh != undefined and not MD_Data.InWorkTask.MainMesh.IsDeleted then
 				(
 					GeneralCatalogRoll.btn_main_mesh.text = "  Main Mesh •"
-					if MD_Data.InWorkTask.ActiveMesh == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.Mesh then 
+					if MD_Data.InWorkTask.ActiveMeshIndex == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 					(
 						-- GeneralCatalogRoll.btn_assign_mat.enabled = true
 						GeneralCatalogRoll.btn_update_mat.enabled = true
 						GeneralCatalogRoll.btn_set_texture.enabled = true
 					)
-					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.Mesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
+					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.MainMesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
 				)
 				else
 				(
@@ -211,7 +211,7 @@ struct UI
 
 					GeneralCatalogRoll.btn_mesh_switch.enabled = true
 
-					if MD_Data.InWorkTask.ActiveMesh == 2 then
+					if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
 					GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"	
 					else GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
@@ -219,7 +219,7 @@ struct UI
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						if MD_Data.InWorkTask.ActiveMesh == 2 then
+						if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
 						(
 							GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
 							GeneralCatalogRoll.btn_add_mesh.enabled = true		
@@ -237,7 +237,7 @@ struct UI
 					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
 						GeneralCatalogRoll.btn_add_mesh.text = "  Additional Mesh •"
-						if MD_Data.InWorkTask.ActiveMesh == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
+						if MD_Data.InWorkTask.ActiveMeshIndex == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
@@ -254,14 +254,14 @@ struct UI
 				-- Если задание НЕ имеет поле трансформации
 				else
 				(
-					MD_Data.InWorkTask.ActiveMesh = 1
+					MD_Data.InWorkTask.ActiveMeshIndex = 1
 
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						GeneralCatalogRoll.btn_main_mesh.enabled = true
-						if MD_Data.InWorkTask.Mesh == 1 and selection[1] == MD_Data.InWorkTask.Mesh then 
+						if MD_Data.InWorkTask.MainMesh == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
@@ -388,7 +388,7 @@ struct UI
 
 					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.WebSite) catch()
 
-					case MD_Data.ActiveTask.ActiveMesh of
+					case MD_Data.ActiveTask.ActiveMeshIndex of
 					(
 						1:(
 							InfoCatalogRoll.lbl_size_txt.text = LabelSizeText

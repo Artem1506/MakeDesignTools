@@ -190,8 +190,8 @@
         --     )else MD_Data.InWorkTask.CreateMaterial()
         --     -- Set material
             
-        --     MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
-        --     MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+        --     MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
+        --     MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         -- )catch()
 
         -- Добавить функции обратного вызова

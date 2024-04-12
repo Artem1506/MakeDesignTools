@@ -134,20 +134,20 @@ struct GlobalData
 		local val = true 
 		local msg = "" 
 		local valids = #("X", "X", "X", "X", "X", "X", "X") 
-		local objs = #(InWorkTask.Mesh, InWorkTask.AddMesh) 
+		local objs = #(InWorkTask.MainMesh, InWorkTask.AddMesh) 
 
 		-- Check count 
 		if InWorkTask.SizeTrans == undefined then 
 		( 
-			if WorkLayerNodes.count == 1 and InWorkTask.Mesh != undefined and InWorkTask.AddMesh == undefined then 
+			if WorkLayerNodes.count == 1 and InWorkTask.MainMesh != undefined and InWorkTask.AddMesh == undefined then 
 			( 
 				valids[1] = "OK" 
 				obj = WorkLayerNodes[1] 
 			) 
-		)else if WorkLayerNodes.count == 2 and InWorkTask.Mesh != undefined and InWorkTask.AddMesh != undefined then 
+		)else if WorkLayerNodes.count == 2 and InWorkTask.MainMesh != undefined and InWorkTask.AddMesh != undefined then 
 		( 
 			valids[1] = "OK" 
-			obj = objs[MD_Data.InWorkTask.ActiveMesh] 
+			obj = objs[MD_Data.InWorkTask.ActiveMeshIndex] 
 		) 
 		else (msg = "Слой задания содержит более одного объекта.") 
 		 
@@ -366,7 +366,7 @@ struct GlobalData
 		for t in MD_Data.Tasks do 
 		( 
 			t.State = STATES[1] 
-			t.ActiveMesh = 1 
+			t.ActiveMeshIndex = 1 
 		) 
 		DeleteWorkLayer()  
 		InWorkTask = undefined 
@@ -398,7 +398,7 @@ struct GlobalData
 		try this.ExitWorkState()  catch()  
 
 		ActiveTask.State = STATES[2] 
-		ActiveTask.ActiveMesh = 1 
+		ActiveTask.ActiveMeshIndex = 1 
 		InWorkTask = ActiveTask 
 		InWorkTaskFile = ActiveTask.File 
 		try ClearTrashLayers()  catch()  
@@ -451,7 +451,7 @@ struct GlobalData
 	-- ( 
 	-- 	try MD_Callbacks.Destruct() catch() 
 	-- 	this.ActiveTask.State = STATES[2] 
-	--     this.ActiveTask.ActiveMesh = 1 
+	--     this.ActiveTask.ActiveMeshIndex = 1 
 	--     this.InWorkTask = this.ActiveTask 
 	-- 	this.InWorkTaskFile = this.ActiveTask.File 
 	-- 	this.CreateWorkLayer() 
@@ -501,7 +501,7 @@ struct GlobalData
 		( 
 			MD_Callbacks.Destruct()  
 			this.InWorkTask.State = STATES[2] 
-			this.InWorkTask.ActiveMesh = 1 
+			this.InWorkTask.ActiveMeshIndex = 1 
 			this.InWorkTask = this.ActiveTask 
 			this.InWorkTaskFile = this.InWorkTask.File 
 			this.CreateWorkLayer()  
@@ -585,12 +585,12 @@ struct GlobalData
 	( 
 		if (SuperClassOf obj == GeometryClass) and MD_Data.InWorkTask != undefined then 
 		( 
-			if this.InWorkTask.Mesh == obj then 
+			if this.InWorkTask.MainMesh == obj then 
 			( 
-				this.InWorkTask.Mesh.Material = undefined 
-				this.InWorkTask.Mesh.Name = uniqueName "Object" 
-				this.InWorkTask.Mesh = undefined 
-				this.ActiveTask.ActiveMesh = 1 
+				this.InWorkTask.MainMesh.Material = undefined 
+				this.InWorkTask.MainMesh.Name = uniqueName "Object" 
+				this.InWorkTask.MainMesh = undefined 
+				this.ActiveTask.ActiveMeshIndex = 1 
 			) 
 			else 
 			( 
@@ -612,14 +612,14 @@ struct GlobalData
 					task_obj.Name = uniqueName "Object" 
 				) 
 				obj.IsHidden = false 
-				this.InWorkTask.Mesh = obj 
-				this.InWorkTask.Mesh.Name = mesh_name 
-				this.ActiveTask.ActiveMesh = 1 
-				-- this.InWorkTask.Mesh.Material = this.InWorkTask.Material
+				this.InWorkTask.MainMesh = obj 
+				this.InWorkTask.MainMesh.Name = mesh_name 
+				this.ActiveTask.ActiveMeshIndex = 1 
+				-- this.InWorkTask.MainMesh.Material = this.InWorkTask.Material
 				this.InWorkTask.Material = undefined
 			)	 
 
-			if this.InWorkTask.Mesh == this.InWorkTask.AddMesh then 
+			if this.InWorkTask.MainMesh == this.InWorkTask.AddMesh then 
 			this.InWorkTask.AddMesh = undefined 
 			select obj 
 			CompleteRedraw()  
@@ -637,7 +637,7 @@ struct GlobalData
 				this.InWorkTask.AddMesh.Name = uniqueName "Object" 
 				this.InWorkTask.AddMesh = undefined 
 				obj.IsHidden = False 
-				this.ActiveTask.ActiveMesh = 1 
+				this.ActiveTask.ActiveMeshIndex = 1 
 			) 
 			else 
 			( 
@@ -664,11 +664,11 @@ struct GlobalData
 				this.InWorkTask.AddMesh.Name = mesh_name + TRANS_POSTFIX 
 				obj.IsHidden = False 
 				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material 
-				this.ActiveTask.ActiveMesh = 2 
+				this.ActiveTask.ActiveMeshIndex = 2 
 			) 
 
-			if this.InWorkTask.AddMesh == this.InWorkTask.Mesh then 
-			this.InWorkTask.Mesh = undefined 
+			if this.InWorkTask.AddMesh == this.InWorkTask.MainMesh then 
+			this.InWorkTask.MainMesh = undefined 
 			select obj 
 			-- clearSelection() 
 			CompleteRedraw()  
@@ -685,8 +685,8 @@ struct GlobalData
 		( 
 			MD_Callbacks.Destruct()  
 
-			if InWorkTask.SizeTrans == undefined then (objs = #(InWorkTask.Mesh); cur_obj_names = #(InWorkTask.Mesh.Name)) 
-			else (objs = #(InWorkTask.Mesh, InWorkTask.AddMesh); cur_obj_names = #(InWorkTask.Mesh.Name, InWorkTask.AddMesh.Name)) 
+			if InWorkTask.SizeTrans == undefined then (objs = #(InWorkTask.MainMesh); cur_obj_names = #(InWorkTask.MainMesh.Name)) 
+			else (objs = #(InWorkTask.MainMesh, InWorkTask.AddMesh); cur_obj_names = #(InWorkTask.MainMesh.Name, InWorkTask.AddMesh.Name)) 
 
 			local main_dir = pathConfig.removePathLeaf (getFilenamePath ActiveTask.File) 
 			local save_fbx_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".fbx") 

@@ -132,7 +132,7 @@ groupBox 'grp_02' " Masks: " width:(dlg_load_textures.width - 10) height:108 ali
             for obj in MD_Data.WorkLayerNodes do
             (
                 try(
-                    if obj == MD_Data.InWorkTask.Mesh or obj == MD_Data.InWorkTask.AddMesh then
+                    if obj == MD_Data.InWorkTask.MainMesh or obj == MD_Data.InWorkTask.AddMesh then
                     MD_Data.AssignMaterial obj
                 )catch()
             )

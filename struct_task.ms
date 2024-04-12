@@ -20,9 +20,10 @@ struct Task
 	IconSize = #(),
 	Icon = undefined,
 	Layer = undefined,
-	Mesh = undefined,
+	MainMesh = undefined,
 	AddMesh = undefined,
-	ActiveMesh = 1,
+	ActiveMeshIndex = 1,
+	ActiveMatIndex = 1,
 	SavedWorks = #(),
 	SavedWorksPreviews = #(),
 	RefBitmap = undefined,
@@ -77,7 +78,7 @@ struct Task
     --     -- saveMaterialLibrary MatLibFile
 	-- ),
 
-	fn CreateMaterial =
+	fn CreateMaterial mat_index =
 	(
         local mat = Multimaterial name:Article
         -- local MatLib = materialLibrary()
@@ -89,18 +90,18 @@ struct Task
 		mat.materialList[1].Name = m_name
 		-- mat.names[1] = ""
 
-		this.Material = mat
+		this.Materials[mat_index].mat = mat
         -- append MatLib mat
 		-- if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
         -- saveTempMaterialLibrary MatLib MatLibFile
         -- saveMaterialLibrary MatLibFile
 	),
 
-	fn LoadMaterial =
+	fn LoadMaterial mat_index =
 	(
 		try
 		(
-			this.Material = (loadMaterialLibrary MatLibFile)[1]
+			this.Material = (loadMaterialLibrary MatLibFile)[mat_index]
 			-- MatLib = loadTempMaterialLibrary MatLibFile
 			-- this.Material = MatLib[1]
 		)
@@ -145,7 +146,7 @@ struct Task
 					(
 						if obj.name == MD_Data.InWorkTask.Article then
 						(
-							MD_Data.InWorkTask.Mesh = obj
+							MD_Data.InWorkTask.MainMesh = obj
 							MD_Data.AssignMaterial obj
 						)
 						if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
@@ -156,7 +157,7 @@ struct Task
 					)else(
 						if obj.name == MD_Data.InWorkTask.Group then
 						(
-							MD_Data.InWorkTask.Mesh = obj
+							MD_Data.InWorkTask.MainMesh = obj
 							MD_Data.AssignMaterial obj
 						)
 						if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
@@ -167,7 +168,7 @@ struct Task
 					)
 				)
 			)
-			-- try (select MD_Data.InWorkTask.Mesh) catch()
+			-- try (select MD_Data.InWorkTask.MainMesh) catch()
 			load_result = true		
 		)
 		else try (select cur_sel_objs) catch()
@@ -288,7 +289,7 @@ struct Task
 	),
 
 	fn Init = (
-
+		
 		-- Инициализация данных задания
         if (File != undefined and DoesFileExist File) then
         (
@@ -413,6 +414,7 @@ struct Task
 				-- if not DoesFileExist MatLibFile then CreateMaterial()
 				-- else LoadMaterial()
             )
+			try this.Material = this.Materials[this.ActiveMatIndex].MultiMat catch()
         )
 	),
 

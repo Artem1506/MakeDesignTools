@@ -46,8 +46,8 @@ rollout rlt_catalog_general "General"
             )else MD_Data.InWorkTask.CreateMaterial()
             -- Set material
             
-            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
-            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
+            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         )catch()
     )
 
@@ -82,8 +82,8 @@ rollout rlt_catalog_general "General"
             )else MD_Data.InWorkTask.CreateMaterial()
             -- Set material
             
-            MD_Data.UpdateMaterial MD_Data.InWorkTask.Mesh
-            MD_Data.AssignMaterial MD_Data.InWorkTask.Mesh
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
+            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         )catch()
     )
 
@@ -91,7 +91,7 @@ rollout rlt_catalog_general "General"
     (
         if MD_Data.InWorkTask != undefined and selection[1] != undefined then 
         (
-            if MD_Data.InWorkTask.AddMesh == undefined and MD_Data.InWorkTask.Mesh == selection[1] then
+            if MD_Data.InWorkTask.AddMesh == undefined and MD_Data.InWorkTask.MainMesh == selection[1] then
             (
                 if (queryBox "Создать дополнительный меш путём копирования основного?" title:"Внимание!" icon:#question) then 
                 (
@@ -112,19 +112,19 @@ rollout rlt_catalog_general "General"
         (
             MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
-            case MD_Data.InWorkTask.ActiveMesh of
+            case MD_Data.InWorkTask.ActiveMeshIndex of
             (
                 1:(
-                    MD_Data.InWorkTask.ActiveMesh = 2
+                    MD_Data.InWorkTask.ActiveMeshIndex = 2
                     try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
                     try MD_Data.InWorkTask.AddMesh.IsHidden = false catch()
                     try select MD_Data.InWorkTask.AddMesh catch()
                 )
                 2:(
-                    MD_Data.InWorkTask.ActiveMesh = 1
+                    MD_Data.InWorkTask.ActiveMeshIndex = 1
                     try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
                     try MD_Data.InWorkTask.AddMesh.IsHidden = true catch()
-                    try select MD_Data.InWorkTask.Mesh catch()
+                    try select MD_Data.InWorkTask.MainMesh catch()
                 )
             )
 

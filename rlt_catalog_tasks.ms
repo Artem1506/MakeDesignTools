@@ -400,13 +400,13 @@ rollout rlt_catalog_tasks "Catalog"
                 if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
                     MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
-                    MD_Data.InWorkTask.ActiveMesh = 1
+                    MD_Data.InWorkTask.ActiveMeshIndex = 1
 
                     for obj in MD_Data.WorkLayerNodes do
                     (
                         if obj.name == MD_Data.InWorkTask.Article then
                         (
-                            MD_Data.InWorkTask.Mesh = obj
+                            MD_Data.InWorkTask.MainMesh = obj
                         )
                         if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
                         (
@@ -417,7 +417,7 @@ rollout rlt_catalog_tasks "Catalog"
 
                     if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
                     ( 
-                        try MD_Data.InWorkTask.Mesh.Material = MD_Data.InWorkTask.Material catch()
+                        try MD_Data.InWorkTask.MainMesh.Material = MD_Data.InWorkTask.Material catch()
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Material catch()
                         completeRedraw()
                     )
@@ -434,7 +434,7 @@ rollout rlt_catalog_tasks "Catalog"
                     (
                         try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
-                        try MD_Data.InWorkTask.Mesh.Material = MD_Data.ActiveTask.Material catch()
+                        try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Material catch()
                         try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Material catch()
                         completeRedraw()
                     )

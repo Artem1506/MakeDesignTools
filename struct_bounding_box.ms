@@ -148,7 +148,7 @@ struct BoundingBox
 
 		if MD_Data.InWorkTask != undefined then
 		(
-			case MD_Data.InWorkTask.ActiveMesh of
+			case MD_Data.InWorkTask.ActiveMeshIndex of
 			(
 				1:(
 					bb_w = MD_Data.InWorkTask.Size[1]
@@ -221,7 +221,7 @@ struct BoundingBox
 		clr_main = MD_UI.SettingsRoll.clr_bb_main.color
 		clr_add = MD_UI.SettingsRoll.clr_bb_add.color
 
-		case MD_Data.ActiveTask.ActiveMesh of
+		case MD_Data.ActiveTask.ActiveMeshIndex of
 		(
 			1:(
 				this.bb.wireColor = clr_main

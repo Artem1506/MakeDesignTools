@@ -2,7 +2,7 @@
 struct TaskMaterial
 (
 	Article = undefined,
-	Mat = undefined,
+	MultiMat = Multimaterial(),
 	MatIndex = undefined,
     RefFile = undefined,
 	texture_d = undefined,

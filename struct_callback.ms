@@ -37,7 +37,7 @@ struct Callback
 					obj.IsHidden = False
 				)
 			)
-			if obj != MD_Data.ActiveTask.Mesh and obj != MD_Data.ActiveTask.AddMesh then
+			if obj != MD_Data.ActiveTask.MainMesh and obj != MD_Data.ActiveTask.AddMesh then
 			(
 				obj.Name = uniqueName "Object"
 				obj.Material = undefined
@@ -54,7 +54,7 @@ struct Callback
 
 			if MD_Data.InWorkTask != undefined then
 			(
-				if obj == MD_Data.InWorkTask.Mesh then MD_Data.InWorkTask.Mesh = undefined
+				if obj == MD_Data.InWorkTask.MainMesh then MD_Data.InWorkTask.MainMesh = undefined
 				if obj == MD_Data.InWorkTask.AddMesh then MD_Data.InWorkTask.AddMesh = undefined
 			)
 			
@@ -83,9 +83,9 @@ struct Callback
 
 			if new_layer != MD_Data.WorkLayer then
 			(
-				if obj == MD_Data.InWorkTask.Mesh then 
+				if obj == MD_Data.InWorkTask.MainMesh then 
 				(
-					MD_Data.InWorkTask.Mesh = undefined
+					MD_Data.InWorkTask.MainMesh = undefined
 					obj.Name = uniqueName "Object"
 				)
 				if obj == MD_Data.InWorkTask.AddMesh then 
@@ -110,7 +110,7 @@ struct Callback
 			if MD_Data.ActiveTask != undefined then
 			(
 				MD_Data.ActiveTask.State = STATES[1]
-				MD_Data.ActiveTask.ActiveMesh = 1
+				MD_Data.ActiveTask.ActiveMeshIndex = 1
 				MD_Data.InWorkTask = undefined
 				MD_Data.WorkLayer = undefined
 				MD_Data.ActiveTask.Update()
