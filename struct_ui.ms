@@ -56,7 +56,7 @@ struct UI
 		SetListViewParams CatalogListMain
 		SetListViewParams CatalogListAdd CheckBoxes:false
 
-		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 84, 60, 150)
+		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 86, 48, 160)
 		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 155)
 
 		setFocus CatalogListMain
@@ -83,6 +83,7 @@ struct UI
 		local main_items = #()
 		local item_index = 0
 		local cur_sel = undefined
+		local work_group = ""
 
 		-- Индекс выделенного элемента в стике
 		if CatalogListMain.SelectedItems.Count != 0 then cur_sel = CatalogListMain.SelectedItems.Item[0].Index
@@ -96,24 +97,38 @@ struct UI
 			dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 			dn_list_item.Checked = false
 			dn_list_item.ForeColor = DN_CLR_DEFAULT
+			dn_list_item.SubItems.add "" -- state (index = 1)
 
-			if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
-			(MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then 
+			-- Есть ли группа
+			-- if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
+			-- (MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then
+			-- (
+			-- 	-- dn_list_item.ForeColor = DN_CLR_INWORK
+			-- 	dn_list_item.ForeColor = DN_CLR_DEFAULT
+			-- 	dn_list_item.Font = DN_FNT_GRP
+				
+			-- 	if task.Article == MD_Data.ActiveTask.Article then
+			-- 	(
+			-- 		MD_Data.InWorkTask = task
+			-- 		dn_list_item.SubItems.add STATES[2]	
+			-- 		MD_Data.CreateWorkLayer()				
+			-- 	)
+			-- 	else dn_list_item.SubItems.add ""
+			-- )
+			-- else dn_list_item.SubItems.add ""
+
+			-- Добавить состояние
+			if task.State == STATES[2] then
 			(
-				dn_list_item.ForeColor = DN_CLR_INWORK
-				-- dn_list_item.Font = DN_FNT_GRP
-				dn_list_item.SubItems.add STATES[2]
-
-				if task.Article == MD_Data.ActiveTask.Article then
-				(
-					MD_Data.InWorkTask = task
-					MD_Data.CreateWorkLayer()							
-				)
+				dn_list_item.SubItems.Item[1].Text = STATES[2]
 			)
-			else dn_list_item.SubItems.add ""
 
-			-- Group
-			if task.Group != undefined then dn_list_item.SubItems.add task.Group
+			-- Добавить название группы
+			if task.Group != undefined then 
+			(
+				dn_list_item.SubItems.add task.Group
+				if task.State == STATES[2] then work_group = task.Group
+			)
 			else dn_list_item.SubItems.add ""
 
 			-- Transformation
@@ -133,6 +148,17 @@ struct UI
 
 			item_index += 1
 			try dn_list_item.tag = item_index catch()
+
+			try MD_Data.CreateWorkLayer() catch()
+		)
+
+		-- Замена шрифта
+		for i = 1 to main_items.Count do
+		(
+			if (work_group != "" and main_items[i].SubItems.Item[2].Text == work_group) or main_items[i].SubItems.Item[1].Text == STATES[2] then
+			(
+				main_items[i].Font = DN_FNT_GRP
+			)
 		)
 
 		-- Заполнить основной список панели Tasks (задания)
@@ -157,8 +183,8 @@ struct UI
 	(
 		try
 		(
-			GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
-			GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
+			GeneralCatalogRoll.btn_main_mesh.text = "Set Main Mesh"
+			GeneralCatalogRoll.btn_add_mesh.text = "Set Add Mesh"
 			GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
@@ -189,7 +215,7 @@ struct UI
 				-- Основной меш
 				if MD_Data.InWorkTask.MainMesh != undefined and not MD_Data.InWorkTask.MainMesh.IsDeleted then
 				(
-					GeneralCatalogRoll.btn_main_mesh.text = "  Main Mesh •"
+					GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh •"
 					if MD_Data.InWorkTask.ActiveMeshIndex == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 					(
 						-- GeneralCatalogRoll.btn_assign_mat.enabled = true
@@ -200,7 +226,7 @@ struct UI
 				)
 				else
 				(
-					GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh"
+					GeneralCatalogRoll.btn_main_mesh.text = "Set Main Mesh"
 					if SettingsRoll.ckbx_tooltips.Checked == true then
 					GeneralCatalogRoll.btn_main_mesh.tooltip = MD_Tooltips.tools_cat_07_a
 				)
@@ -228,6 +254,7 @@ struct UI
 						(
 							GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 							GeneralCatalogRoll.btn_main_mesh.enabled = true
+							GeneralCatalogRoll.btn_clear.enabled = true
 							if MD_Data.InWorkTask.AddMesh == undefined or MD_Data.InWorkTask.AddMesh.IsDeleted then
 							GeneralCatalogRoll.btn_add_mesh.enabled = true
 						)
@@ -236,7 +263,7 @@ struct UI
 					-- Доп. меш
 					if MD_Data.InWorkTask.AddMesh != undefined and not MD_Data.InWorkTask.AddMesh.IsDeleted then
 					(
-						GeneralCatalogRoll.btn_add_mesh.text = "  Additional Mesh •"
+						GeneralCatalogRoll.btn_add_mesh.text = "  Add Mesh •"
 						if MD_Data.InWorkTask.ActiveMeshIndex == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
@@ -246,7 +273,7 @@ struct UI
 						try GeneralCatalogRoll.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name + "\nДля удаления статуса дополнительного объекта необходимо повторно нажать на кнопку.") catch()
 					)
 					else(
-						GeneralCatalogRoll.btn_add_mesh.text = "Additional Mesh"
+						GeneralCatalogRoll.btn_add_mesh.text = "Set Add Mesh"
 						if SettingsRoll.ckbx_tooltips.Checked == true then
 						GeneralCatalogRoll.btn_add_mesh.tooltip = MD_Tooltips.tools_cat_07_b
 					)
@@ -261,6 +288,7 @@ struct UI
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
 						GeneralCatalogRoll.btn_main_mesh.enabled = true
+						GeneralCatalogRoll.btn_clear.enabled = true
 						if MD_Data.InWorkTask.MainMesh == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
@@ -274,6 +302,7 @@ struct UI
 				if (MD_Data.WorkLayer != undefined and MD_Data.WorkLayerNodes.count != 0) then
 				(
 					GeneralCatalogRoll.btn_save_work.enabled = true
+					GeneralCatalogRoll.btn_clear.enabled = true
 					GeneralCatalogRoll.btn_export.enabled = true
 				)
 
@@ -675,8 +704,10 @@ struct UI
             GetINISettings SettingsRoll MDT_CONFIG_FILE SettingsRoll.name
             GetINISettings TasksCatalogRoll MDT_CONFIG_FILE TasksCatalogRoll.name include_list:#(TasksCatalogRoll.lst_basic_catalog, TasksCatalogRoll.lst_sub_catalog)
             GetINISettings InfoCatalogRoll MDT_CONFIG_FILE InfoCatalogRoll.name onlyRollState:true
-            try GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name onlyRollState:true catch()
-            GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
+            -- GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name onlyRollState:true
+            -- GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
+            GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name
+            GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name
         )catch ()
 
 		if MD_Data.main_categs.count != 0 then

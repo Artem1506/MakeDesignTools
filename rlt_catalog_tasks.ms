@@ -378,7 +378,7 @@ rollout rlt_catalog_tasks "Catalog"
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = 0
         subobjectLevel = 0
-
+        MD_Callbacks.Destruct()
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
@@ -401,7 +401,7 @@ rollout rlt_catalog_tasks "Catalog"
                 (
                     MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
                     MD_Data.InWorkTask.ActiveMeshIndex = 1
-
+                    
                     for obj in MD_Data.WorkLayerNodes do
                     (
                         if obj.name == MD_Data.InWorkTask.Article then
@@ -415,14 +415,17 @@ rollout rlt_catalog_tasks "Catalog"
                         )    
                     )
 
-                    if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
-                    ( 
-                        try MD_Data.InWorkTask.MainMesh.Material = MD_Data.InWorkTask.Material catch()
-                        try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Material catch()
-                        completeRedraw()
-                    )
+                    -- if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+                    -- ( 
+                    --     try MD_Data.InWorkTask.MainMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
+                    --     try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
+
+                    --     completeRedraw()
+                    -- )
                     try MD_BBox.Update() catch()
                     MD_Data.ShowLayers mode:#work_only
+                    -- Добавить функции обратного вызова
+                    try MD_Callbacks.Add() catch()
                 )
                 else 
                 (
@@ -434,8 +437,10 @@ rollout rlt_catalog_tasks "Catalog"
                     (
                         try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
-                        try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Material catch()
-                        try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Material catch()
+                        -- try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
+                        -- try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
+                        -- Добавить функции обратного вызова
+                        try MD_Callbacks.Add() catch()
                         completeRedraw()
                     )
                     else 
@@ -455,25 +460,29 @@ rollout rlt_catalog_tasks "Catalog"
         )
         MD_UI.UpdateCatalogInfoRlt()
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
-
-        
+        try MD_Data.CreateWorkLayer() catch()
     )
 
     on lv_add Click self arg do
     (
         MD_Data.ActiveList = 2
         MD_Data.ActiveTaskIndex = 0
+        MD_Data.ActiveTask.ActiveMatIndex = self.SelectedItems.Item[0].Index + 1
 
         if (MD_Data.ActiveTaskAddIndex != self.SelectedItems.Item[0].Index + 1) then
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
+            
             MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
         )
 
         if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
+
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
     )
 
     on lv_add MouseDoubleClick self arg do
@@ -496,7 +505,7 @@ rollout rlt_catalog_tasks "Catalog"
             "Set Work State":(
                 try ClearTrashLayers() catch()
                 
-                MD_Data.CreateWorkState()
+                MD_Data.CreateWorkState MD_Data.ActiveTask
                 -- MD_Icon.Create()
 
                 -- Если имеются ранее сохранённые рабочие файлы

@@ -66,61 +66,61 @@ groupBox 'grp_02' " Masks: " width:(dlg_load_textures.width - 10) height:108 ali
         if textures[1] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[1]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = bm
-            showproperties MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex]
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = bm
+            showproperties MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex]
             -- bm.rgbOutput - Alpha
             -- bm.coords.mapChannel
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].diffuseMap = undefined
 
         if textures[2] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[2]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = bm
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].specularMap = bm
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].specularMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].specularMap = undefined
 
         if textures[3] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[3]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = bm
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = bm
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].bumpMap = undefined
 
         if textures[4] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[4]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = bm
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = bm
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].glossinessMap = undefined
 
         if textures[5] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[5]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = bm
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMapEnable = off
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = bm
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].selfillumMapEnable = off
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].selfillumMap = undefined
 
         if textures[6] != undefined then 
         (
             bm = Bitmaptexture fileName:textures[6]
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = bm
-            MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMapEnable = off
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = bm
+            MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].opacityMapEnable = off
             bm.reload()
         )
-        else MD_Data.ActiveTask.Material.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = undefined
+        else MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList[MD_Data.ActiveTaskAddIndex].opacityMap = undefined
 
-        -- append MatLib MD_Data.InWorkTask.Material
-        MD_Data.ActiveTask.MatLib[1] = MD_Data.ActiveTask.Material
+        -- append MatLib MD_Data.InWorkTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat
+        MD_Data.ActiveTask.MatLib[1] = MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat
         saveTempMaterialLibrary MD_Data.ActiveTask.MatLib MD_Data.ActiveTask.MatLibFile
         MD_Data.ActiveTask.MatLib = loadTempMaterialLibrary MD_Data.ActiveTask.MatLibFile
-        MD_Data.ActiveTask.Material = MD_Data.ActiveTask.MatLib[1]
+        MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat = MD_Data.ActiveTask.MatLib[1]
         UpdateSceneMaterialLib()
         actionMan.executeAction 0 "63545" -- Views: Viewport Materials Display as Shaded with Maps
 
@@ -133,7 +133,7 @@ groupBox 'grp_02' " Masks: " width:(dlg_load_textures.width - 10) height:108 ali
             (
                 try(
                     if obj == MD_Data.InWorkTask.MainMesh or obj == MD_Data.InWorkTask.AddMesh then
-                    MD_Data.AssignMaterial obj
+                    MD_Data.AssignMaterial obj MD_Data.ActiveTask.ActiveMatIndex
                 )catch()
             )
         )
@@ -242,7 +242,7 @@ groupBox 'grp_02' " Masks: " width:(dlg_load_textures.width - 10) height:108 ali
         )catch()
 
         MD_Callbacks.Add()
-        mat = MD_Data.ActiveTask.Material
+        mat = MD_Data.ActiveTask.MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat
         mat_ids = for i = 1 to mat.materialList.count collect i as string
         lst_mat_id.items = mat_ids
         InitExistTextures()

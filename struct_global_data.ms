@@ -40,7 +40,8 @@ struct GlobalData
 	LoadState = false, -- Был ли загружен rlt_catalog_tasks 
 	ProjectsRollLoadState = false, -- Был ли загружен rlt_projects_tasks 
 	Users = #(), 
-	 
+	LoadWorkHashSum = 0,
+
 	fn AssignMatID obj = 
 	( 
 		try( 
@@ -52,11 +53,11 @@ struct GlobalData
 		)catch()  
 	), 
 
-	fn AssignMaterial obj = 
+	fn AssignMaterial obj mat_index= 
 	( 
 		try( 
 			subobjectLevel = 0 
-			obj.Material = MD_Data.ActiveTask.Material 
+			obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat 
 			CompleteRedraw()  
 		)catch()  
 	), 
@@ -76,7 +77,7 @@ struct GlobalData
 	-- 	)
 
 	-- 	try(	
-	-- 		MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
+	-- 		MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList.count = mat_ids.count
 	-- 		local m_name = "Material_" + (formattedPrint 1 format:#02d)
 			
 	-- 		for i = 1 to mat_ids.count do
@@ -85,12 +86,12 @@ struct GlobalData
 	-- 			mat.materialList[i].Diffuse = CLR_PALETTE_1[i]
 	-- 			mat.materialList[i].Name = m_name
 	-- 		)
-	-- 		obj.Material = MD_Data.ActiveTask.Material 
+	-- 		obj.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat 
 	-- 	)catch()
 	-- 	CompleteRedraw() 
 	-- ), 
 
-	fn UpdateMaterial obj = 
+	fn UpdateMaterial obj mat_index = 
 	(
 		local mat_ids = #() 
 		local all_faces = 0
@@ -106,19 +107,27 @@ struct GlobalData
 			)
 		)
 
-		MD_Data.ActiveTask.Material.materialList.count = mat_ids.count
+		MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList.count = mat_ids.count
+		MD_Data.ActiveTask.Materials[mat_index].MultiMat.Name = MD_Data.ActiveTask.Materials[mat_index].Article
 
-		try(
+		-- try(
 			for i = 1 to mat_ids.count do
 			(
-				MD_Data.ActiveTask.Material.materialList[i] = Standardmaterial()
-				MD_Data.ActiveTask.Material.materialList[i].Diffuse = CLR_PALETTE_1[i]
-				m_name = "Material_" + (formattedPrint i format:#02d)
-				MD_Data.ActiveTask.Material.materialList[i].Name = m_name
+				local mat = MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList[i]
+				local m_name = "Material_" + (formattedPrint i format:#02d)
+				
+				if classOf mat != Standardmaterial then 
+				(
+					mat = Standardmaterial()
+					MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList[i] = mat
+				)				
+				mat.Name = m_name
+				mat.Diffuse = CLR_PALETTE_1[i]
 			)
-			MD_Data.ActiveTask.Material.materialIDList = mat_ids
-			obj.Material = MD_Data.ActiveTask.Material
-		)catch()
+
+			MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialIDList = mat_ids
+			-- obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat
+		-- )catch()
 
 		CompleteRedraw() 
 	),
@@ -133,12 +142,12 @@ struct GlobalData
 		local mat_ids = uv_count = #() 
 		local val = true 
 		local msg = "" 
-		local valids = #("X", "X", "X", "X", "X", "X", "X") 
+		local valids = #("X", "X", "X", "X", "X", "X") -- Для валидации декали нужно добавить ещё один "X"
 		local objs = #(InWorkTask.MainMesh, InWorkTask.AddMesh) 
 
 		-- Check count 
 		if InWorkTask.SizeTrans == undefined then 
-		( 
+		(
 			if WorkLayerNodes.count == 1 and InWorkTask.MainMesh != undefined and InWorkTask.AddMesh == undefined then 
 			( 
 				valids[1] = "OK" 
@@ -147,12 +156,12 @@ struct GlobalData
 		)else if WorkLayerNodes.count == 2 and InWorkTask.MainMesh != undefined and InWorkTask.AddMesh != undefined then 
 		( 
 			valids[1] = "OK" 
-			obj = objs[MD_Data.InWorkTask.ActiveMeshIndex] 
+			obj = objs[MD_Data.InWorkTask.ActiveMeshIndex]
 		) 
 		else (msg = "Слой задания содержит более одного объекта.") 
 		 
 		if obj != undefined and not (isdeleted obj) then 
-		( 
+		(
 			if superClassOf obj == GeometryClass then 
 			( 
 				valids[2] = "OK" 
@@ -164,27 +173,30 @@ struct GlobalData
 				( 
 					valids[3] = "OK" 
 					 
-				)else (msg = "Расположение или размеры объекта не соответствуют габаритному контейнеру.") 
-				 
-				-- Check material 
-				if this.ActiveTask.material != undefined then 
-				( 
-					-- Check submaterials count 
-					sub_mats_count = 0 
-					try(sub_mats_count = this.ActiveTask.material.count)catch()  
-					if (InWorkTask.Group == undefined and this.ActiveTask.material.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) or \ 
-					(InWorkTask.Group == this.ActiveTask.Group and this.ActiveTask.Material.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) then 
-					( 
-						valids[4] = "OK" 
-						 
-						-- Check material id count 
-						mat_ids = GetMaterialIDList obj 
-						if mat_ids.count >= this.ActiveTask.Materials.count then 
-						( 
-							valids[5] = "OK" 
-						)else (msg = "Количество material IDs объекта не соответствует заданию.") 
-					)else (msg = "На объект назначен некорректный материал.") 
-				)else (msg = "На объект не назначен материал.") 
+				)else (msg = "Расположение или размеры объекта не соответствуют габаритному контейнеру.")
+
+				-- Check submaterials count
+				local sub_mats_count, sub_mats_count, main_mesh_uvs
+				try sub_mats_count = this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.count catch()
+				try main_mesh_uvs = (GetMaterialIDList this.ActiveTask.MainMesh).count catch()
+				try local add_mesh_uvs = (GetMaterialIDList this.ActiveTask.AddMesh).count catch()
+
+				-- Material
+				if this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat != undefined and \
+				(classof this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat == Multimaterial) then 
+				(
+					valids[4] = "OK" 
+					-- try(sub_mats_count = this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.count)catch()  
+					-- if (InWorkTask.Group == undefined and this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) or \ 
+					-- (InWorkTask.Group == this.ActiveTask.Group and this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) then 
+					if (this.ActiveTask.AddMesh == undefined and main_mesh_uvs == sub_mats_count) or \
+					(this.ActiveTask.AddMesh != undefined and main_mesh_uvs == sub_mats_count and add_mesh_uvs == sub_mats_count) then
+					(
+						-- Material ID
+						valids[5] = "OK"
+					)else (msg = "На объект назначен некорректный материал.\nКоличество material ID объекта не соответствует количеству материалов.") 
+				)else (msg = "На объект не назначен материал.")
+
 				 
 				-- Check uv channels count 
 				uv_count = GetNumUVChannels obj 
@@ -193,14 +205,13 @@ struct GlobalData
 					valids[6] = "OK"  
 				)else(msg = "Объект должен содержать хотя бы один UV канал.") 
 
-				-- Check icon 
-				 
+				-- Check decal 	 
 				if this.ActiveCategoryIcon.Icon != undefined then 
 				( 
 					valids[7] = "OK"  
-				)else(msg = "Для данной категории необходима иконка.") 
+				)else(msg = "Для данной категории необходима декаль.") 
 
-			)else (msg = "Объект должен иметь тип Geometry.") 
+			)else (msg = "Класс объекта должен быть Geometry.") 
 		) 
 		 
 		for v in valids where v == "X" do (val = false; exit) 
@@ -312,19 +323,22 @@ struct GlobalData
 	fn CreateWorkLayer = 
 	( 
 		try ( 
-			if InWorkTask.Group == undefined then 
-			( 
+			-- if InWorkTask.Group == undefined then 
+			-- ( 
 				LayerManager.newLayerFromName InWorkTask.Article 
-				WorkLayer = LayerManager.getLayerFromName InWorkTask.Article 
-			) 
-			else( 
-				LayerManager.newLayerFromName InWorkTask.Group 
-				WorkLayer = LayerManager.getLayerFromName InWorkTask.Group 
-			) 
+				WorkLayer = LayerManager.getLayerFromName InWorkTask.Article
+				
+			-- ) 
+			-- else
+			-- ( 
+			-- 	LayerManager.newLayerFromName InWorkTask.Group 
+			-- 	WorkLayer = LayerManager.getLayerFromName InWorkTask.Group 
+			-- ) 
 			WorkLayer.on 
 			WorkLayer.current = true 
-		)catch()  
-	), 
+		)catch() 
+
+	),
 
 	fn AttachSelectedToWorkLayer = 
 	( 
@@ -344,7 +358,7 @@ struct GlobalData
 			local nodes 
 			local name_case = InWorkTask.Article 
 
-			if InWorkTask.Group != undefined then name_case = InWorkTask.Group 
+			-- if InWorkTask.Group != undefined then name_case = InWorkTask.Group 
 
 			nodes = GetAllLayerNodes name_case 
 			Delete nodes 
@@ -392,19 +406,19 @@ struct GlobalData
 		) catch()  
 	), 
 
-	fn CreateWorkState = 
+	fn CreateWorkState input_task = 
 	( 
 		try MD_Callbacks.Destruct()  catch()  
 		try this.ExitWorkState()  catch()  
 
-		ActiveTask.State = STATES[2] 
-		ActiveTask.ActiveMeshIndex = 1 
-		InWorkTask = ActiveTask 
-		InWorkTaskFile = ActiveTask.File 
-		try ClearTrashLayers()  catch()  
-		CreateWorkLayer()  
-		AttachSelectedToWorkLayer()  
-		try AttachObjectsToWorkState()  catch()  
+		input_task.State = STATES[2] 
+		input_task.ActiveMeshIndex = 1 
+		this.InWorkTask = input_task
+		this.InWorkTaskFile = input_task.File 
+		try this.ClearTrashLayers()  catch()  
+		this.CreateWorkLayer()  
+		this.AttachSelectedToWorkLayer()  
+		try this.AttachObjectsToWorkState()  catch()  
 
 		try ( 
 			ReadDataFile MD_LIB_DATA_FILE 
@@ -414,20 +428,23 @@ struct GlobalData
 		catch ()  
 		 
 		-- Обновить 
-		ActiveTask.Update()  
-		 
-		local work_tasks = #() 
+		input_task.Update()
 
-		if this.ActiveTask.Group != undefined then 
-		( 
-			work_tasks = for t in this.Tasks where t.Group == this.ActiveTask.Group collect t 
-		) 
-		else work_tasks = #(this.ActiveTask) 
+		-- Создать рабочую папку 
+		if not (doesDirectoryExist InWorkTask.InWorkDir) then MakeDir InWorkTask.InWorkDir
 
-		for t in work_tasks do 
-		( 
+		-- local work_tasks = #()
+
+		-- if input_task.Group != undefined then 
+		-- ( 
+		-- 	work_tasks = for t in this.Tasks where t.Group == input_task.Group collect t 
+		-- ) 
+		-- else work_tasks = #(input_task) 
+
+		-- for t in work_tasks do 
+		-- ( 
 			-- Создать рабочую папку 
-			MakeDir t.InWorkDir 
+			-- MakeDir t.InWorkDir 
 
 			-- Создать материал 
 			-- if DoesFileExist (pathConfig.appendPath t.InWorkDir TASK_MAT_NAME) then 
@@ -435,10 +452,11 @@ struct GlobalData
 			-- 	t.LoadMaterial()  
 				 
 			-- )else t.CreateMaterial()   
-		) 
+		-- ) 
+
 		try MD_Callbacks.Add() catch() 
 
-		-- Иконка 
+		-- Установить иконку (декаль) 
 		local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME 
 
 		if (DoesFileExist icon_file) then  
@@ -597,14 +615,14 @@ struct GlobalData
 				local mesh_name = "" 
 				this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name 
 
-				if this.InWorkTask.Group == undefined then  
-				( 
+				-- if this.InWorkTask.Group == undefined then  
+				-- ( 
 					mesh_name = this.InWorkTask.Article 
-				) 
-				else  
-				( 
-					mesh_name = this.InWorkTask.Group 
-				) 
+				-- ) 
+				-- else  
+				-- ( 
+				-- 	mesh_name = this.InWorkTask.Group 
+				-- ) 
 
 				for task_obj in this.WorkLayerNodes where task_obj.name == mesh_name do 
 				( 
@@ -615,8 +633,8 @@ struct GlobalData
 				this.InWorkTask.MainMesh = obj 
 				this.InWorkTask.MainMesh.Name = mesh_name 
 				this.ActiveTask.ActiveMeshIndex = 1 
-				-- this.InWorkTask.MainMesh.Material = this.InWorkTask.Material
-				this.InWorkTask.Material = undefined
+				-- this.InWorkTask.MainMesh.Material = this.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat
+				-- this.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat = undefined
 			)	 
 
 			if this.InWorkTask.MainMesh == this.InWorkTask.AddMesh then 
@@ -644,14 +662,14 @@ struct GlobalData
 				local mesh_name = "" 
 				this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name 
 
-				if this.InWorkTask.Group == undefined then  
-				( 
+				-- if this.InWorkTask.Group == undefined then  
+				-- ( 
 					mesh_name = this.InWorkTask.Article 
-				) 
-				else  
-				( 
-					mesh_name = this.InWorkTask.Group 
-				) 
+				-- ) 
+				-- else  
+				-- ( 
+				-- 	mesh_name = this.InWorkTask.Group 
+				-- ) 
 
 				for task_obj in this.WorkLayerNodes where task_obj.name == (mesh_name + TRANS_POSTFIX) do 
 				( 
@@ -663,7 +681,7 @@ struct GlobalData
 				this.InWorkTask.AddMesh = obj 
 				this.InWorkTask.AddMesh.Name = mesh_name + TRANS_POSTFIX 
 				obj.IsHidden = False 
-				this.ActiveTask.AddMesh.Material = this.InWorkTask.Material 
+				this.ActiveTask.AddMesh.Material = this.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat 
 				this.ActiveTask.ActiveMeshIndex = 2 
 			) 
 
@@ -676,7 +694,7 @@ struct GlobalData
 	), 
 
 	fn ExportTask = 
-	( 
+	(
 		local valid_result = validation()  
 		local objs = #() 
 		local cur_obj_names = #() 
@@ -704,11 +722,11 @@ struct GlobalData
 
 			with redraw off  
 			( 
-				if InWorkTask.Group != undefined then 
-				( 
-					objs[1].name = ActiveTask.Article 
-					try objs[2].name = (ActiveTask.Article + TRANS_POSTFIX) catch()  
-				) 
+				-- if InWorkTask.Group != undefined then 
+				-- ( 
+				-- 	objs[1].name = ActiveTask.Article 
+				-- 	try objs[2].name = (ActiveTask.Article + TRANS_POSTFIX) catch()  
+				-- ) 
 
 				try( 
 					SaveSelectedObjects objs save_max_path 
@@ -718,11 +736,11 @@ struct GlobalData
 					ExportToFBX objs save_fbx_path 
 				)catch(MD_Log.Error "Не удалось экспортировать задание!") 
 
-				if InWorkTask.Group != undefined then 
-				( 
-					objs[1].name = cur_obj_names[1] 
-					try objs[2].name = cur_obj_names[2] catch()  
-				) 
+				-- if InWorkTask.Group != undefined then 
+				-- ( 
+				-- 	objs[1].name = cur_obj_names[1] 
+				-- 	try objs[2].name = cur_obj_names[2] catch()  
+				-- ) 
 			) 
 
 			for obj in objs do  
@@ -758,15 +776,18 @@ struct GlobalData
 	( 
 		try ( 
 			this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name 
+			local current_hash = getHashCodeFromObjects this.WorkLayerNodes
 
-			if MD_Data.InWorkTask != undefined and WorkLayerNodes.count != 0 then 
+			if MD_Data.InWorkTask != undefined and WorkLayerNodes.count != 0 and MD_Data.LoadWorkHashSum != current_hash then 
 			( 
-				if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nСохранить работу перед удалением?" title:"Внимание!" icon:#question) then 
-				InWorkTask.SaveWork()  
+				if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nПродолжить?" title:"Внимание!" icon:#question) then
+				(
+					MD_Data.LoadWorkHashSum = 0
+					delete WorkLayerNodes
+					CompleteRedraw()
+					gc() 
+				)
 			) 
-
-			delete WorkLayerNodes 
-			gc()  
 		) catch()  
 	), 
 
@@ -793,7 +814,7 @@ struct GlobalData
 				case ActiveTask.State of 
 				( 
 					(STATES[1]): ()  
-					(STATES[2]):(CreateWorkState()) 
+					(STATES[2]):(CreateWorkState ActiveTask) 
 					(STATES[3]): ()  
 					(STATES[4]): ()  
 				) 
@@ -876,7 +897,7 @@ struct GlobalData
 		try this.ActiveTask = this.Tasks[this.ActiveTaskIndex] catch()  
 
 		-- Обновить интерфейс 
-		try MD_UI.FillMainList()  catch()  
+		try MD_UI.FillMainList()  catch()
 		try MD_UI.FillAddList()  catch()  
 		try MD_UI.UpdateCatalogTasksRlt()  catch()  
 		try MD_UI.UpdateCatalogInfoRlt()  catch()  

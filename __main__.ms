@@ -90,7 +90,6 @@
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = undefined
         -- MD_Data.Update()
-        -- MD_Data.FullUpdate()
         MD_UI.FillCategoriesLists()
         try MD_BBox.Update() catch()
 
@@ -109,6 +108,11 @@
 		(
             local exist_task_index = undefined
 
+            -- for t in MD_Data.Tasks do
+            -- (
+            --     if t.State == STATES[2] then MD_Data.InWorkTask = t  
+            -- )
+
             try (exist_task_index = execute (GetINISetting MDT_CONFIG_FILE MD_UI.TasksCatalogRoll.Name (MD_UI.CatalogListMain.name + "_selection")) + 1) catch()
 
             if exist_task_index != undefined and exist_task_index > 0 then
@@ -122,7 +126,7 @@
                 if MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
                     -- Создать рабочее состояние
-                    MD_Data.CreateWorkState()
+                    try MD_Data.CreateWorkState MD_Data.InWorkTask catch()
 
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
                     if MD_UI.SettingsRoll.ckbx_load_last.checked then
@@ -146,8 +150,6 @@
         MD_Data.FullUpdate()
         MD_UI.Init()
 
-        -- Создать рабочий слой, если есть задание в работе
-        try if MD_Data.InWorkTask.file != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
 
         -- Обновить рабочий слой, если он есть
         if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
@@ -158,12 +160,15 @@
         if MD_Data.ActiveTaskIndex == undefined then try MD_UI.CatalogListMain.Items.Item[0].selected = true catch()
 
         
-
+        -- Отображение слоёв с учётом наличия группы
         try (
             if MD_Data.InWorkTask != undefined then
             (
+                MD_Data.CreateWorkLayer()
                 if MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
-                MD_Data.ShowLayers mode:#work_only
+                (
+                    MD_Data.ShowLayers mode:#work_only
+                )
             )
         )catch()
         
@@ -194,8 +199,22 @@
         --     MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         -- )catch()
 
+        -- Создать рабочий слой, если есть задание в работе
+        -- try if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch(print "ass")
+
+        for t in MD_Data.Tasks do
+        (
+            if t.State == STATES[2] then MD_Data.InWorkTask = t
+            try MD_Data.CreateWorkLayer() catch()
+
+            if MD_Data.InWorkTask == MD_Data.ActiveTask then
+            MD_Data.ShowLayers mode:#work_only else
+            MD_Data.ShowLayers mode:#scene_only 
+        )
+
         -- Добавить функции обратного вызова
         try MD_Callbacks.Add() catch()
+
     )
     else
     (

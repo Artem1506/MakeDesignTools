@@ -634,3 +634,74 @@ fn MoveVertsInNamedSet obj set_name offset =
 		polyop.setvert obj i (cur_pos + offset)
 	)
 )
+
+fn getNumUVChannels obj = 
+(
+	local uv_count = 0
+
+	if classof obj == Editable_Poly then
+	(
+		for i in 1 to polyOp.getNumMaps obj do
+		if polyOp.getMapSupport obj i then uv_count += 1
+	)
+	else if classof obj == editable_mesh then
+	(
+		for i in 1 to meshOp.getNumMaps obj do
+		if meshOp.getMapSupport obj i then uv_count += 1
+	)
+	
+	uv_count
+)
+
+fn getHashCodeFromObjects objs = 
+(
+	local hashStr = stringstream ""
+	local verts_arr = #()
+	local mat_ids = #()
+	local uvs_count = 0
+	
+	for obj in objs do 
+	(
+		print obj.name to:hashStr
+		print obj.transform to:hashStr
+		print (classOf obj) to:hashStr
+		uvs_count = getNumUVChannels obj
+		print uvs_count to:hashStr
+		if classOf obj == Editable_Poly do
+		(
+			verts_arr = for v in obj.verts collect v.pos
+			print verts_arr to:hashStr
+
+			all_faces = polyop.getNumFaces obj 
+			for i = 1 to all_faces do
+			( 
+				mat_id = polyop.getFaceMatID obj i
+				appendifunique mat_ids mat_id
+			)
+			print mat_ids to:hashStr
+		)
+		if classOf obj == Editable_mesh then
+		(
+			verts_arr = for v in obj.verts collect v.pos
+			print verts_arr to:hashStr			
+		)
+		else if superclassOf obj == shape then
+		(
+			print (numKnots obj) to:hashStr
+		)
+		try(
+			for i = 1 to uvs_count do
+			(
+				uvs_arr = for n = 1 to obj.verts.count collect meshop.getMapVert obj.mesh i n
+				print uvs_arr to:hashStr
+			)
+		)catch()
+		print (obj.min) to:hashStr
+		print (obj.max) to:hashStr
+		print (obj.material) to:hashStr
+		print (obj.modifiers) to:hashStr
+		if obj.parent != undefined then print obj.parent.name to:hashStr
+	)
+	
+	(dotNetObject "System.String" hashStr).GetHashCode()
+)

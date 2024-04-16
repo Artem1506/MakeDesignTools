@@ -1,16 +1,18 @@
 
 rollout rlt_catalog_general "General"
 (
-    groupBox 'grp_01' " Common: " width:(rlt_catalog_general.width - 8) height:97 align:#center offset:[0, -4]
-    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -82] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_01
-    button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -82] enabled:false tooltip:MD_Tooltips.tools_cat_11_a
-    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    groupBox 'grp_01' " Layers: " width:(rlt_catalog_general.width - 8) height:97 align:#center offset:[0, -4]
+    button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -83] enabled:false tooltip:MD_Tooltips.tools_cat_11_a
+    button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_01
+    
     -- button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_03
-	checkbutton 'btn_edit_icon' "Edit Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
+	-- checkbutton 'btn_edit_icon' "Edit Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
+	button 'btn_clear' "Clear Work Layer" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:true
 
-    groupBox 'grp_02' " Mesh: " width:(rlt_catalog_general.width - 8) height:72 align:#center offset:[0, 4]
-    button 'btn_main_mesh' "Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -57] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_add_mesh' "Additional Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -57] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    groupBox 'grp_02' " Meshes: " width:(rlt_catalog_general.width - 8) height:97 align:#center offset:[0, 4]
+    button 'btn_set_pivot' "Set Pivot" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -83] enabled:false tooltip:MD_Tooltips.tools_cat_02
+    button 'btn_main_mesh' "Set Main Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
+    button 'btn_add_mesh' "Set Add Mesh" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
    
     groupBox 'grp_03' " Material: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 4]
@@ -18,42 +20,50 @@ rollout rlt_catalog_general "General"
     button 'btn_set_texture' "Set Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     -- button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
 
-    groupBox 'grp_04' " Files: " width:(rlt_catalog_general.width - 8) height:82 align:#center offset:[0, 4]
-    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16, -67] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
-    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
-    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, -67] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
-    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_2 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_10
+    groupBox 'grp_04' " Working Files: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 5]
+    button 'btn_save_work' "Save Work" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[16, -34] across:3 enabled:false tooltip:MD_Tooltips.tools_cat_05
+    button 'btn_load_work' "Load Last" width:(CTRL_WIDTH_02 - CTRL_HEIGHT_1 - 4) height:CTRL_HEIGHT_1 align:#center offset:[44, -34] enabled:false tooltip:MD_Tooltips.tools_cat_06_a
+    button 'btn_work_list' "…" width:CTRL_HEIGHT_1 height:CTRL_HEIGHT_1 align:#center offset:[30, -34] enabled:false tooltip:MD_Tooltips.tools_cat_06_b
+    button 'btn_export' "Validation And Export" width:CTRL_WIDTH_1 height:CTRL_HEIGHT_2 align:#center offset:[1, 8] enabled:false tooltip:MD_Tooltips.tools_cat_10
 
     -- button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
 
     on rlt_catalog_general open do
     (
-        rlt_catalog_general.height = 350
+        -- rlt_catalog_general.height = 350
     )
     
     on rlt_catalog_general close do
     (
-        -- SetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name
+        SetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name
     )
 
     on btn_update_mat pressed do
     (
-        try(
-            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
-            ( 
-                MD_Data.InWorkTask.LoadMaterial()  
+        -- try(
+            
+            for i = 1 to MD_Data.InWorkTask.Materials.Count do
+            (
+                MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
+                MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh i
+                -- try MD_Data.UpdateMaterial MD_Data.InWorkTask.AddMesh i catch()
+                try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
+            )
+            -- if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+            -- ( 
+            --     MD_Data.InWorkTask.LoadMaterial()  
                     
-            )else MD_Data.InWorkTask.CreateMaterial()
+            -- )else MD_Data.InWorkTask.CreateMaterial()
             -- Set material
             
-            MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
-            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
-        )catch()
+            -- MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
+            -- MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
+        -- )catch()
     )
 
     on btn_vis_switch pressed do
     (
-        MD_Data.CreateWorkLayer()
+        -- MD_Data.CreateWorkLayer()
         case btn_vis_switch.text of
         (
             "Show All Layers":(
@@ -74,17 +84,27 @@ rollout rlt_catalog_general "General"
         MD_Data.SetMesh selection[1]
         MD_UI.UpdateCatalogGeneralRlt()
         try MD_BBox.Update() catch()
-        try(
-            if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
-            ( 
-                MD_Data.InWorkTask.LoadMaterial()  
+
+        for i = 1 to MD_Data.InWorkTask.Materials.Count do
+        (
+            -- MD_Data.InWorkTask.Materials[i].MultiMat
+            MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
+            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh i
+            -- try MD_Data.UpdateMaterial MD_Data.InWorkTask.AddMesh i catch()
+            try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
+        )
+
+        -- try(
+        --     if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
+        --     ( 
+        --         MD_Data.InWorkTask.LoadMaterial()  
                     
-            )else MD_Data.InWorkTask.CreateMaterial()
-            -- Set material
+        --     )else MD_Data.InWorkTask.CreateMaterial()
+        --     -- Set material
             
-            MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
-            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
-        )catch()
+        --     MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
+        --     MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
+        -- )catch()
     )
 
     on btn_add_mesh pressed do
@@ -155,10 +175,10 @@ rollout rlt_catalog_general "General"
 
     on btn_load_work pressed do
     (
-        if MD_Data.ActiveTask.Group == undefined then
-        (
+        -- if MD_Data.ActiveTask.Group == undefined then
+        -- (
             MD_Data.CreateWorkLayer()
-        )
+        -- )
 
         MD_Data.InWorkTask.LoadWork \
         MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:false
@@ -189,65 +209,74 @@ rollout rlt_catalog_general "General"
     (
         MD_Data.AttachSelectedToWorkLayer()
         MD_Data.ShowLayers mode:#work_only
+
+        -- MD_Data.ShowLayers mode:#work_only
+        btn_vis_switch.text = "Show All Layers"
+        btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
     )
 
-	on btn_edit_icon changed arg do
-	(
-		case arg of
-		(
-			true:(
-                MD_Callbacks.Destruct()
+	-- on btn_edit_icon changed arg do
+	-- (
+	-- 	case arg of
+	-- 	(
+	-- 		true:(
+    --             MD_Callbacks.Destruct()
 
-				MD_BBox.Layer.on = false
-				MD_BBox.Layer.lock = false
-				MD_BBox.Layer.ishidden = false
-				MD_BBox.Layer.current = true
+	-- 			MD_BBox.Layer.on = false
+	-- 			MD_BBox.Layer.lock = false
+	-- 			MD_BBox.Layer.ishidden = false
+	-- 			MD_BBox.Layer.current = true
 
-                for i = 0 to LayerManager.count - 1 do
-				(
-					lr = LayerManager.getLayer i
-					if lr != MD_BBox.Layer then lr.ishidden = true
-				)
+    --             for i = 0 to LayerManager.count - 1 do
+	-- 			(
+	-- 				lr = LayerManager.getLayer i
+	-- 				if lr != MD_BBox.Layer then lr.ishidden = true
+	-- 			)
 
-				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = false
-				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = false
-				for ctrl in MD_UI.GeneralCatalogRoll.Controls do ctrl.enabled = false
-                btn_edit_icon.enabled = true
+	-- 			for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = false
+	-- 			for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = false
+	-- 			for ctrl in MD_UI.GeneralCatalogRoll.Controls do ctrl.enabled = false
+    --             btn_edit_icon.enabled = true
 
-                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = false catch()
-                try select MD_Data.ActiveCategoryIcon.Icon catch()
-                max modify mode
-                subobjectLevel = 1
-                -- try (polyop.setVertSelection MD_Data.ActiveCategoryIcon.Icon #{}) catch()
-			)
-			false:(
-                try MD_BBox.Update() catch()
+    --             try MD_Data.ActiveCategoryIcon.Icon.IsHidden = false catch()
+    --             try select MD_Data.ActiveCategoryIcon.Icon catch()
+    --             max modify mode
+    --             subobjectLevel = 1
+    --             -- try (polyop.setVertSelection MD_Data.ActiveCategoryIcon.Icon #{}) catch()
+	-- 		)
+	-- 		false:(
+    --             try MD_BBox.Update() catch()
 
-                try MD_Data.ActiveCategoryIcon.Icon.IsHidden = not MD_UI.SettingsRoll.ckbx_show_icon.checked catch()
+    --             try MD_Data.ActiveCategoryIcon.Icon.IsHidden = not MD_UI.SettingsRoll.ckbx_show_icon.checked catch()
 
-				if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
-				MD_Data.ShowLayers mode:#work_only else MD_Data.ShowLayers mode:#scene_only
+	-- 			if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
+	-- 			MD_Data.ShowLayers mode:#work_only else MD_Data.ShowLayers mode:#scene_only
 
-				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
-				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = true
-				MD_UI.UpdateCatalogTasksRlt()
-				MD_UI.UpdateCatalogGeneralRlt()
+	-- 			for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
+	-- 			for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = true
+	-- 			MD_UI.UpdateCatalogTasksRlt()
+	-- 			MD_UI.UpdateCatalogGeneralRlt()
                 
-                -- Сохранить дефолтную иконку для текущей категории
-                local file_path = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME
-                gc()
-                save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
+    --             -- Сохранить дефолтную иконку для текущей категории
+    --             local file_path = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME
+    --             gc()
+    --             save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
                 
-                -- MD_Callbacks.Add()
-			)
-		)
-		completeRedraw()
-		MD_Data.edit_icon_mode = arg
-	)
+    --             -- MD_Callbacks.Add()
+	-- 		)
+	-- 	)
+	-- 	completeRedraw()
+	-- 	MD_Data.edit_icon_mode = arg
+	-- )
 
     on btn_set_texture pressed do
     (
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
         CreateDialog MD_UI.Dialogs.LoadTextures modal:false
+    )
+
+    on btn_clear pressed do
+    (
+        MD_Data.ClearWorkLayer()
     )
 )

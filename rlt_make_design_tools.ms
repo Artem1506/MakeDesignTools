@@ -30,8 +30,10 @@ rollout rlt_make_design_tools ("MDT_ContentMaker v" + version)
         SetINISettings MD_UI.SettingsRoll MDT_CONFIG_FILE MD_UI.SettingsRoll.name
         SetINISettings MD_UI.TasksCatalogRoll MDT_CONFIG_FILE MD_UI.TasksCatalogRoll.name include_list:#(MD_UI.TasksCatalogRoll.lst_basic_catalog, MD_UI.TasksCatalogRoll.lst_sub_catalog, MD_UI.TasksCatalogRoll.lv_main)
         -- SetINISettings MD_UI.InfoCatalogRoll MDT_CONFIG_FILE MD_UI.InfoCatalogRoll.name onlyRollState:true
-        try SetINISettings MD_UI.ToolsCatalogRoll MDT_CONFIG_FILE MD_UI.ToolsCatalogRoll.name onlyRollState:true catch()
-        SetINISettings MD_UI.GeneralCatalogRoll MDT_CONFIG_FILE MD_UI.GeneralCatalogRoll.name onlyRollState:true
+        -- try SetINISettings MD_UI.ToolsCatalogRoll MDT_CONFIG_FILE MD_UI.ToolsCatalogRoll.name onlyRollState:true catch()
+        -- SetINISettings MD_UI.GeneralCatalogRoll MDT_CONFIG_FILE MD_UI.GeneralCatalogRoll.name onlyRollState:true
+        SetINISettings MD_UI.ToolsCatalogRoll MDT_CONFIG_FILE MD_UI.ToolsCatalogRoll.name
+        SetINISettings MD_UI.GeneralCatalogRoll MDT_CONFIG_FILE MD_UI.GeneralCatalogRoll.name
 
         -- Очистить рабочую сцену
         try MD_Callbacks.Destruct() catch()

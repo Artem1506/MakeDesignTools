@@ -6,8 +6,8 @@ struct Task
 	DateCreate = undefined,
 	Object = undefined,
 	WebSite = undefined,
-	Materials = #(),
-	Material = undefined,
+	Materials = #(), -- Array of TaskMaterials
+	-- Material = undefined,
 	MatLib = undefined,
 	State = STATES[1],
 	Pivot = undefined,
@@ -97,16 +97,16 @@ struct Task
         -- saveMaterialLibrary MatLibFile
 	),
 
-	fn LoadMaterial mat_index =
-	(
-		try
-		(
-			this.Material = (loadMaterialLibrary MatLibFile)[mat_index]
-			-- MatLib = loadTempMaterialLibrary MatLibFile
-			-- this.Material = MatLib[1]
-		)
-		catch(this.Material = undefined)
-	),
+	-- fn LoadMaterial mat_index =
+	-- (
+	-- 	try
+	-- 	(
+	-- 		this.Material = (loadMaterialLibrary MatLibFile)[mat_index]
+	-- 		-- MatLib = loadTempMaterialLibrary MatLibFile
+	-- 		-- this.Material = MatLib[1]
+	-- 	)
+	-- 	catch(this.Material = undefined)
+	-- ),
 
 	fn LoadWork saved_file quiet_mode:true =
 	(
@@ -136,43 +136,62 @@ struct Task
 
 		merged_objs = getLastMergedNodes()
 
+		-- Если кол-во смердженных объектов не равно нулю
 		if merged_objs.count != 0 then
 		(
+			MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 			for obj in merged_objs do
 			(
 				if MD_Data.InWorkTask != undefined then
 				(
-					if MD_Data.InWorkTask.Group == undefined then 
-					(
+					local mat_lib_file = (filterString saved_file ".")[1] + ".mat"
+					local mat_lib = loadTempMaterialLibrary mat_lib_file
+
+					-- MD_Data.InWorkTask.Materials = undefined
+					try(
+						for i = 1 to mat_lib.count do MD_Data.InWorkTask.Materials[i].MultiMat = mat_lib[i]
+					)catch()
+
+					-- if MD_Data.InWorkTask.Group == undefined then 
+					-- (
 						if obj.name == MD_Data.InWorkTask.Article then
 						(
 							MD_Data.InWorkTask.MainMesh = obj
-							MD_Data.AssignMaterial obj
+							try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
 						)
 						if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
 						(
 							MD_Data.InWorkTask.AddMesh = obj
-							MD_Data.AssignMaterial obj
+							try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
 						)						
-					)else(
-						if obj.name == MD_Data.InWorkTask.Group then
-						(
-							MD_Data.InWorkTask.MainMesh = obj
-							MD_Data.AssignMaterial obj
-						)
-						if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
-						(
-							MD_Data.InWorkTask.AddMesh = obj
-							MD_Data.AssignMaterial obj
-						)	
-					)
+					-- )
+					-- else
+					-- (
+					-- 	if obj.name == MD_Data.InWorkTask.Group then
+					-- 	(
+					-- 		MD_Data.InWorkTask.MainMesh = obj
+					-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+					-- 	)
+					-- 	if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
+					-- 	(
+					-- 		MD_Data.InWorkTask.AddMesh = obj
+					-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+					-- 	)	
+					-- )
 				)
 			)
 			-- try (select MD_Data.InWorkTask.MainMesh) catch()
-			load_result = true		
+			load_result = true
+			
+			-- Генерация хэш суммы
+			MD_Data.LoadWorkHashSum = getHashCodeFromObjects MD_Data.WorkLayerNodes
 		)
-		else try (select cur_sel_objs) catch()
-		
+		else 
+		(
+			(try (select cur_sel_objs) catch())
+			-- MD_Data.LoadWorkHashSum = 0
+		)
+
 		completeRedraw()
 
 		-- MD_Callbacks.Add()
@@ -188,14 +207,21 @@ struct Task
 		local file_path
 		local prev_file
 		local save_dir
-		
-		if MD_Data.WorkLayerNodes.count != 0 then
+		local current_hash = getHashCodeFromObjects MD_Data.WorkLayerNodes
+		local saved = true
+
+		if MD_Data.LoadWorkHashSum == current_hash then
 		(
-			if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
-			(
-				msg = "Будут сохранены только объекты находящиеся на рабочем слое!"
-				messageBox msg title:"Warning!" icon:#warning
-			)
+			if not (queryBox "Рабочий слой не содержит изменений!\nВсё равно сохранить файл?" title:"Внимание!" icon:#question) then saved = false		
+		)
+
+		if MD_Data.WorkLayerNodes.count != 0 and saved then
+		(
+			-- if ((objects.count - MD_Data.TempLayerNodes.count) > MD_Data.WorkLayerNodes.count) then
+			-- (
+			-- 	msg = "На сцене имеются объекты вне рабочего слоя.\nБудут сохранены только объекты находящиеся на рабочем слое!"
+			-- 	messageBox msg title:"Warning!" icon:#warning
+			-- )
 			-- else
 			-- (
 				local index
@@ -234,16 +260,23 @@ struct Task
 				local file_name = (SAVED_FILE_NAME + "_" + index)
 				local task_file = MD_Data.InWorkTask.File
 				local task_dir = pathConfig.removePathLeaf (pathConfig.removePathLeaf task_file)
+				local mat_lib = materialLibrary()
 
-				if Group == undefined then save_dir = pathConfig.appendPath task_dir TASK_INNER_DIRS[3]
-				else save_dir = MD_Data.InWorkTask.GroupDir
+				-- if Group == undefined then 
+				save_dir = pathConfig.appendPath task_dir TASK_INNER_DIRS[3]
+				-- else save_dir = MD_Data.InWorkTask.GroupDir
 
 				if not doesDirectoryExist save_dir then MakeDir save_dir
 
 				-- Сохранить рабочий файл .max
 				
-				file_path = (pathconfig.appendpath save_dir (file_name + ".max"))
+				local file_path = (pathconfig.appendpath save_dir (file_name + ".max"))
+				local mat_lib_file = (pathconfig.appendpath save_dir (file_name + ".mat"))
 				save_nodes MD_Data.WorkLayerNodes file_path
+
+				-- Сохранить материалы в библиотеку
+				for m in this.Materials do append mat_lib m.MultiMat
+				saveTempMaterialLibrary mat_lib mat_lib_file
 
 				-- Сохранить скриншот сцены .jpg
 				prev_file = (pathconfig.appendpath save_dir (file_name + ".jpg"))
@@ -255,9 +288,10 @@ struct Task
 
 				DisplayTempPrompt "Работа была сохранена." 5000
 				MD_Log.Info ("Работа была сохранена  [" + file_name + "]")
+				MD_Data.LoadWorkHashSum = current_hash
 			-- )
 		)
-		else
+		else if MD_Data.WorkLayerNodes.count == 0 and saved then
 		(
 			messageBox "Рабочий слой не содержит объектов!" title:"Сообщение"
 		)
@@ -284,7 +318,7 @@ struct Task
 					else mat.textures[t] = undefined
 				)
 			)
-			this.LoadMaterial()
+			-- this.LoadMaterial()
 		)
 	),
 
@@ -302,12 +336,12 @@ struct Task
 				InWorkDir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) TASK_INNER_DIRS[2]
 				saved_dir = pathConfig.appendPath (pathConfig.removePathLeaf task_file_dir) TASK_INNER_DIRS[3]
 				try Group = data["tags"][1] catch()
-				if Group != undefined then 
-				(
-					GroupDir = pathConfig.removePathLeaf task_file_dir
-					GroupDir = pathConfig.removePathLeaf GroupDir
-					GroupDir = pathConfig.appendPath GroupDir Group
-				)
+				-- if Group != undefined then 
+				-- (
+				-- 	GroupDir = pathConfig.removePathLeaf task_file_dir
+				-- 	GroupDir = pathConfig.removePathLeaf GroupDir
+				-- 	GroupDir = pathConfig.appendPath GroupDir Group
+				-- )
 				MatLibFile = (pathConfig.appendPath InWorkDir TASK_MAT_NAME)
 				local ref_file_name = data["ref_photo_name"]
 				local ref_file_type = getFilenameType ref_file_name
@@ -391,22 +425,22 @@ struct Task
 				) 
 				catch()
 
-				if Group == undefined then
-				(
+				-- if Group == undefined then
+				-- (
 					if pathConfig.doesFileExist saved_dir then
 					(
 						SavedWorks = GetFiles (saved_dir + "/*.max")
 						sort SavedWorks
 					)					
-				)
-				else
-				(
-					if pathConfig.doesFileExist GroupDir then
-					(
-						SavedWorks = GetFiles (GroupDir + "/*.max")
-						sort SavedWorks
-					)	
-				)
+				-- )
+				-- else
+				-- (
+				-- 	if pathConfig.doesFileExist GroupDir then
+				-- 	(
+				-- 		SavedWorks = GetFiles (GroupDir + "/*.max")
+				-- 		sort SavedWorks
+				-- 	)	
+				-- )
 				try (RefBitmap = CreatePreviewFromImageFile RefFile PREVIEW_SIZE)
 				catch(RefBitmap = CreatePreviewFromImageFile ICON_NO_PRVIEW_FILE PREVIEW_SIZE type:#dotnet)
 
@@ -414,7 +448,7 @@ struct Task
 				-- if not DoesFileExist MatLibFile then CreateMaterial()
 				-- else LoadMaterial()
             )
-			try this.Material = this.Materials[this.ActiveMatIndex].MultiMat catch()
+			-- try this.Material = this.Materials[this.ActiveMatIndex].MultiMat catch()
         )
 	),
 

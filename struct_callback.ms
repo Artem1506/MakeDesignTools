@@ -93,7 +93,7 @@ struct Callback
 					MD_Data.InWorkTask.AddMesh = undefined
 					obj.Name = uniqueName "Object"
 				)
-				if obj.Material == MD_Data.InWorkTask.Material then obj.Material = undefined
+				if obj.Material == MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat then obj.Material = undefined
 			)
 
 			completeRedraw()
@@ -157,7 +157,7 @@ struct Callback
 		-- print "MatChange"
 
 		try (
-			--print MD_Data.ActiveTask.Material.materialList.count
+			--print MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList.count
 		)catch()
 	),
 

@@ -140,13 +140,14 @@ struct BoundingBox
 		-- this.Layer.on = false
 		arrow_rad = 0.0
 		bbox_size = [0, 0, 0]
-		this.bb.isHidden = true
-		this.arrow.isHidden = true
-		this.pp.isHidden = true
+		-- this.bb.isHidden = true
+		-- this.arrow.isHidden = true
+		-- this.pp.isHidden = true
 		this.bb.wireColor = clr_main
 		this.arrow.wireColor = clr_main
 
-		if MD_Data.InWorkTask != undefined then
+		if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) or\
+		(MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == undefined) then
 		(
 			case MD_Data.InWorkTask.ActiveMeshIndex of
 			(

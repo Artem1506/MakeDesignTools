@@ -3,17 +3,17 @@ rollout dlg_export "Validation And Export" width:210  height:230
 (
     label 'lbl_one_mesh' "1 - Objects Count" width:160 align:#left offset:[8, 24] across:2 tooltip:MD_Tooltips.val_exp_01
         dotnetcontrol 'lbl_one_mesh_txt' "System.Windows.Forms.Label" text:"X" width:24 offset:[-4, 24] align:#right
-    label 'lbl_epoly' "2 - Object(s) Type" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_02
+    label 'lbl_epoly' "2 - Object(s) Class" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_02
         dotnetcontrol 'lbl_epoly_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_bounds' "3 - Bounds And Position" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_03
         dotnetcontrol 'lbl_bounds_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_cor_mat' "4 - Material" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_04
         dotnetcontrol 'lbl_cor_mat_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_mat_id' "5 - Material IDs Count" width:190 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_05
+    label 'lbl_mat_id' "5 - Material IDs" width:190 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_05
         dotnetcontrol 'lbl_mat_id_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_uvs' "6 - UVs" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
         dotnetcontrol 'lbl_uvs_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_icon' "7 - Icon" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
+    label 'lbl_icon' "7 - Decal" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
         dotnetcontrol 'lbl_icon_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
 
     groupBox 'grp_01' " Validation " width:(dlg_export.width - 20) height:174 align:#center offset:[0, -166]
