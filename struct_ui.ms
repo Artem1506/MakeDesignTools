@@ -18,12 +18,6 @@ struct UI
 	InfoCatalogPreview = rlt_catalog_info.img_prev,
 	InfoCatalogWeb = rlt_catalog_info.hpl_site,
 	InfoCatalogSize = rlt_catalog_info.lbl_size_txt,
-	-- Projects UI
-	TasksProjectsRoll = rlt_projects_tasks,
-	InfoProjectsRoll = rlt_projects_info,
-	GeneralProjectsRoll = rlt_projects_general,
-	ProjectsListMain = rlt_projects_tasks.lv_main,
-	ProjectsListAdd = rlt_projects_tasks.lv_add,
 
 	EMPTY_PREVIEW = undefined,
 	LabelSizeText = "",
@@ -60,20 +54,6 @@ struct UI
 		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 155)
 
 		setFocus CatalogListMain
-	),
-
-	fn InitProjectsLists = 
-	(
-		ProjectsListMain.Columns.Clear()
-		ProjectsListAdd.Columns.Clear()
-
-		SetListViewParams ProjectsListMain
-		SetListViewParams ProjectsListAdd CheckBoxes:false
-
-		AddListViewColumns ProjectsListMain MAIN_LIST_COLUMNS_2 widths:#(206)
-		AddListViewColumns ProjectsListAdd ADD_LIST_COLUMNS_2 widths:#(206)
-
-		setFocus ProjectsListMain
 	),
 
 	fn FillMainList =
@@ -188,7 +168,6 @@ struct UI
 			GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 			GeneralCatalogRoll.grp_01.enabled = true
 			GeneralCatalogRoll.grp_02.enabled = true
 			GeneralCatalogRoll.grp_03.enabled = true
@@ -422,7 +401,6 @@ struct UI
 					(
 						1:(
 							InfoCatalogRoll.lbl_size_txt.text = LabelSizeText
-							print InfoCatalogRoll.lbl_size_txt.width
 						)
 						2:(
 							InfoCatalogRoll.lbl_size_txt.text = LabelAddSizeText
@@ -440,7 +418,7 @@ struct UI
 				(
 					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
 					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite) catch()
-					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite 1 28) catch(print MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex])
+					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite 1 28) catch()
 				)
 				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [Material-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex + "]"
 				InfoCatalogRoll.lbl_size_txt.visible = false
@@ -461,7 +439,6 @@ struct UI
 			for ctrl in TasksCatalogRoll.Controls do ctrl.enabled = false
 			for ctrl in InfoCatalogRoll.Controls do ctrl.enabled = false
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 
 			TasksCatalogRoll.btn_work_state.text = "Set Work State"
 			InfoCatalogPreview.bitmap = EMPTY_PREVIEW
@@ -487,7 +464,7 @@ struct UI
 				TasksCatalogRoll.btn_work_state.text = "Set Work State"
 				TasksCatalogRoll.btn_exit_work_state.enabled = false
 				for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
-				for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
+				-- for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 			)
 			else if (MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article and MD_Data.ActiveTask.Group == undefined) or \
 			
@@ -530,7 +507,6 @@ struct UI
 			TasksCatalogRoll.btn_exit_work_state.enabled = false
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
-			for ctrl in GeneralProjectsRoll.Controls do ctrl.enabled = false
 
 			case MD_Client.ActiveCheckParam of
 			(
@@ -625,15 +601,14 @@ struct UI
 		-- Переключает роллоуты в зависимости от того, какой раздел выбран
 		try MD_Callbacks.Destruct() catch()
 		-- windows.sendmessage (windows.getmaxhwnd()) 0x000B 0 0
-		removeSubRollout MainRoll.sub_rlt GeneralProjectsRoll
-		removeSubRollout MainRoll.sub_rlt InfoProjectsRoll
-		removeSubRollout MainRoll.sub_rlt TasksProjectsRoll
+		-- removeSubRollout MainRoll.sub_rlt GeneralProjectsRoll
+		-- removeSubRollout MainRoll.sub_rlt InfoProjectsRoll
+		-- removeSubRollout MainRoll.sub_rlt TasksProjectsRoll
 
 		AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:false
 		AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
-		try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
+		AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true
 		AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
-		
         AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:True
 		MD_Data.FullUpdate()
 
@@ -686,7 +661,7 @@ struct UI
 		Close()
 		-- Установить цветовую схему
 		SetColorScheme()
-
+		
 		createdialog MainRoll width:(MAIN_RLT_WIDTH + 8) height:(MAIN_RLT_HEIGHT - 20) autoLayoutOnResize:true scrollBar:#on lockHeight:false
 
 		AddSubRollout MainRoll.sub_rlt SettingsRoll rolledUp:true
@@ -695,12 +670,12 @@ struct UI
 		try AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true catch()
 		AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
 
-		AddSubRollout MainRoll.sub_rlt TasksProjectsRoll rolledUp:true
-		AddSubRollout MainRoll.sub_rlt InfoProjectsRoll rolledUp:true
-		AddSubRollout MainRoll.sub_rlt GeneralProjectsRoll rolledUp:true
+		-- AddSubRollout MainRoll.sub_rlt TasksProjectsRoll rolledUp:true
+		-- AddSubRollout MainRoll.sub_rlt InfoProjectsRoll rolledUp:true
+		-- AddSubRollout MainRoll.sub_rlt GeneralProjectsRoll rolledUp:true
 
 		AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:true
-
+		
 		-- Инициализация входных значений
         try(
             GetINISettings SettingsRoll MDT_CONFIG_FILE SettingsRoll.name
@@ -711,12 +686,13 @@ struct UI
             GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name
             GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name
         )catch ()
-
+		
 		if MD_Data.main_categs.count != 0 then
 		(
 			exist_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_basic_catalog_selection")
 			if classOf exist_categ_index != Integer then exist_categ_index = 1
 		)
+
 		if MD_Data.sub_categs.count != 0 then
 		(
 			exist_sub_categ_index = execute (GetINISetting MDT_CONFIG_FILE TasksCatalogRoll.Name "lst_sub_catalog_selection")
@@ -758,10 +734,10 @@ struct UI
 			for ctrl in InfoCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
 			try (for ctrl in ToolsCatalogRoll.Controls do try(ctrl.tooltip = "")catch()) catch()
 			for ctrl in GeneralCatalogRoll.Controls do try(ctrl.tooltip = "")catch()
-			for ctrl in GeneralProjectsRoll.Controls do try(ctrl.tooltip = "")catch()
+			-- for ctrl in GeneralProjectsRoll.Controls do try(ctrl.tooltip = "")catch()
 		)
 		SettingsRoll.ckbx_tooltips.tooltip = "Требуется перезагрузка."
-
+		
 		MD_Data.Update()
 		
 		this.InitCatalogLists()
@@ -769,11 +745,20 @@ struct UI
 		this.FillMainList()
 		this.FillAddList()
 
-		this.InitProjectsLists()
+		-- try MD_Callbacks.Destruct() catch()
+		-- AddSubRollout MainRoll.sub_rlt TasksCatalogRoll rolledUp:false
+		-- AddSubRollout MainRoll.sub_rlt InfoCatalogRoll rolledUp:true
+		-- AddSubRollout MainRoll.sub_rlt ToolsCatalogRoll rolledUp:true
+		-- AddSubRollout MainRoll.sub_rlt GeneralCatalogRoll rolledUp:true
+        -- AddSubRollout MainRoll.sub_rlt AboutRoll rolledUp:True
+		-- MD_Data.FullUpdate()
 
-		this.SwitchRollouts()
+		-- Выравнить подроллаут
+		MainRoll.sub_rlt.height = (MAIN_RLT_HEIGHT - 28)
+		MainRoll.sub_rlt.pos = [2, 4]
+		updateRolloutLayout TasksCatalogRoll forceUpdate:true
+
 		MD_Data.LoadState = true
-		MD_Data.ProjectsRollLoadState = true
 		-- UpdateCatalogTasksRlt()
 		this.UpdateCatalogInfoRlt()
 		-- UpdateCatalogGeneralRlt()

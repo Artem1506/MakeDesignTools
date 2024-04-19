@@ -964,7 +964,7 @@ struct GlobalData
 		( 
 			ReadDataFile MD_LIB_DATA_FILE 
 			InWorkTaskFile = data["in_work_task"] 
-			if InWorkTaskFile != undefined then InWorkTask = Task file:InWorkTaskFile 
+			if InWorkTaskFile != undefined then InWorkTask = Task file:InWorkTaskFile
 		) 
 		else  
 		( 
@@ -1032,8 +1032,7 @@ struct GlobalData
 				append users us_ids  
 			) 
 			else MD_Log.Error "Отсутствуют данные о пользователях." 
-		) 
-		 
+		)
 	) 
 
 	-- on create do Init()

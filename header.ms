@@ -90,7 +90,7 @@ MAX_TEX_SIZE = 4096
 
 -- Интерфейс
 MAIN_RLT_WIDTH = 240
-MAIN_RLT_HEIGHT = 800
+MAIN_RLT_HEIGHT = 760
 CTRL_WIDTH_0 = MAIN_RLT_WIDTH - 24
 CTRL_WIDTH_1 = MAIN_RLT_WIDTH - 12
 CTRL_WIDTH_2 = (MAIN_RLT_WIDTH - 12)/2 - 2
@@ -150,11 +150,8 @@ dlg_load_textures
 global rlt_make_design_tools
 rlt_settings
 rlt_catalog_info
-rlt_projects_info
 rlt_catalog_tasks
-rlt_projects_tasks
 rlt_catalog_general
-rlt_projects_general
 rlt_catalog_tools
 rlt_about
 

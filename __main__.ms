@@ -31,12 +31,9 @@
         include "dlg_load_textures.ms"
         include "rlt_settings.ms"
         include "rlt_catalog_info.ms"
-        include "rlt_projects_info.ms"
         include "rlt_catalog_tasks.ms"
-        include "rlt_projects_tasks.ms"
         include "rlt_catalog_tools.ms"
         include "rlt_catalog_general.ms"
-        include "rlt_projects_general.ms"
         include "rlt_about.ms"
         include "rlt_make_design_tools.ms"
 
@@ -49,7 +46,7 @@
         MD_Data = GlobalData()
         MD_UI = UI()
         MD_BBox = BoundingBox()
-        MD_Callbacks = Callback()
+        -- MD_Callbacks = Callback()
         MD_Client = HTTPClient()
 
         -- try MD_UI.Categories.Selection = 1 catch()
@@ -84,14 +81,13 @@
             etxt_pass.text = password
         )catch()
 
-        MD_Callbacks.Destruct()
+        -- MD_Callbacks.Destruct()
         MD_Data.Init()
         MD_Data.CheckedTasks = #()
         MD_Data.ActiveList = 1
         MD_Data.ActiveTaskAddIndex = undefined
         -- MD_Data.Update()
         MD_UI.FillCategoriesLists()
-        try MD_BBox.Update() catch()
 
         MD_Data.ShowLayers mode:#none
         for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
@@ -146,10 +142,14 @@
                 )
             )
 		)
-
+        -- Создать рабочий слой, если есть задание в работе
+        try if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
         MD_Data.FullUpdate()
-        MD_UI.Init()
 
+        -- try (MD_Data.CreateWorkState MD_Data.InWorkTask) catch(print "#####")
+        -- try (MD_Data.CreateWorkLayer()) catch(print "#####")
+
+        MD_UI.Init()
 
         -- Обновить рабочий слой, если он есть
         if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then 
@@ -199,9 +199,6 @@
         --     MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         -- )catch()
 
-        -- Создать рабочий слой, если есть задание в работе
-        -- try if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch(print "ass")
-
         for t in MD_Data.Tasks do
         (
             if t.State == STATES[2] then MD_Data.InWorkTask = t
@@ -211,10 +208,12 @@
             MD_Data.ShowLayers mode:#work_only else
             MD_Data.ShowLayers mode:#scene_only 
         )
-
+        
+        try MD_BBox.Update() catch()
         -- Добавить функции обратного вызова
+        MD_Callbacks = Callback()
         try MD_Callbacks.Add() catch()
-
+        
     )
     else
     (

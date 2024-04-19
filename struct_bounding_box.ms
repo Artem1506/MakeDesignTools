@@ -140,9 +140,9 @@ struct BoundingBox
 		-- this.Layer.on = false
 		arrow_rad = 0.0
 		bbox_size = [0, 0, 0]
-		-- this.bb.isHidden = true
-		-- this.arrow.isHidden = true
-		-- this.pp.isHidden = true
+		this.bb.isHidden = true
+		this.arrow.isHidden = true
+		this.pp.isHidden = true
 		this.bb.wireColor = clr_main
 		this.arrow.wireColor = clr_main
 
@@ -172,40 +172,47 @@ struct BoundingBox
 					this.arrow.wireColor = clr_add
 				)
 			)
-
+		
 			arrow_rad = ConvertCentimeterToSysUnits 10.0
 			
-			if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Article then
+		if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask != undefined and MD_Data.InWorkTask.Article == MD_Data.ActiveTask.Article then
+		(
+			if MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
 			(
-				if MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
-				(
-					this.bb.isHidden = false
-					this.arrow.isHidden = false
-					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-					try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
-				)
-				else if MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
-				(
-					this.bb.isHidden = false
-					this.arrow.isHidden = false
-					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-					try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
-				)
-				else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
-				(
-					this.bb.isHidden = true
-					this.arrow.isHidden = true
-					this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
-					try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
-				)	
-				else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
-				(
-					this.bb.isHidden = true
-					this.arrow.isHidden = true
-					try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
-				)					
+				this.bb.isHidden = false
+				this.arrow.isHidden = false
+				this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+				try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
 			)
+			else if MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
+			(
+				this.bb.isHidden = false
+				this.arrow.isHidden = false
+				this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+				try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
+			)
+			else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and MD_UI.SettingsRoll.ckbx_show_icon.checked then
+			(
+				this.bb.isHidden = true
+				this.arrow.isHidden = true
+				this.pp.isHidden = not MD_UI.SettingsRoll.ckbx_auto_pivot.checked
+				try MD_Data.ActiveCategoryIcon.icon.isHidden = false catch()
+			)	
+			else if not MD_UI.SettingsRoll.ckbx_show_bb.checked and not MD_UI.SettingsRoll.ckbx_show_icon.checked then
+			(
+				this.bb.isHidden = true
+				this.arrow.isHidden = true
+				try MD_Data.ActiveCategoryIcon.icon.isHidden = true catch()
+			)					
 		)
+	)
+
+		-- if (MD_Data.ActiveTask == undefined and MD_Data.InWorkTask == undefined) then
+		-- (
+		-- 	this.bb.isHidden = true
+		-- 	this.arrow.isHidden = true
+		-- 	this.pp.isHidden = true
+		-- )
 
 		this.bb.length = bbox_size[1]
 		this.bb.width = bbox_size[2]
