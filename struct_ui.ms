@@ -409,6 +409,7 @@ struct UI
 						LabelAddSizeText += ("H: " + (MD_Data.ActiveTask.SizeTrans[3] as float) as string)
 					) catch()
 
+					
 					InfoCatalogRoll.lbl_size.visible = true
 					InfoCatalogRoll.lbl_size_txt.visible = true
 					InfoCatalogRoll.lbl_site.visible = true
@@ -421,6 +422,7 @@ struct UI
 					(
 						1:(
 							InfoCatalogRoll.lbl_size_txt.text = LabelSizeText
+							print InfoCatalogRoll.lbl_size_txt.width
 						)
 						2:(
 							InfoCatalogRoll.lbl_size_txt.text = LabelAddSizeText
