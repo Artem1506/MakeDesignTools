@@ -60,11 +60,11 @@ try(destroydialog ::dlg_install)catch()
 
 			if chk_dock.checked then
 			(
-				macros_txt += "try cui.RegisterDialogBar ::rlt_make_design_tools minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles) catch()" + "\n"
-				macros_txt += "try cui.DockDialogBar ::rlt_make_design_tools #cui_dock_right catch()" + "\n"
+				macros_txt += "try cui.RegisterDialogBar ::rlt_mdt_content_maker minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles) catch()" + "\n"
+				macros_txt += "try cui.DockDialogBar ::rlt_mdt_content_maker #cui_dock_right catch()" + "\n"
 			)
 
-			macros_txt += "try checked = rlt_make_design_tools.visible catch()" + "\n"
+			macros_txt += "try checked = rlt_mdt_content_maker.visible catch()" + "\n"
 			macros_txt += ")" + "\n"
 			macros_txt += "on isChecked return checked" + "\n"
 			macros_txt += ")"
@@ -79,8 +79,8 @@ try(destroydialog ::dlg_install)catch()
 
 			if chk_dock.checked then
 			(
-				format "cui.RegisterDialogBar ::rlt_make_design_tools minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles)\n" to:script_file
-				format "cui.DockDialogBar ::rlt_make_design_tools #cui_dock_right\n" to:script_file
+				format "cui.RegisterDialogBar ::rlt_mdt_content_maker minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles)\n" to:script_file
+				format "cui.DockDialogBar ::rlt_mdt_content_maker #cui_dock_right\n" to:script_file
 			)
 			close script_file
 		)
@@ -126,8 +126,8 @@ try(destroydialog ::dlg_install)catch()
 		on btn_install pressed do 
 		(
 			uninstall()
-			try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
-			try(destroyDialog ::rlt_make_design_tools)catch()
+			try(cui.UnRegisterDialogBar ::rlt_mdt_content_maker)catch()
+			try(destroyDialog ::rlt_mdt_content_maker)catch()
 			sleep .5
 			if chk_auto.checked then create_startup_script()
 			destroyDialog dlg_install
@@ -136,8 +136,8 @@ try(destroydialog ::dlg_install)catch()
 
 			if chk_dock.checked then
 			(
-				cui.RegisterDialogBar ::rlt_make_design_tools minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles)
-				cui.DockDialogBar ::rlt_make_design_tools #cui_dock_right
+				cui.RegisterDialogBar ::rlt_mdt_content_maker minSize:[252, 600] style:#(#cui_dock_vert, #cui_handles)
+				cui.DockDialogBar ::rlt_mdt_content_maker #cui_dock_right
 			)
 		)
 
@@ -156,8 +156,8 @@ try(destroydialog ::dlg_install)catch()
 			)
 			btn_install.text = "Install"
 			btn_uninstall.enabled = false
-			try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
-			try(destroyDialog ::rlt_make_design_tools)catch()
+			try(cui.UnRegisterDialogBar ::rlt_mdt_content_maker)catch()
+			try(destroyDialog ::rlt_mdt_content_maker)catch()
 		)
 	)
 

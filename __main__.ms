@@ -5,7 +5,7 @@
 
     clearListener()
 
-    if ::rlt_make_design_tools == undefined OR ::rlt_make_design_tools.IsDisplayed == false then
+    if ::rlt_mdt_content_maker == undefined OR ::rlt_mdt_content_maker.IsDisplayed == false then
     (
         -- Подключение основных модулей
         include "lib_dotnet.ms"
@@ -35,7 +35,7 @@
         include "rlt_catalog_tools.ms"
         include "rlt_catalog_general.ms"
         include "rlt_about.ms"
-        include "rlt_make_design_tools.ms"
+        include "rlt_mdt_content_maker.ms"
 
         clearSelection()
         try MD_Data.ClearTrashLayers() catch()
@@ -98,7 +98,7 @@
 			-- Установить иконку для текущей категории
 			MD_Data.ActiveCategoryIcon.SetIcon icon_file
 		)catch()
-
+        
         -- Попытаться выбрать последнее активное задание
 		if MD_Data.Tasks.Count != 0 then
 		(
@@ -123,10 +123,11 @@
                 (
                     -- Создать рабочее состояние
                     try MD_Data.CreateWorkState MD_Data.InWorkTask catch()
-
+                    
                     -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
                     if MD_UI.SettingsRoll.ckbx_load_last.checked then
                     (
+                        
                         try(
                             if MD_Data.WorkLayerNodes.count == 0 then
                             (
@@ -144,10 +145,7 @@
 		)
         -- Создать рабочий слой, если есть задание в работе
         try if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
-        MD_Data.FullUpdate()
-
-        -- try (MD_Data.CreateWorkState MD_Data.InWorkTask) catch(print "#####")
-        -- try (MD_Data.CreateWorkLayer()) catch(print "#####")
+        -- MD_Data.FullUpdate() !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         MD_UI.Init()
 
@@ -210,15 +208,25 @@
         )
         
         try MD_BBox.Update() catch()
-        -- Добавить функции обратного вызова
         MD_Callbacks = Callback()
-        try MD_Callbacks.Add() catch()
-        
+        SetViewShading 0
+
+        if MD_UI.SettingsRoll.ckbx_load_last.checked then
+        (
+            if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
+            -- Загрузить последнюю работу
+            try (MD_Data.InWorkTask.LoadWork \
+            MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
+        )
+
+        MD_Data.FullUpdate()
+        MD_UI.UpdateCatalogTasksRlt()
+        MD_Callbacks.Add()
     )
     else
     (
-        try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
-        try(destroyDialog ::rlt_make_design_tools)catch()
+        try(cui.UnRegisterDialogBar ::rlt_mdt_content_maker)catch()
+        try(destroyDialog ::rlt_mdt_content_maker)catch()
     )
     
 	ok

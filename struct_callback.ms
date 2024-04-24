@@ -152,11 +152,12 @@ struct Callback
 		) catch()
 	),
 
-	fn MatChange ev nd =
+	fn MatChange =
 	(
 		-- print "MatChange"
 
 		try (
+			MD_UI.UpdateCatalogGeneralRlt()
 			--print MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList.count
 		)catch()
 	),
@@ -172,11 +173,11 @@ struct Callback
 		callbacks.addScript #nodeCreated AddObject id:#md_callbacks
 		callbacks.addScript #nodePreDelete DeleteObject id:#md_callbacks
 		callbacks.addScript #nodeLayerChanged LayerChange id:#md_callbacks
+		callbacks.addScript #nodePostMaterial MatChange id:#md_callbacks
 		-- callbacks.addScript #nodeLayerChanged RemoveFromTempLayer id:#md_callbacks
 		-- callbacks.addScript #selectionSetChanged MD_UI.UpdateCatalogGeneralRlt id:#md_callbacks
 
 		ToolsUIUpdate = NodeEventCallback mouseUp:false delay:250 \
-		materialOtherEvent:MatChange \
 		selectionChanged: UpdateUI \
 		subobjectSelectionChanged:UpdateUI2
 		-- deleted: DeleteObject \

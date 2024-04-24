@@ -705,3 +705,24 @@ fn getHashCodeFromObjects objs =
 	
 	(dotNetObject "System.String" hashStr).GetHashCode()
 )
+
+fn SetViewShading val =
+(
+	actionMan.executeAction -844228238 "13"  -- Viewport Lighting and Shadows: Standard
+	displayColor.wireframe = #object
+	displayColor.shaded = #material
+
+	case val of
+	(
+		0:(
+			-- Default shading
+			actionMan.executeAction 0 "63544"  -- Views: Viewport Materials Display as Shaded
+			actionMan.executeAction 0 "63566"  -- Views: Default Shading
+		)
+		1:(
+			-- Texturing shading
+			actionMan.executeAction 0 "63545" -- Views: Viewport Materials Display as Shaded with Maps
+			actionMan.executeAction 0 "554"  -- Views: Viewport Visual Style Consistent Colors
+		)
+	)
+)

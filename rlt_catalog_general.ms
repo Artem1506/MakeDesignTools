@@ -17,7 +17,7 @@ rollout rlt_catalog_general "General"
    
     groupBox 'grp_03' " Material: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 4]
     button 'btn_update_mat' "Update Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -34] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_set_texture' "Set Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    button 'btn_set_texture' "Assign Maps" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     -- button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
 
     groupBox 'grp_04' " Working Files: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 5]
@@ -67,7 +67,7 @@ rollout rlt_catalog_general "General"
         case btn_vis_switch.text of
         (
             "Show All Layers":(
-                MD_Data.ShowLayers mode:#all
+                MD_Data.ShowLayers mode:#scene_only
                 btn_vis_switch.text = "Show Work Layer"
                 btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_b
             )
@@ -113,7 +113,7 @@ rollout rlt_catalog_general "General"
         (
             if MD_Data.InWorkTask.AddMesh == undefined and MD_Data.InWorkTask.MainMesh == selection[1] then
             (
-                if (queryBox "Создать дополнительный меш путём копирования основного?" title:"Внимание!" icon:#question) then 
+                if (queryBox "Создать дополнительный объект (меш) путём копирования основного?\n" title:"Внимание!" icon:#question) then 
                 (
                     MD_Data.SetAddMesh (copy selection[1])
                 )

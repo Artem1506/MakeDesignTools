@@ -123,7 +123,7 @@ struct Task
 		
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
-			if (queryBox "Очистить рабочий слой перед загрузкой?" title:"Внимание!" icon:#question) then
+			if (queryBox "Очистить рабочий слой перед загрузкой?\n" title:"Внимание!" icon:#question) then
 			(
 				delete MD_Data.WorkLayerNodes
 				gc()
@@ -185,10 +185,12 @@ struct Task
 			
 			-- Генерация хэш суммы
 			MD_Data.LoadWorkHashSum = getHashCodeFromObjects MD_Data.WorkLayerNodes
+			try (select MD_Data.InWorkTask.MainMesh) catch()
+
 		)
 		else 
 		(
-			(try (select cur_sel_objs) catch())
+			try (select cur_sel_objs) catch()
 			-- MD_Data.LoadWorkHashSum = 0
 		)
 
@@ -212,7 +214,7 @@ struct Task
 
 		if MD_Data.LoadWorkHashSum == current_hash then
 		(
-			if not (queryBox "Рабочий слой не содержит изменений!\nВсё равно сохранить файл?" title:"Внимание!" icon:#question) then saved = false		
+			if not (queryBox "Рабочий слой не содержит изменений!\n\nВсё равно сохранить файл?\n" title:"Внимание!" icon:#question) then saved = false		
 		)
 
 		if MD_Data.WorkLayerNodes.count != 0 and saved then

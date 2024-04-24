@@ -13,8 +13,8 @@ rollout rlt_catalog_tasks "Catalog"
     -- Label 'lbl_vars' "Finishing Variations:" width:100 offset:[8, 2] align:#left across:2
     -- dropdownlist 'lst_vars' "" items:#() width:(CTRL_WIDTH_1 - 114) height:50 offset:[12, V_MARGIN] align:#right selection:1 enabled:true
     dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
-    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06
-    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07
+    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:2 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06 visible:false
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:2 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07 visible:false
     
     on rlt_catalog_tasks open do
     (
@@ -276,7 +276,7 @@ rollout rlt_catalog_tasks "Catalog"
                     )
                     else
                     (
-                        if (queryBox "Дейсвительно удалить отмеченные задания?" title:"Внимание!" icon:#warning) then
+                        if (queryBox "Дейсвительно удалить отмеченные задания?\n" title:"Внимание!" icon:#warning) then
                         (
                             local del_task_dirs = 0
 
@@ -433,8 +433,9 @@ rollout rlt_catalog_tasks "Catalog"
                     MD_Data.InWorkTask != undefined and \
                     MD_Data.InWorkTask.Article != undefined and \
                     MD_Data.ActiveTask.Group != undefined and \
-                    MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group then
+                    MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                     (
+                        print "222"
                         try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
                         -- try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
@@ -461,6 +462,15 @@ rollout rlt_catalog_tasks "Catalog"
         MD_UI.UpdateCatalogInfoRlt()
         try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
         try MD_Data.CreateWorkLayer() catch()
+
+        try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
+        if MD_UI.SettingsRoll.ckbx_load_last.checked and MD_Data.WorkLayerNodes.count == 0 then
+        (
+            if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
+            -- Загрузить последнюю работу
+            try (MD_Data.InWorkTask.LoadWork \
+            MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
+        )
     )
 
     on lv_add Click self arg do

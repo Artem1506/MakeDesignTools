@@ -147,7 +147,7 @@ dlg_request
 dlg_load_textures
 
 -- Роллауты
-global rlt_make_design_tools
+global rlt_mdt_content_maker
 rlt_settings
 rlt_catalog_info
 rlt_catalog_tasks

@@ -772,24 +772,52 @@ struct GlobalData
 		) 
 	), 
 
-	fn ClearWorkLayer = 
-	( 
-		try ( 
+	-- fn ClearWorkLayer =
+	-- (
+	-- 	try (
+	-- 		this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name 
+	-- 		local current_hash = getHashCodeFromObjects this.WorkLayerNodes
+
+	-- 		if MD_Data.InWorkTask != undefined and WorkLayerNodes.count != 0 and MD_Data.LoadWorkHashSum != current_hash then 
+	-- 		( 
+	-- 			if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nПродолжить?" title:"Внимание!" icon:#question) then
+	-- 			(
+	-- 				MD_Data.LoadWorkHashSum = 0
+	-- 				delete WorkLayerNodes
+	-- 				CompleteRedraw()
+	-- 				gc() 
+	-- 			)
+	-- 		)
+	-- 		else
+	-- 		(
+	-- 			MD_Data.LoadWorkHashSum = 0
+	-- 			delete WorkLayerNodes
+	-- 			CompleteRedraw()
+	-- 			gc() 
+	-- 		)
+	-- 	) catch()
+	-- ),
+
+	fn ClearWorkLayer =
+	(
+		try (
 			this.WorkLayerNodes = GetAllLayerNodes this.WorkLayer.Name 
 			local current_hash = getHashCodeFromObjects this.WorkLayerNodes
 
 			if MD_Data.InWorkTask != undefined and WorkLayerNodes.count != 0 and MD_Data.LoadWorkHashSum != current_hash then 
 			( 
-				if (queryBox "Все объекты, находящиеся на рабочем слое, будут удалены.\nПродолжить?" title:"Внимание!" icon:#question) then
+				if (queryBox "Содержимое рабочего слоя было изменено.\n\nСохранить работу перед удалением?\n" title:"Внимание!" icon:#question) then
 				(
-					MD_Data.LoadWorkHashSum = 0
-					delete WorkLayerNodes
-					CompleteRedraw()
-					gc() 
+					MD_Data.InWorkTask.SaveWork()
 				)
-			) 
-		) catch()  
-	), 
+			)
+
+			MD_Data.LoadWorkHashSum = 0
+			delete WorkLayerNodes
+			CompleteRedraw()
+			gc()
+		) catch()
+	),
 
 	fn Update = 
 	( 

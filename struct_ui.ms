@@ -1,7 +1,7 @@
 
 struct UI
 (
-	MainRoll = rlt_make_design_tools,
+	MainRoll = rlt_mdt_content_maker,
 	SettingsRoll = rlt_settings,
 	AboutRoll = rlt_about,
 	Dialogs = UI_Dialogs(),
@@ -176,7 +176,7 @@ struct UI
 			local objs = #()
 
 			if (MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask.State == STATES[2]) or \
-			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Group == MD_Data.InWorkTask.Group) then
+			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article) then
 			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
 				GeneralCatalogRoll.btn_vis_switch.enabled = true
@@ -197,8 +197,10 @@ struct UI
 					GeneralCatalogRoll.btn_main_mesh.text = "Main Mesh •"
 					if MD_Data.InWorkTask.ActiveMeshIndex == 1 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 					(
-						-- GeneralCatalogRoll.btn_assign_mat.enabled = true
+						-- Обновить материал
 						GeneralCatalogRoll.btn_update_mat.enabled = true
+						-- Назначить карты текстур
+						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == MD_Data.InWorkTask.Article then
 						GeneralCatalogRoll.btn_set_texture.enabled = true
 					)
 					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.MainMesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
@@ -214,20 +216,21 @@ struct UI
 				if MD_Data.InWorkTask.SizeTrans != undefined then 
 				(
 
-					GeneralCatalogRoll.btn_mesh_switch.enabled = true
+					-- GeneralCatalogRoll.btn_mesh_switch.enabled = true
 
 					if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
-					GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"	
+					(GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh")	
 					else GeneralCatalogRoll.btn_mesh_switch.text = ">> Switch To Additional Mesh"
 
 					if (selection.count == 1 and \
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
+						GeneralCatalogRoll.btn_mesh_switch.enabled = true
 						if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
 						(
 							GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
-							GeneralCatalogRoll.btn_add_mesh.enabled = true		
+							GeneralCatalogRoll.btn_add_mesh.enabled = true	
 						)
 						else
 						(
@@ -626,8 +629,8 @@ struct UI
 	fn Close = (
 		-- Удаляет главный роллаут, если он ткрыт
 
-		try(cui.UnRegisterDialogBar ::rlt_make_design_tools)catch()
-		try(destroyDialog ::rlt_make_design_tools)catch()
+		try(cui.UnRegisterDialogBar ::rlt_mdt_content_maker)catch()
+		try(destroyDialog ::rlt_mdt_content_maker)catch()
 	),
 
 	fn SetColorScheme =

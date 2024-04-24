@@ -21,7 +21,7 @@ struct UI_Dialogs
 	(
 		local indexes = #()
 
-		if (queryBox "Действительно удалить отмеченные файлы?" title:"Внимание!" icon:#warning) then
+		if (queryBox "Действительно удалить отмеченные файлы?\n" title:"Внимание!" icon:#warning) then
 		(
 			for i = 0 to LoadWork.lv_files.Items.count - 1 do
 			(
