@@ -2,7 +2,10 @@
 rollout rlt_catalog_general "General"
 (
     groupBox 'grp_01' " Layers: " width:(rlt_catalog_general.width - 8) height:97 align:#center offset:[0, -4]
-    button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -83] enabled:false tooltip:MD_Tooltips.tools_cat_11_a
+    -- button 'btn_vis_switch' "Show All Layers" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -83] enabled:false tooltip:MD_Tooltips.tools_cat_11_a
+    checkbutton 'chbtn_show_work' "Work" width:70 height:CTRL_HEIGHT_1 align:#center offset:[-2, -83] across:3 checked:true
+    checkbutton 'chbtn_show_scene' "Scene" width:69 height:CTRL_HEIGHT_1 align:#center offset:[2, -83] checked:false
+    checkbutton 'chbtn_show_all' "All" width:69 height:CTRL_HEIGHT_1 align:#center offset:[6, -83] checked:false
     button 'btn_attach_to_task' "Attach Selected" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_01
     
     -- button 'btn_assign_mat' "Assign Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_03
@@ -30,12 +33,40 @@ rollout rlt_catalog_general "General"
 
     on rlt_catalog_general open do
     (
+        try (GetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name onlyRollState:true) catch()
         -- rlt_catalog_general.height = 350
     )
     
     on rlt_catalog_general close do
     (
         SetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name
+    )
+
+    on chbtn_show_work changed state do
+    (
+        if state and (MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask) then MD_Data.ShowLayers mode:#work_only
+
+        chbtn_show_work.checked = true
+        chbtn_show_scene.checked = false
+        chbtn_show_all.checked = false
+    )
+
+    on chbtn_show_scene changed state do
+    (
+        if state then MD_Data.ShowLayers mode:#scene_only
+
+        chbtn_show_work.checked = false
+        chbtn_show_scene.checked = true
+        chbtn_show_all.checked = false
+    )
+
+    on chbtn_show_all changed state do
+    (
+        if state and (MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask) then MD_Data.ShowLayers mode:#all
+
+        chbtn_show_work.checked = false
+        chbtn_show_scene.checked = false
+        chbtn_show_all.checked = true
     )
 
     on btn_update_mat pressed do
@@ -49,6 +80,8 @@ rollout rlt_catalog_general "General"
                 -- try MD_Data.UpdateMaterial MD_Data.InWorkTask.AddMesh i catch()
                 try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
             )
+
+            if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
             -- if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
             -- ( 
             --     MD_Data.InWorkTask.LoadMaterial()  
@@ -61,23 +94,23 @@ rollout rlt_catalog_general "General"
         -- )catch()
     )
 
-    on btn_vis_switch pressed do
-    (
-        -- MD_Data.CreateWorkLayer()
-        case btn_vis_switch.text of
-        (
-            "Show All Layers":(
-                MD_Data.ShowLayers mode:#scene_only
-                btn_vis_switch.text = "Show Work Layer"
-                btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_b
-            )
-            "Show Work Layer":(
-                MD_Data.ShowLayers mode:#work_only
-                btn_vis_switch.text = "Show All Layers"
-                btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
-            )
-        )
-    )
+    -- on btn_vis_switch pressed do
+    -- (
+    --     -- MD_Data.CreateWorkLayer()
+    --     case btn_vis_switch.text of
+    --     (
+    --         "Show All Layers":(
+    --             MD_Data.ShowLayers mode:#scene_only
+    --             btn_vis_switch.text = "Show Work Layer"
+    --             btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_b
+    --         )
+    --         "Show Work Layer":(
+    --             MD_Data.ShowLayers mode:#work_only
+    --             btn_vis_switch.text = "Show All Layers"
+    --             btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
+    --         )
+    --     )
+    -- )
 
     on btn_main_mesh pressed do
     (
@@ -210,9 +243,8 @@ rollout rlt_catalog_general "General"
         MD_Data.AttachSelectedToWorkLayer()
         MD_Data.ShowLayers mode:#work_only
 
-        -- MD_Data.ShowLayers mode:#work_only
-        btn_vis_switch.text = "Show All Layers"
-        btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
+        -- btn_vis_switch.text = "Show All Layers"
+        -- btn_vis_switch.tooltip = MD_Tooltips.tools_cat_11_a
     )
 
 	-- on btn_edit_icon changed arg do
@@ -277,6 +309,7 @@ rollout rlt_catalog_general "General"
 
     on btn_clear pressed do
     (
+        if (queryBox "Все объкты на рабочем слое будут удалены.\n\nПродолжить?\n" title:"Внимание!" icon:#question) then
         MD_Data.ClearWorkLayer()
     )
 )

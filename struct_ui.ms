@@ -165,9 +165,10 @@ struct UI
 		(
 			GeneralCatalogRoll.btn_main_mesh.text = "Set Main Mesh"
 			GeneralCatalogRoll.btn_add_mesh.text = "Set Add Mesh"
-			GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
+			-- GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
 
 			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
+			
 			GeneralCatalogRoll.grp_01.enabled = true
 			GeneralCatalogRoll.grp_02.enabled = true
 			GeneralCatalogRoll.grp_03.enabled = true
@@ -179,7 +180,7 @@ struct UI
 			(MD_Data.ActiveTask != undefined and MD_Data.ActiveTask.Group != undefined and MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article) then
 			-- if MD_Data.ActiveTask != undefined and MD_Data.WorkLayer != undefined and MD_Data.ActiveTask == MD_Data.InWorkTask then
 			(
-				GeneralCatalogRoll.btn_vis_switch.enabled = true
+				-- GeneralCatalogRoll.btn_vis_switch.enabled = true
 				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 
 				objs = for obj in (objects as array) where (findItem MD_Data.TempLayerNodes obj == 0) collect obj
@@ -200,7 +201,7 @@ struct UI
 						-- Обновить материал
 						GeneralCatalogRoll.btn_update_mat.enabled = true
 						-- Назначить карты текстур
-						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == MD_Data.InWorkTask.Article then
+						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == (MD_Data.InWorkTask.Article + "-"+ (formattedPrint MD_Data.ActiveTaskAddIndex format:#02d)) then
 						GeneralCatalogRoll.btn_set_texture.enabled = true
 					)
 					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.MainMesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
@@ -216,7 +217,7 @@ struct UI
 				if MD_Data.InWorkTask.SizeTrans != undefined then 
 				(
 
-					-- GeneralCatalogRoll.btn_mesh_switch.enabled = true
+					GeneralCatalogRoll.btn_mesh_switch.enabled = true
 
 					if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
 					(GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh")	
@@ -226,11 +227,13 @@ struct UI
 						SuperClassOf selection[1] == GeometryClass and \
 						findItem MD_Data.WorkLayerNodes selection[1] != 0) then
 					(
-						GeneralCatalogRoll.btn_mesh_switch.enabled = true
+						-- GeneralCatalogRoll.btn_mesh_switch.enabled = true
 						if MD_Data.InWorkTask.ActiveMeshIndex == 2 then
 						(
 							GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
-							GeneralCatalogRoll.btn_add_mesh.enabled = true	
+							GeneralCatalogRoll.btn_add_mesh.enabled = true
+							GeneralCatalogRoll.btn_update_mat.enabled = false
+							GeneralCatalogRoll.btn_set_texture.enabled = false
 						)
 						else
 						(
@@ -239,6 +242,7 @@ struct UI
 							GeneralCatalogRoll.btn_clear.enabled = true
 							if MD_Data.InWorkTask.AddMesh == undefined or MD_Data.InWorkTask.AddMesh.IsDeleted then
 							GeneralCatalogRoll.btn_add_mesh.enabled = true
+							-- GeneralCatalogRoll.btn_update_mat.enabled = true
 						)
 					)
 
@@ -248,7 +252,7 @@ struct UI
 						GeneralCatalogRoll.btn_add_mesh.text = "  Add Mesh •"
 						if MD_Data.InWorkTask.ActiveMeshIndex == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
 						(
-							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
+							GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
 							GeneralCatalogRoll.btn_set_texture.enabled = true
 						)
@@ -271,6 +275,7 @@ struct UI
 					(
 						GeneralCatalogRoll.btn_main_mesh.enabled = true
 						GeneralCatalogRoll.btn_clear.enabled = true
+
 						if MD_Data.InWorkTask.MainMesh == 1 and selection[1] == MD_Data.InWorkTask.MainMesh then 
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
@@ -309,6 +314,9 @@ struct UI
 					GeneralCatalogRoll.btn_work_list.enabled = true
 				)
 			)
+			GeneralCatalogRoll.chbtn_show_work.enabled = true
+			GeneralCatalogRoll.chbtn_show_scene.enabled = true
+			GeneralCatalogRoll.chbtn_show_all.enabled = true
 
 			free MD_Data.WorkLayerNodes
 			free objs
@@ -684,10 +692,10 @@ struct UI
             GetINISettings SettingsRoll MDT_CONFIG_FILE SettingsRoll.name
             GetINISettings TasksCatalogRoll MDT_CONFIG_FILE TasksCatalogRoll.name include_list:#(TasksCatalogRoll.lst_basic_catalog, TasksCatalogRoll.lst_sub_catalog)
             GetINISettings InfoCatalogRoll MDT_CONFIG_FILE InfoCatalogRoll.name onlyRollState:true
-            -- GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name onlyRollState:true
-            -- GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
-            GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name
-            GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name
+            GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name onlyRollState:true
+            GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name onlyRollState:true
+            -- GetINISettings ToolsCatalogRoll MDT_CONFIG_FILE ToolsCatalogRoll.name
+            -- GetINISettings GeneralCatalogRoll MDT_CONFIG_FILE GeneralCatalogRoll.name
         )catch ()
 		
 		if MD_Data.main_categs.count != 0 then

@@ -1,6 +1,6 @@
 
 struct GlobalData
-( 
+(
 	Categories = #(), 
 	SubCategories = #(), 
 	WorkLayer = undefined, 
@@ -20,7 +20,7 @@ struct GlobalData
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
-	ActiveTaskAddIndex = undefined, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
+	ActiveTaskAddIndex = 1, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
 	active_catalog_dir = undefined, --> [str] "D:\MakeDesignLib\Catalog\01-01-001"
 	active_catalog_article = undefined, --> [str] "01-01-001" 
 	ActiveList = 1, --> [int] Активный список 
@@ -107,25 +107,26 @@ struct GlobalData
 			)
 		)
 
-		MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList.count = mat_ids.count
-		MD_Data.ActiveTask.Materials[mat_index].MultiMat.Name = MD_Data.ActiveTask.Materials[mat_index].Article
+		MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialList.count = mat_ids.count
+		MD_Data.InWorkTask.Materials[mat_index].MultiMat.Name = MD_Data.InWorkTask.Materials[mat_index].Article
 
 		-- try(
 			for i = 1 to mat_ids.count do
 			(
-				local mat = MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList[i]
+				local mat = MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialList[i]
 				local m_name = "Material_" + (formattedPrint i format:#02d)
 				
 				if classOf mat != Standardmaterial then 
 				(
 					mat = Standardmaterial()
-					MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialList[i] = mat
+					MD_Data.InWorkTask.CreateComposeMap mat
+					MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialList[i] = mat
 				)				
 				mat.Name = m_name
 				mat.Diffuse = CLR_PALETTE_1[i]
 			)
 
-			MD_Data.ActiveTask.Materials[mat_index].MultiMat.materialIDList = mat_ids
+			MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialIDList = mat_ids
 			-- obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat
 		-- )catch()
 
@@ -267,18 +268,19 @@ struct GlobalData
 			case mode of 
 			( 
 				#scene_only:( 
+					MD_Callbacks.Destruct()
 					for i = 0 to LayerManager.count - 1 do 
-					( 
+					(
 						lr = LayerManager.getLayer i 
-						if lr != WorkLayer and lr != MD_BBox.Layer then 
-						( 
-							lr.on = true 
-							DEFAULT_LAYER.current = true  
-						) 
-						else lr.on = false 
+						lr.on = true
 					) 
+
+					try(WorkLayer.on = false)catch()  
+					try(MD_BBox.Layer.on = false)catch() 
+					DEFAULT_LAYER.current = true
+					MD_Callbacks.Add()
 				) 
-				#work_only:( 
+				#work_only:(
 					for i = 0 to LayerManager.count - 1 do 
 					( 
 						lr = LayerManager.getLayer i 
@@ -314,10 +316,9 @@ struct GlobalData
 						lr.on = false 
 					) 
 				) 
-			)  
+			) 
+			completeRedraw() 
 		)catch()  
-
-		completeRedraw()  
 	), 
 
 	fn CreateWorkLayer = 
@@ -821,7 +822,7 @@ struct GlobalData
 
 	fn Update = 
 	( 
-		ActiveTaskAddIndex = undefined 
+		ActiveTaskAddIndex = 1 
 		TempArticlesList = #() 
 
 		try (GetTasksInActiveCategory()) catch()  

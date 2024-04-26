@@ -85,7 +85,7 @@
         MD_Data.Init()
         MD_Data.CheckedTasks = #()
         MD_Data.ActiveList = 1
-        MD_Data.ActiveTaskAddIndex = undefined
+        MD_Data.ActiveTaskAddIndex = 1
         -- MD_Data.Update()
         MD_UI.FillCategoriesLists()
 
@@ -183,7 +183,7 @@
                 )
             ) catch()    
         )
-
+        
         -- Обновить материал
         -- try(
         --     if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
@@ -196,6 +196,9 @@
         --     MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh
         --     MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh
         -- )catch()
+        
+        -- Установить видимость слоёв
+        MD_Data.ShowLayers mode:#all
 
         for t in MD_Data.Tasks do
         (
@@ -203,8 +206,7 @@
             try MD_Data.CreateWorkLayer() catch()
 
             if MD_Data.InWorkTask == MD_Data.ActiveTask then
-            MD_Data.ShowLayers mode:#work_only else
-            MD_Data.ShowLayers mode:#scene_only 
+            MD_Data.ShowLayers mode:#work_only
         )
         
         try MD_BBox.Update() catch()
@@ -218,10 +220,11 @@
             try (MD_Data.InWorkTask.LoadWork \
             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
         )
-
+        
         MD_Data.FullUpdate()
-        MD_UI.UpdateCatalogTasksRlt()
+        -- MD_UI.UpdateCatalogTasksRlt()
         MD_Callbacks.Add()
+        
     )
     else
     (

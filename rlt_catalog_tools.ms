@@ -284,7 +284,8 @@ rollout rlt_catalog_tools "Tools"
 	)
     on rlt_catalog_tools open do
     (
-        rlt_catalog_tools.height = 300
+		try (GetINISettings rlt_catalog_tools MDT_CONFIG_FILE rlt_catalog_tools.name onlyRollState:true) catch()
+        -- rlt_catalog_tools.height = 300
     )
 
     on btn_up pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw()))

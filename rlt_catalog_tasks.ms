@@ -63,7 +63,7 @@ rollout rlt_catalog_tasks "Catalog"
             try lst_sub_catalog.selection = 1 catch()
             MD_Data.ActiveSubCategory = lst_sub_catalog.selection
             MD_Data.ActiveList = 1
-            MD_Data.ActiveTaskAddIndex = undefined
+            MD_Data.ActiveTaskAddIndex = 1
             MD_Data.Update()
             -- MD_UI.FillCategoriesLists()
             MD_Data.FullUpdate()
@@ -90,7 +90,7 @@ rollout rlt_catalog_tasks "Catalog"
             MD_Data.ActiveSubCategory = arg
             -- MD_Data.ActiveTaskIndex = undefined
             MD_Data.ActiveList = 1
-            MD_Data.ActiveTaskAddIndex = undefined
+            MD_Data.ActiveTaskAddIndex = 1
             MD_Data.Update()
             MD_Data.FullUpdate()
             try MD_BBox.Update() catch()
@@ -376,7 +376,8 @@ rollout rlt_catalog_tasks "Catalog"
     on lv_main Click self arg do
     (
         MD_Data.ActiveList = 1
-        MD_Data.ActiveTaskAddIndex = 0
+        MD_Data.ActiveTaskAddIndex = 1
+        MD_Data.ActiveTask.ActiveMatIndex = 1
         subobjectLevel = 0
         MD_Callbacks.Destruct()
         -- Если временный список заданий пуст
@@ -392,7 +393,7 @@ rollout rlt_catalog_tasks "Catalog"
 				else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
 
                 -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
-                MD_Data.ActiveTaskAddIndex = undefined
+                -- MD_Data.ActiveTaskAddIndex = 1
 
                 -- Проверка состояния
                 if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask
@@ -435,7 +436,6 @@ rollout rlt_catalog_tasks "Catalog"
                     MD_Data.ActiveTask.Group != undefined and \
                     MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                     (
-                        print "222"
                         try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
                         -- try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
@@ -460,10 +460,12 @@ rollout rlt_catalog_tasks "Catalog"
             )
         )
         MD_UI.UpdateCatalogInfoRlt()
-        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        -- try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        
         try MD_Data.CreateWorkLayer() catch()
 
         try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
+
         if MD_UI.SettingsRoll.ckbx_load_last.checked and MD_Data.WorkLayerNodes.count == 0 then
         (
             if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
@@ -471,6 +473,15 @@ rollout rlt_catalog_tasks "Catalog"
             try (MD_Data.InWorkTask.LoadWork \
             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
         )
+
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
+
+        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
+
+        if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
+        (try select MD_Data.InWorkTask.MainMesh catch())
+        else clearselection()
     )
 
     on lv_add Click self arg do
@@ -483,12 +494,11 @@ rollout rlt_catalog_tasks "Catalog"
         (
             MD_Data.ActiveList = 2
             MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
-            
             MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
         )
-
+        -- Обновить состояние окна загрузки текстур, если оно открыто
         if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
 
         try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()

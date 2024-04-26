@@ -56,9 +56,11 @@ rollout dlg_load_textures "" width:346 height:512
         button 'btn_dp' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_dp_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
     
-    button 'btn_load' "Assign Maps" width:(dlg_load_textures.width - 42) height:CTRL_HEIGHT_2 align:#center offset:[0, 16] enabled:false
+    button 'btn_assign' "Assign Maps" width:(dlg_load_textures.width - 42) height:CTRL_HEIGHT_2 align:#center offset:[0, 16] enabled:false
 
-    -- local controls_arr = #(#(btn_d, ckbx_d), #(btn_srm, ckbx_srm), #(btn_n, ckbx_n), #(btn_d_t, ckbx_d_t), #(btn_srm_t, ckbx_srm_t), #(btn_n_t, ckbx_n_t), #(btn_e, ckbx_e), #(btn_m, ckbx_m), #(btn_sss, ckbx_sss))
+    local controls_arr = #(btn_d, btn_srm, btn_n, btn_d_t, btn_srm_t, btn_n_t, btn_e, btn_mx, btn_sss, btn_dp)
+    local texts_suffixes = #("_D", "_SRM", "_N", "_D", "_SRM", "_N", "_E", "_M", "_SSS", "_DP")
+    local text_names = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
     local textures = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
     local source_files = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
 
@@ -159,44 +161,63 @@ rollout dlg_load_textures "" width:346 height:512
 
         return checked_items
     )
-
+*/
     fn InitExistTextures =
     (
-        if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Assign Textures")
-        else 
-        (
+        -- if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Assign Textures")
+        -- else 
+        -- (
+            -- Задать заголовок окна
             dlg_load_textures.title = ("Assign Textures to Material-" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex)
-
-            btn_clear.enabled = false
+            
             btn_assign.enabled = false
 
+            -- Получить количество id материала
+            local mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat
+            local mat_ids = for i = 1 to mat.materialList.count collect i as string
+
+            -- Задать список id материала
+            lst_mat_id.items = mat_ids
+            SetFocus lst_mat_id
+
+            -- Пройти по всем типам карт
             for i = 1 to controls_arr.count do
             (
-                local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
-                local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
-                local lib_tex_file = (pathConfig.appendPath task_dir text_name)
+                local text_name = ""
+                local mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex]
 
-                if DoesFileExist lib_tex_file then
-                (
-                    controls_arr[i][1].text = text_name
-                    controls_arr[i][2].checked = false
-                    controls_arr[i][2].enabled = true
-                    textures[i] = lib_tex_file
-                    btn_clear.enabled = false
-                    btn_assign.enabled = false
-                )
+                if i != 4 and i != 5 and i != 6 then
+                text_name = "T_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
                 else
-                (
-                    controls_arr[i][1].text = EMPTY_TEXT
-                    controls_arr[i][2].checked = false
-                    controls_arr[i][2].enabled = false
-                    textures[i] = undefined
-                )
+                text_name = "TL_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
+
+                append text_names text_name
+
+                print text_names
+                -- local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
+                -- local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
+                -- local lib_tex_file = (pathConfig.appendPath task_dir text_name)
+
+                -- if DoesFileExist lib_tex_file then
+                -- (
+                --     controls_arr[i][1].text = text_name
+                --     controls_arr[i][2].checked = false
+                --     controls_arr[i][2].enabled = true
+                --     textures[i] = lib_tex_file
+                --     btn_assign.enabled = true
+                -- )
+                -- else
+                -- (
+                --     controls_arr[i][1].text = EMPTY_TEXT
+                --     controls_arr[i][2].checked = false
+                --     controls_arr[i][2].enabled = false
+                --     textures[i] = undefined
+                -- )
             )
-        )
+        -- )
         SetFocus dlg_load_textures 
     )
-
+/*
     fn OpenFile btn lbl def_text =
     (
         -- Вызов диалогового окна для выбора директории локальной базы
@@ -254,15 +275,8 @@ rollout dlg_load_textures "" width:346 height:512
             SetDialogPos dlg_load_textures dialog_pos
         )catch()
 
-        -- Получить количество id материала
-        local mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat
-        local mat_ids = for i = 1 to mat.materialList.count collect i as string
-
-        -- Задать список id материала
-        lst_mat_id.items = mat_ids
-
         -- Инициализация имеющихся текстур в материале
-        -- InitExistTextures()
+        InitExistTextures()
     )
 
     on dlg_load_textures close do
@@ -503,4 +517,15 @@ showTextureMap mat mat.bumpMap true
 showTextureMap mat mat.selfillumMap true
 
 redrawViews()
+
+
+m = $.material.diffuseMap
+showproperties m
+comp_map = CompositeTexturemap \
+mapEnabled:#(false, false, false) \
+maskEnabled:#(false, false, false) \
+layerName:#("Diffuse", "SRM", "Normal")
+
+s = $.material
+s.diffuseMap = comp_map
 */

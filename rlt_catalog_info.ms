@@ -9,7 +9,8 @@ rollout rlt_catalog_info "Info"
 
     on rlt_catalog_info open do
     (
-        rlt_catalog_info.height = 280
+        try (GetINISettings rlt_catalog_info MDT_CONFIG_FILE rlt_catalog_info.name onlyRollState:true) catch()
+        -- rlt_catalog_info.height = 280
     )
 
     on img_prev lbuttondblclk point_click args do 

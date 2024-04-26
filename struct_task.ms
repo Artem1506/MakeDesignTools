@@ -77,6 +77,10 @@ struct Task
     --     saveTempMaterialLibrary MatLib MatLibFile
     --     -- saveMaterialLibrary MatLibFile
 	-- ),
+	fn CreateComposeMap mat =
+	(
+		local comp_map = CompositeTexturemap name:"Compos"
+	),
 
 	fn CreateMaterial mat_index =
 	(
@@ -91,6 +95,7 @@ struct Task
 		-- mat.names[1] = ""
 
 		this.Materials[mat_index].mat = mat
+		mat
         -- append MatLib mat
 		-- if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
         -- saveTempMaterialLibrary MatLib MatLibFile
@@ -113,90 +118,94 @@ struct Task
 		local cur_sel_objs = (selection as array)
 		local merged_objs = undefined
 		local load_result = false
-
-		MD_Callbacks.Destruct()
-
-		clearSelection()
+		local msg_box_val = undefined
 
 		MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
 		MD_Data.WorkLayer.current = true
 		
 		if MD_Data.WorkLayerNodes.count != 0 and quiet_mode == false then
 		(
-			if (queryBox "Очистить рабочий слой перед загрузкой?\n" title:"Внимание!" icon:#question) then
+			msg_box_val = yesNoCancelBox "Рабочий слой содержит объекты.\n\nУдалить их?\n" title:"Внимание!" icon:#question
+
+			if msg_box_val == #yes then
 			(
 				delete MD_Data.WorkLayerNodes
 				gc()
-
 			)
 		)
-	
-		-- mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
-		mergeMAXFile saved_file #mergeDups #useSceneMtlDups #neverReparent
 
-		merged_objs = getLastMergedNodes()
-
-		-- Если кол-во смердженных объектов не равно нулю
-		if merged_objs.count != 0 then
+		if msg_box_val == undefined or msg_box_val == #yes or msg_box_val == #no then
 		(
-			MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
-			for obj in merged_objs do
+			clearSelection()
+			MD_Callbacks.Destruct()
+
+			-- mergeMAXFile saved_file #deleteOldDups #useMergedMtlDups #neverReparent
+			mergeMAXFile saved_file #mergeDups #useSceneMtlDups #neverReparent
+
+			merged_objs = getLastMergedNodes()
+
+			-- Если кол-во смердженных объектов не равно нулю
+			if merged_objs.count != 0 then
 			(
-				if MD_Data.InWorkTask != undefined then
+				MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+				for obj in merged_objs do
 				(
-					local mat_lib_file = (filterString saved_file ".")[1] + ".mat"
-					local mat_lib = loadTempMaterialLibrary mat_lib_file
+					if MD_Data.InWorkTask != undefined then
+					(
+						local mat_lib_file = (filterString saved_file ".")[1] + ".mat"
+						local mat_lib = loadTempMaterialLibrary mat_lib_file
 
-					-- MD_Data.InWorkTask.Materials = undefined
-					try(
-						for i = 1 to mat_lib.count do MD_Data.InWorkTask.Materials[i].MultiMat = mat_lib[i]
-					)catch()
+						-- MD_Data.InWorkTask.Materials = undefined
+						try(
+							for i = 1 to mat_lib.count do MD_Data.InWorkTask.Materials[i].MultiMat = mat_lib[i]
+						)catch()
 
-					-- if MD_Data.InWorkTask.Group == undefined then 
-					-- (
-						if obj.name == MD_Data.InWorkTask.Article then
-						(
-							MD_Data.InWorkTask.MainMesh = obj
-							try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
-						)
-						if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
-						(
-							MD_Data.InWorkTask.AddMesh = obj
-							try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
-						)						
-					-- )
-					-- else
-					-- (
-					-- 	if obj.name == MD_Data.InWorkTask.Group then
-					-- 	(
-					-- 		MD_Data.InWorkTask.MainMesh = obj
-					-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
-					-- 	)
-					-- 	if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
-					-- 	(
-					-- 		MD_Data.InWorkTask.AddMesh = obj
-					-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
-					-- 	)	
-					-- )
+						-- if MD_Data.InWorkTask.Group == undefined then 
+						-- (
+							if obj.name == MD_Data.InWorkTask.Article then
+							(
+								MD_Data.InWorkTask.MainMesh = obj
+								try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+							)
+							if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
+							(
+								MD_Data.InWorkTask.AddMesh = obj
+								try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+							)						
+						-- )
+						-- else
+						-- (
+						-- 	if obj.name == MD_Data.InWorkTask.Group then
+						-- 	(
+						-- 		MD_Data.InWorkTask.MainMesh = obj
+						-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+						-- 	)
+						-- 	if obj.name == (MD_Data.InWorkTask.Group + TRANS_POSTFIX) then
+						-- 	(
+						-- 		MD_Data.InWorkTask.AddMesh = obj
+						-- 		try MD_Data.AssignMaterial obj MD_Data.InWorkTask.ActiveMatIndex catch()
+						-- 	)	
+						-- )
+					)
 				)
+				-- try (select MD_Data.InWorkTask.MainMesh) catch()
+				load_result = true
+				
+				-- Генерация хэш суммы
+				MD_Data.LoadWorkHashSum = getHashCodeFromObjects MD_Data.WorkLayerNodes
+				try (select MD_Data.InWorkTask.MainMesh) catch()
+
 			)
-			-- try (select MD_Data.InWorkTask.MainMesh) catch()
-			load_result = true
-			
-			-- Генерация хэш суммы
-			MD_Data.LoadWorkHashSum = getHashCodeFromObjects MD_Data.WorkLayerNodes
-			try (select MD_Data.InWorkTask.MainMesh) catch()
+			else 
+			(
+				try (select cur_sel_objs) catch()
+				-- MD_Data.LoadWorkHashSum = 0
+			)
 
+			completeRedraw()
+
+			MD_Callbacks.Add()
 		)
-		else 
-		(
-			try (select cur_sel_objs) catch()
-			-- MD_Data.LoadWorkHashSum = 0
-		)
-
-		completeRedraw()
-
-		-- MD_Callbacks.Add()
 
 		return load_result
 	),
@@ -390,7 +399,7 @@ struct Task
 				else
 				(
 					mat = TaskMaterial()
-					mat.Article = data["article"]
+					mat.Article = (data["article"]+"-01")
 					mat.MatIndex = "01"
 
 					for t = 1 to mat.textures.count do
@@ -456,3 +465,4 @@ struct Task
 
 	on create do Init()
 )
+
