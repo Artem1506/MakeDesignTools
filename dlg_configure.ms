@@ -7,7 +7,7 @@ rollout dlg_configure "Configure User Data" width:400 height:210
     Label 'lbl_6' "Local Database Dir: " width:92 offset:[8, 14] align:#left across:3
     editText 'etxt_local_dir' "" width:198 height:20 offset:[-20, 12] align:#left
     Button 'btn_md_lib_dir' "Browse" width:64 height:CTRL_HEIGHT_1 offset:[0, 11] align:#right
-
+    
     Label 'lbl_8' "MD Login:" width:48 offset:[55, 2] align:#left across:2
     editText 'etxt_log' "" width:268 height:20 offset:[-2, 0] align:#right multiLine:false
 
@@ -225,89 +225,98 @@ rollout dlg_configure "Configure User Data" width:400 height:210
     on btn_get_data pressed do 
     (
         lbl_connect.text = ""
+        
+        SetUserEnvVar "MD_LIB_DIR" etxt_local_dir.text
+        SetUserEnvVar "MD_USER_LOGIN" etxt_log.text
+        SetUserEnvVar "MD_USER_PASS" etxt_pass.text
+        SetUserEnvVar "MD_CURRENT_PROJECT" etxt_proj_article.text
 
-        -- Запросить данные о пользователях MD
-
-        MD_Client.Request "get_users_tree" args:("\"" + MD_USERS_DATA_FILE + "\"") title:"Get Users Data"
-
-        if MD_Client.ResponseStatus == "200" then 
+        if etxt_local_dir.text != "" and etxt_log.text != "" and etxt_pass.text != "" and etxt_proj_article.text != ""  then
         (
-            Client_Log.Info MD_Client.ResponseMessage
-            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
-            result_sum += 1
+            -- Запросить данные о пользователях MD
+
+            MD_Client.Request "get_users_tree" args:("\"" + MD_USERS_DATA_FILE + "\"") title:"Get Users Data"
+
+            if MD_Client.ResponseStatus == "200" then 
+            (
+                Client_Log.Info MD_Client.ResponseMessage
+                lbl_info.text = "INFO: " + MD_Client.ResponseMessage
+                result_sum += 1
+            )
+            else
+            (
+                Client_Log.Error MD_Client.ResponseMessage
+                lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
+            )
+
+            -- Запросить данные о проектах MD
+
+            MD_Client.Request "get_projects_tree" args:("\"" + MD_PROJECTS_DATA_FILE + "\"") title:"Get Projects Data"
+
+            if MD_Client.ResponseStatus == "200" then 
+            (
+                Client_Log.Info MD_Client.ResponseMessage
+                lbl_info.text = "INFO: " + MD_Client.ResponseMessage
+                result_sum += 1
+            )
+            else
+            (
+                Client_Log.Error MD_Client.ResponseMessage
+                lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
+            )
+
+            -- Запросить данные о каталоге текущего проекта MD
+
+            MD_Client.Request "get_project_catalog" args:("\"" + MD_CURRENT_PROJECT + SEPAR + MD_CATALOG_DATA_FILE + "\"") title:("Get "+ MD_CURRENT_PROJECT + " Catalog Data")
+
+            if MD_Client.ResponseStatus == "200" then 
+            (
+                Client_Log.Info MD_Client.ResponseMessage
+                lbl_info.text = "INFO: " + MD_Client.ResponseMessage
+                result_sum += 1
+            )
+            else
+            (
+                Client_Log.Error MD_Client.ResponseMessage
+                lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
+            )
+
+            if result_sum == 3 then 
+            (
+                destroyDialog dlg_configure
+                
+                MD_Data.CheckedTasks = #()
+                MD_Callbacks.Destruct()
+                MD_Data.Init()
+                try (MD_UI.Categories.selection = 1) catch()
+                try MD_Data.ActiveCategory = 1 catch()
+                try MD_Data.ActiveSubCategory = 1 catch()
+                try MD_UI.lst_sub_catalog.Items = MD_Data.sub_categs[MD_Data.ActiveCategory] catch()
+                try MD_UI.lst_sub_catalog.selection = 1 catch()
+                MD_Data.CheckedTasks = #()
+                MD_Data.ActiveList = 1
+                MD_Data.ActiveTaskAddIndex = 1
+                MD_Data.FullUpdate()
+                MD_UI.FillCategoriesLists()
+                try MD_BBox.Update() catch()
+                try (MD_UI.SubCategories.selection = 1) catch()
+                MD_UI.UpdateCatalogTasksRlt()
+                if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+                else MD_Data.ShowLayers mode:#scene_only
+            )
+            else if result_sum > 0 then
+            (
+                msg = "Не удалось загрузить некоторые данные."
+                lbl_info.text = "WARNING: " + msg
+                Client_Log.Warning msg
+            ) 
+            else
+            (
+                msg = "Данные не были загружены."
+                lbl_info.text = "ERROR: " + msg
+                Client_Log.Error msg
+            )
         )
-        else
-        (
-            Client_Log.Error MD_Client.ResponseMessage
-            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
-        )
-
-        -- Запросить данные о проектах MD
-
-        MD_Client.Request "get_projects_tree" args:("\"" + MD_PROJECTS_DATA_FILE + "\"") title:"Get Projects Data"
-
-        if MD_Client.ResponseStatus == "200" then 
-        (
-            Client_Log.Info MD_Client.ResponseMessage
-            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
-            result_sum += 1
-        )
-        else
-        (
-            Client_Log.Error MD_Client.ResponseMessage
-            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
-        )
-
-        -- Запросить данные о каталоге текущего проекта MD
-
-        MD_Client.Request "get_project_catalog" args:("\"" + MD_CURRENT_PROJECT + SEPAR + MD_CATALOG_DATA_FILE + "\"") title:("Get "+ MD_CURRENT_PROJECT + " Catalog Data")
-
-        if MD_Client.ResponseStatus == "200" then 
-        (
-            Client_Log.Info MD_Client.ResponseMessage
-            lbl_info.text = "INFO: " + MD_Client.ResponseMessage
-            result_sum += 1
-        )
-        else
-        (
-            Client_Log.Error MD_Client.ResponseMessage
-            lbl_info.text = "ERROR: " + MD_Client.ResponseMessage
-        )
-
-        if result_sum == 3 then 
-        (
-            destroyDialog dlg_configure
-            
-            MD_Data.CheckedTasks = #()
-            MD_Callbacks.Destruct()
-            MD_Data.Init()
-            try (MD_UI.Categories.selection = 1) catch()
-            try MD_Data.ActiveCategory = 1 catch()
-            try MD_Data.ActiveSubCategory = 1 catch()
-            try MD_UI.lst_sub_catalog.Items = MD_Data.sub_categs[MD_Data.ActiveCategory] catch()
-            try MD_UI.lst_sub_catalog.selection = 1 catch()
-            MD_Data.CheckedTasks = #()
-            MD_Data.ActiveList = 1
-            MD_Data.ActiveTaskAddIndex = 1
-            MD_Data.FullUpdate()
-            MD_UI.FillCategoriesLists()
-            try MD_BBox.Update() catch()
-            try (MD_UI.SubCategories.selection = 1) catch()
-            MD_UI.UpdateCatalogTasksRlt()
-            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-            else MD_Data.ShowLayers mode:#scene_only
-        )
-        else if result_sum > 0 then
-        (
-            msg = "Не удалось загрузить некоторые данные."
-            lbl_info.text = "WARNING: " + msg
-            Client_Log.Warning msg
-        ) 
-        else
-        (
-            msg = "Данные не были загружены."
-            lbl_info.text = "ERROR: " + msg
-            Client_Log.Error msg
-        )
+        else lbl_info.text = "WARNING: Необходимо заполнить все поля!"
     )
 )

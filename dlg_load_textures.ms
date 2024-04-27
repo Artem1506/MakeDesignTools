@@ -64,6 +64,7 @@ rollout dlg_load_textures "" width:346 height:512
     local source_text_files = #() -- Многомерный массив. Хранит пути текстур
     local active_mat = undefined -- Активный материал (Multi-Sub mat)
     local active_map_index = 0
+    local bbox_checked_state = false
 
     fn SwitchStates current_ctrl state =
     (
@@ -181,9 +182,9 @@ rollout dlg_load_textures "" width:346 height:512
                 -- mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex]
 
                 if i != 4 and i != 5 and i != 6 then
-                text_name = "T_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
+                text_name = "T_" + mat.MultiMat.name + "_" + (s as string) + texts_suffixes[i]
                 else
-                text_name = "TL_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
+                text_name = "TL_" + mat.MultiMat.name + "_" + (s as string) + texts_suffixes[i]
 
                 text_names[s][i] = text_name
 
@@ -293,6 +294,28 @@ rollout dlg_load_textures "" width:346 height:512
         mat.diffuseMap.mapEnabled[map_slot_index] = state
     )
 
+    fn UpdateDialog =
+    (
+        -- Задать имена текстур на кнопках
+        for i = 1 to controls_arr.count do
+        (
+            map_obj = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[i]
+
+            if classOf map_obj == Bitmaptexture and map_obj.fileName != "" then 
+            controls_arr[i].text = text_names[lst_mat_id.selection][i]
+            else if classOf map_obj == RGB_Tint and map_obj.map1.fileName != "" then
+            controls_arr[i].text = text_names[lst_mat_id.selection][i]
+            else controls_arr[i].text = EMPTY_TEXT
+        )
+
+        -- Переключить видимость текстур во вьюпорте
+        if active_map_index > 0 then
+        (
+            for i = 1 to lst_mat_id.items.count do ShowMapInViewport active_mat.materialList[i] active_map_index false
+            ShowMapInViewport active_mat.materialList[lst_mat_id.selection] active_map_index true
+        )
+    )
+
 /*
     fn OpenFile btn lbl def_text =
     (
@@ -356,30 +379,26 @@ rollout dlg_load_textures "" width:346 height:512
 
         -- Активный материал
         try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
+
+        UpdateDialog()
+        bbox_checked_state = rlt_settings.ckbx_show_bb.checked
+        rlt_settings.ckbx_show_bb.checked = false
+        try MD_BBox.Update() catch()
     )
 
     on dlg_load_textures close do
     (
         -- Сохранить положение диалога
         SetINISetting MDT_CONFIG_FILE dlg_load_textures.name "pos" ((GetDialogPos dlg_load_textures) as string)
+
+        SetViewShading 0
+        rlt_settings.ckbx_show_bb.checked = bbox_checked_state
+        try MD_BBox.Update() catch()
     )
 
     on lst_mat_id selected arg do
     (
-        for i = 1 to controls_arr.count do
-        (
-            controls_arr[i].text = text_names[arg][i]
-        )
-        -- for ctrl in dlg_load_textures.Controls where (classOf ctrl == CheckButtonControl) do ctrl.checked = false
-
-        -- Переключить видимость текстур во вьюпорте
-        if active_map_index > 0 then 
-        (
-            for i = 1 to lst_mat_id.items.count do ShowMapInViewport active_mat.materialList[i] active_map_index false
-            ShowMapInViewport active_mat.materialList[lst_mat_id.selection] active_map_index true
-        )
-
-        
+        UpdateDialog()
     )
 
 --------------------------------------------------
