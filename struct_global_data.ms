@@ -58,6 +58,7 @@ struct GlobalData
 		try( 
 			subobjectLevel = 0 
 			obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat 
+			showTextureMap obj.Material false
 			CompleteRedraw()  
 		)catch()  
 	), 
@@ -119,17 +120,18 @@ struct GlobalData
 				if classOf mat != Standardmaterial then 
 				(
 					mat = Standardmaterial()
-					MD_Data.InWorkTask.CreateComposeMap mat
 					MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialList[i] = mat
-				)				
+				)		
 				mat.Name = m_name
 				mat.Diffuse = CLR_PALETTE_1[i]
+				mat.diffuseMap = MD_Data.InWorkTask.CreateComposeMap()
+				showTextureMap mat false
 			)
 
 			MD_Data.InWorkTask.Materials[mat_index].MultiMat.materialIDList = mat_ids
 			-- obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat
 		-- )catch()
-
+		
 		CompleteRedraw() 
 	),
 

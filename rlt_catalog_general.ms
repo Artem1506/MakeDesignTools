@@ -81,7 +81,7 @@ rollout rlt_catalog_general "General"
                 try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
             )
 
-            if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
+            if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
             -- if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
             -- ( 
             --     MD_Data.InWorkTask.LoadMaterial()  
@@ -126,7 +126,7 @@ rollout rlt_catalog_general "General"
             -- try MD_Data.UpdateMaterial MD_Data.InWorkTask.AddMesh i catch()
             try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
         )
-
+        SetViewShading 0
         -- try(
         --     if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
         --     ( 

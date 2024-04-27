@@ -30,9 +30,11 @@ struct UI_Dialogs
 					local index = LoadWork.lv_files.Items.Item[i].Index + 1
 					max_file = MD_Data.ActiveTask.SavedWorks[index]
 					prev_file = (trimRight max_file ".max") + ".jpg"
+					mat_lib_file = (trimRight max_file ".max") + ".mat"
 					
 					deleteFile max_file
 					deleteFile prev_file
+					deleteFile mat_lib_file
 
 					append indexes index
 				)

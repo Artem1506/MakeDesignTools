@@ -477,7 +477,7 @@ rollout rlt_catalog_tasks "Catalog"
         try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
         try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
 
-        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
+        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 
         if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
         (try select MD_Data.InWorkTask.MainMesh catch())
@@ -499,7 +499,7 @@ rollout rlt_catalog_tasks "Catalog"
             MD_UI.UpdateCatalogGeneralRlt()
         )
         -- Обновить состояние окна загрузки текстур, если оно открыто
-        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures()
+        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 
         try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
         try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()

@@ -7,7 +7,7 @@ rollout dlg_load_textures "" width:346 height:512
     spinner 'spn_chnl' "Map Channel: " fieldwidth:42 type:#integer range:[1, 10, 1] height:24 align:#left offset:[2, 2] enabled:false
     spinner 'spn_tile' "Tiling: " fieldwidth:42 type:#float range:[-10000.0, 10000.0, 1.0] height:24 align:#left offset:[40, -6] enabled:false
 
-    groupBox 'grp_01' " Basic Maps: " width:(dlg_load_textures.width - 10) height:108 align:#center offset:[0, 2]
+    groupBox 'grp_01' " Basic Maps: " width:(dlg_load_textures.width - 10) height:108 align:#center offset:[0, 0]
         checkbutton 'chbtn_d' "Color" width:56 height:CTRL_HEIGHT_1 align:#left offset:[8, -92] across:4
         checkbutton 'chbtn_o' "O" width:27 height:CTRL_HEIGHT_1 align:#left offset:[-15, -92]
         button 'btn_d' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-5, -92]
@@ -35,7 +35,7 @@ rollout dlg_load_textures "" width:346 height:512
         button 'btn_srm_t' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-29, 0]
         button 'btn_srm_t_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[11, 0]
 
-        checkbutton 'chbtn_01_n_t' "Normal" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
+        checkbutton 'chbtn_n_t' "Normal" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
         button 'btn_n_t' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_n_t_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
 
@@ -58,11 +58,12 @@ rollout dlg_load_textures "" width:346 height:512
     
     button 'btn_assign' "Assign Maps" width:(dlg_load_textures.width - 42) height:CTRL_HEIGHT_2 align:#center offset:[0, 16] enabled:false
 
-    local controls_arr = #(btn_d, btn_srm, btn_n, btn_d_t, btn_srm_t, btn_n_t, btn_e, btn_mx, btn_sss, btn_dp)
+    local controls_arr = #(btn_d, btn_srm, btn_n, btn_d_t, btn_srm_t, btn_n_t, btn_e, btn_mx, btn_sss, btn_dp) -- Массив объектов кнопок
     local texts_suffixes = #("_D", "_SRM", "_N", "_D", "_SRM", "_N", "_E", "_M", "_SSS", "_DP")
-    local text_names = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
-    local textures = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
-    local source_files = #(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined)
+    local text_names = #() -- Многомерный массив. Хранит названия текстур
+    local source_text_files = #() -- Многомерный массив. Хранит пути текстур
+    local active_mat = undefined -- Активный материал (Multi-Sub mat)
+    local active_map_index = 0
 
     fn SwitchStates current_ctrl state =
     (
@@ -71,7 +72,7 @@ rollout dlg_load_textures "" width:346 height:512
             for ctrl in dlg_load_textures.Controls where (classOf ctrl == CheckButtonControl and ctrl != current_ctrl) do ctrl.checked = false
         )
         spn_chnl.enabled = state
-        spn_tile.enabled = state
+        spn_tile.enabled = false
     )
 /*
     fn ChangeMaterial =
@@ -162,61 +163,136 @@ rollout dlg_load_textures "" width:346 height:512
         return checked_items
     )
 */
-    fn InitExistTextures =
+    fn InitMaps mat =
     (
-        -- if MD_Data.ActiveTaskAddIndex == undefined then dlg_load_textures.title = ("Assign Textures")
-        -- else 
-        -- (
-            -- Задать заголовок окна
-            dlg_load_textures.title = ("Assign Textures to Material-" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex)
-            
-            btn_assign.enabled = false
+        -- Получить количество id материала
+        -- local mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+        text_names = #()
 
-            -- Получить количество id материала
-            local mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat
-            local mat_ids = for i = 1 to mat.materialList.count collect i as string
-
-            -- Задать список id материала
-            lst_mat_id.items = mat_ids
-            SetFocus lst_mat_id
+        for s = 1 to mat.MultiMat.materialList.count do
+        (
+            append text_names #()
+            append source_text_files #()
 
             -- Пройти по всем типам карт
             for i = 1 to controls_arr.count do
             (
                 local text_name = ""
-                local mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex]
+                -- mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex]
 
                 if i != 4 and i != 5 and i != 6 then
                 text_name = "T_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
                 else
                 text_name = "TL_" + mat.MultiMat.name + "_" + (lst_mat_id.selection as string) + texts_suffixes[i]
 
-                append text_names text_name
+                text_names[s][i] = text_name
 
-                print text_names
+                local map_file_name = ""
+                local map_obj = mat.MultiMat.materialList[s].diffuseMap.mapList[i]
+
+                if classOf map_obj == Bitmaptexture then
+                map_file_name = mat.MultiMat.materialList[s].diffuseMap.mapList[i].fileName
+                else if classOf map_obj == RGB_Tint then
+                map_file_name = mat.MultiMat.materialList[s].diffuseMap.mapList[i].map1.fileName
+
+                source_text_files[s][i] = map_file_name
+
                 -- local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
                 -- local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
                 -- local lib_tex_file = (pathConfig.appendPath task_dir text_name)
-
-                -- if DoesFileExist lib_tex_file then
-                -- (
-                --     controls_arr[i][1].text = text_name
-                --     controls_arr[i][2].checked = false
-                --     controls_arr[i][2].enabled = true
-                --     textures[i] = lib_tex_file
-                --     btn_assign.enabled = true
-                -- )
-                -- else
-                -- (
-                --     controls_arr[i][1].text = EMPTY_TEXT
-                --     controls_arr[i][2].checked = false
-                --     controls_arr[i][2].enabled = false
-                --     textures[i] = undefined
-                -- )
             )
-        -- )
+        )
+    )
+
+    fn InitExistTextures mat =
+    (
+        -- Получить количество id материала
+        -- local mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+        local mat_ids = for i = 1 to mat.MultiMat.materialList.count collect i as string
+
+        -- Задать заголовок окна
+        dlg_load_textures.title = ("Assign maps to material " + mat.MultiMat.name)
+        
+        btn_assign.enabled = false
+
+        -- Задать список id материала
+        lst_mat_id.items = mat_ids
+        SetFocus lst_mat_id
+
+        -- Инициализировать текстуры
+        InitMaps mat
+
         SetFocus dlg_load_textures 
     )
+
+    fn AssignMapToMaterial mat map_slot_index =
+    (
+        /*
+        Назначает карты текстур в слои композитной текстуры материала
+        mat = Стандартный материал в слоте мульти саб материала. 
+        Он должен содержать композитную карту в диффузном канале, созданный при помощи функции CreateComposeMap
+        Допустимые значения map_slot_index:
+            1 - Diffuse
+            2 - SRM
+            3 - Normal
+            4 - Diffuse (Tile)
+            5 - SRM (Tile)
+            6 - Normal (Tile)
+            7 - Emission
+            8 - Mixing
+            9 - SSS
+            10 - Displace
+        Параметры композитной текстуры (для всех тип = array)
+            mapEnabled
+            maskEnabled
+            layerName
+            mapList
+            mask
+        */
+        local result = undefined
+        local map_file = getOpenFileName caption:"Set Texture Map File ..." types:"Targa (*.tga)|*.tga|"
+
+        if map_file != undefined then 
+        (
+            mat.diffuseMap.mapList[map_slot_index].fileName = map_file
+            if map_slot_index == 8 then
+            (
+                mat.diffuseMap.mask[4].fileName = map_file
+                mat.diffuseMap.mask[5].fileName = map_file
+                mat.diffuseMap.mask[6].fileName = map_file
+            )
+            result = map_file
+        )
+        
+        result
+    )
+
+    fn RemoveMapFromMaterial mat map_slot_index =
+    (
+        local result = false
+
+        mat.diffuseMap.mapList[map_slot_index].fileName = ""
+        if map_slot_index == 8 then
+        (
+            mat.diffuseMap.mask[4].fileName = ""
+            mat.diffuseMap.mask[5].fileName = ""
+            mat.diffuseMap.mask[6].fileName = ""
+        )
+
+        result = true
+    )
+
+    fn ShowMapInViewport mat map_slot_index state =
+    (
+        case state of
+        (
+            false:(SetViewShading 0)
+            true:(SetViewShading 1)
+        )
+
+        mat.diffuseMap.mapEnabled[map_slot_index] = state
+    )
+
 /*
     fn OpenFile btn lbl def_text =
     (
@@ -276,7 +352,10 @@ rollout dlg_load_textures "" width:346 height:512
         )catch()
 
         -- Инициализация имеющихся текстур в материале
-        InitExistTextures()
+        InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+
+        -- Активный материал
+        try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
     )
 
     on dlg_load_textures close do
@@ -285,13 +364,47 @@ rollout dlg_load_textures "" width:346 height:512
         SetINISetting MDT_CONFIG_FILE dlg_load_textures.name "pos" ((GetDialogPos dlg_load_textures) as string)
     )
 
-/*
-    on ckbx_d changed arg do (
-        if (GetCheckedItems()).count == 0 
-        then (btn_clear.enabled = false; btn_assign.enabled = false)
-        else (btn_clear.enabled = true; btn_assign.enabled = true)
+    on lst_mat_id selected arg do
+    (
+        for i = 1 to controls_arr.count do
+        (
+            controls_arr[i].text = text_names[arg][i]
+        )
+        -- for ctrl in dlg_load_textures.Controls where (classOf ctrl == CheckButtonControl) do ctrl.checked = false
+
+        -- Переключить видимость текстур во вьюпорте
+        if active_map_index > 0 then 
+        (
+            for i = 1 to lst_mat_id.items.count do ShowMapInViewport active_mat.materialList[i] active_map_index false
+            ShowMapInViewport active_mat.materialList[lst_mat_id.selection] active_map_index true
+        )
+
+        
     )
 
+--------------------------------------------------
+    on btn_d pressed do (
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 1
+
+        if map_file != undefined then 
+        (
+            btn_d.text = text_names[lst_mat_id.selection][1]
+            source_text_files[lst_mat_id.selection][1] = map_file
+        )
+    )
+
+    on btn_d_del pressed do (
+        local val = RemoveMapFromMaterial active_mat.materialList[lst_mat_id.selection] 1
+        active_map_index = 0
+
+        if val then 
+        (
+            btn_d.text = EMPTY_TEXT
+            source_text_files[lst_mat_id.selection][1] = ""
+        )
+    )
+
+/*
     on ckbx_m changed arg do (
         if (GetCheckedItems()).count == 0 
         then (btn_clear.enabled = false; btn_assign.enabled = false)
@@ -367,96 +480,135 @@ rollout dlg_load_textures "" width:346 height:512
         SwitchStates chbtn_d state
 
         setFocus dlg_load_textures
+
+        ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 1 state
+        if state then active_map_index = 1 else active_map_index = 0 
     )
 
     on chbtn_o changed state do
     (
         SwitchStates chbtn_o state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 1 else active_map_index = 0
     )
 
     on chbtn_s changed state do
     (
         SwitchStates chbtn_s state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 2 else active_map_index = 0
     )
 
     on chbtn_r changed state do
     (
         SwitchStates chbtn_r state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 2 else active_map_index = 0
     )
 
     on chbtn_m changed state do
     (
         SwitchStates chbtn_m state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 2 else active_map_index = 0
     )
 
     on chbtn_n changed state do
     (
         SwitchStates chbtn_n state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 3 else active_map_index = 0
+    )
+
+    on chbtn_d_t changed state do
+    (
+        SwitchStates chbtn_d_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 4 else active_map_index = 0
+    )
+
+    on chbtn_o_t changed state do
+    (
+        SwitchStates chbtn_o_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 4 else active_map_index = 0
+    )
+
+    on chbtn_s_t changed state do
+    (
+        SwitchStates chbtn_s_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 5 else active_map_index = 0
+    )
+
+    on chbtn_r_t changed state do
+    (
+        SwitchStates chbtn_r_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 5 else active_map_index = 0
+    )
+
+    on chbtn_m_t changed state do
+    (
+        SwitchStates chbtn_m_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 5 else active_map_index = 0
+    )
+
+    on chbtn_n_t changed state do
+    (
+        SwitchStates chbtn_n_t state
+        spn_tile.enabled = state
+        setFocus dlg_load_textures
+
+        if state then active_map_index = 6 else active_map_index = 0
     )
 
     on chbtn_e changed state do
     (
         SwitchStates chbtn_e state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 7 else active_map_index = 0
     )
 
     on chbtn_mx changed state do
     (
         SwitchStates chbtn_mx state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 8 else active_map_index = 0
     )
 
     on chbtn_sss changed state do
     (
         SwitchStates chbtn_sss state
         setFocus dlg_load_textures
-    )
 
-    on chbtn_d_t changed state do
-    (
-        SwitchStates chbtn_d_t state
-        setFocus dlg_load_textures
-    )
-
-    on chbtn_o_t changed state do
-    (
-        SwitchStates chbtn_o_t state
-        setFocus dlg_load_textures
-    )
-
-    on chbtn_s_t changed state do
-    (
-        SwitchStates chbtn_s_t state
-        setFocus dlg_load_textures
-    )
-
-    on chbtn_r_t changed state do
-    (
-        SwitchStates chbtn_r_t state
-        setFocus dlg_load_textures
-    )
-
-    on chbtn_m_t changed state do
-    (
-        SwitchStates chbtn_m_t state
-        setFocus dlg_load_textures
-    )
-
-    on chbtn_01_n_t changed state do
-    (
-        SwitchStates chbtn_01_n_t state
-        setFocus dlg_load_textures
+        if state then active_map_index = 9 else active_map_index = 0
     )
 
     on chbtn_dp changed state do
     (
         SwitchStates chbtn_dp state
         setFocus dlg_load_textures
+
+        if state then active_map_index = 10 else active_map_index = 0
     )
 )
 /*

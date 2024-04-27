@@ -169,6 +169,6 @@ MD_Client
 MD_Icon
 
 global CheckExistTaskLayer
-InitExistTextures
+-- InitExistTextures
 cur_view_tm = undefined
 cur_view_type = undefined

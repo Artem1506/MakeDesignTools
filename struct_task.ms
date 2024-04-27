@@ -77,9 +77,17 @@ struct Task
     --     saveTempMaterialLibrary MatLib MatLibFile
     --     -- saveMaterialLibrary MatLibFile
 	-- ),
-	fn CreateComposeMap mat =
+	fn CreateComposeMap =
 	(
-		local comp_map = CompositeTexturemap name:"Compos"
+		local mask_map = Bitmaptexture()
+		comp_map = CompositeTexturemap \
+		mapEnabled:#(false, false, false, false, false, false, false, false, false, false) \
+		maskEnabled:#(false, false, false, false, false, false, false, false, false, false) \
+		layerName:#("Diffuse", "SRM", "Normal", "Diffuse (Tile)", "SRM (Tile)", "Normal (Tile)", "Emission", "Mixing", "SSS", "Displace")\
+		mapList:#(Bitmaptexture(), (RGB_Tint map1:(Bitmaptexture()) red:(color 0 0 0) green:(color 0 0 0) blue:(color 0 0 0)), Bitmaptexture(),\
+		Bitmaptexture(), (RGB_Tint map1:(Bitmaptexture()) red:(color 0 0 0) green:(color 0 0 0) blue:(color 0 0 0)), Bitmaptexture(), \
+		Bitmaptexture(), mask_map, Bitmaptexture(), Bitmaptexture()) \
+		mask:#(undefined, undefined, undefined, mask_map, mask_map, mask_map, undefined, undefined, undefined, undefined)
 	),
 
 	fn CreateMaterial mat_index =
@@ -91,10 +99,12 @@ struct Task
 		mat.materialList.count = 1
 		mat.materialList[1] = Standardmaterial()
 		mat.materialList[1].Diffuse = CLR_PALETTE_1[1]
+		mat.materialList[1].diffuseMap = this.CreateComposeMap()
 		mat.materialList[1].Name = m_name
 		-- mat.names[1] = ""
 
 		this.Materials[mat_index].mat = mat
+		showTextureMap mat false
 		mat
         -- append MatLib mat
 		-- if not DoesDirectoryExist InWorkDir do MakeDir InWorkDir
@@ -206,7 +216,7 @@ struct Task
 
 			MD_Callbacks.Add()
 		)
-
+		SetViewShading 0
 		return load_result
 	),
 
