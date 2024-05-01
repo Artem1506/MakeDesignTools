@@ -87,7 +87,8 @@ struct Task
 		mapList:#(Bitmaptexture(), (RGB_Tint map1:(Bitmaptexture()) red:(color 0 0 0) green:(color 0 0 0) blue:(color 0 0 0)), Bitmaptexture(),\
 		Bitmaptexture(), (RGB_Tint map1:(Bitmaptexture()) red:(color 0 0 0) green:(color 0 0 0) blue:(color 0 0 0)), Bitmaptexture(), \
 		Bitmaptexture(), mask_map, Bitmaptexture(), Bitmaptexture()) \
-		mask:#(undefined, undefined, undefined, mask_map, mask_map, mask_map, undefined, undefined, undefined, undefined)
+		mask:#(undefined, undefined, undefined, mask_map, mask_map, mask_map, undefined, undefined, undefined, undefined) \
+		blendMode:#(0, 0, 0, 0, 0, 0, 5, 0, 0, 0)
 	),
 
 	fn CreateMaterial mat_index =
