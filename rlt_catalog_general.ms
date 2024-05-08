@@ -73,15 +73,22 @@ rollout rlt_catalog_general "General"
     (
         -- try(
             
+            MD_Callbacks.Destruct()
+
             for i = 1 to MD_Data.InWorkTask.Materials.Count do
             (
+                MD_Data.ActiveTaskAddIndex = i
                 MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
-                MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh i
-                -- try MD_Data.UpdateMaterial MD_Data.InWorkTask.AddMesh i catch()
-                try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh i catch()
-            )
 
+            )
+            MD_Data.InWorkTask.ActiveMatIndex = 1
+            MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
+            try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
+            MD_Data.ActiveTaskAddIndex = 1
+            MD_Callbacks.Add()
+            try select MD_Data.InWorkTask.MainMesh catch()
             if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+            
             -- if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
             -- ( 
             --     MD_Data.InWorkTask.LoadMaterial()  

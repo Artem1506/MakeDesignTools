@@ -164,7 +164,7 @@ rollout dlg_load_textures "" width:346 height:512
         */
 
         local result = undefined
-        local map_file = getOpenFileName caption:"Set Texture Map File ..." types:"Targa (*.tga)|*.tga|"
+        local map_file = getOpenFileName caption:"Set Texture Map File ..." types:"Targa (*.tga)|*.tga"
 
         if map_file != undefined then 
         (
@@ -318,6 +318,20 @@ rollout dlg_load_textures "" width:346 height:512
             SetDialogPos dlg_load_textures dialog_pos
         )catch()
 
+        -- Инициализация имеющихся текстур в материале
+        InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+
+        -- Активный материал
+        try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
+
+        UpdateDialog()
+        bbox_checked_state = rlt_settings.ckbx_show_bb.checked
+        rlt_settings.ckbx_show_bb.checked = false
+        try MD_BBox.Update() catch()
+    )
+
+    on btn_update pressed do
+    (
         -- Инициализация имеющихся текстур в материале
         InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 

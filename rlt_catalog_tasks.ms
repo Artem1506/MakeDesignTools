@@ -523,6 +523,7 @@ rollout rlt_catalog_tasks "Catalog"
         case btn_work_state.text of
         (
             "Set Work State":(
+                MD_Callbacks.Destruct()
                 try ClearTrashLayers() catch()
                 
                 MD_Data.CreateWorkState MD_Data.ActiveTask
@@ -553,6 +554,7 @@ rollout rlt_catalog_tasks "Catalog"
             )
             "Update Work State":(
                 -- Создать рабочее состояние
+                MD_Callbacks.Destruct()
                 MD_Data.UpdateWorkState()
                 MD_UI.UpdateCatalogTasksRlt()
             )
@@ -562,6 +564,7 @@ rollout rlt_catalog_tasks "Catalog"
         try MD_BBox.Update() catch()
         MD_Data.ShowLayers mode:#work_only
         MD_Callbacks.Add()
+        try select MD_Data.InWorkTask.MainMesh catch()
     )
 
     on btn_exit_work_state pressed do
