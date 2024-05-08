@@ -155,7 +155,7 @@ struct Callback
 	fn MatChange =
 	(
 		-- print "MatChange"
-		-- try(destroyDialog dlg_load_textures)catch()
+		-- try(destroyDialog dlg_edit_material)catch()
 		try (
 			MD_UI.UpdateCatalogGeneralRlt()
 			--print MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.materialList.count

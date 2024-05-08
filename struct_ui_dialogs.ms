@@ -7,7 +7,7 @@ struct UI_Dialogs
 	LoadWork = dlg_load_work,
 	Export = dlg_export,
 	Request = dlg_request,
-	LoadTextures = dlg_load_textures,
+	EditMaterial = dlg_edit_material,
 
 	fn UpdatePreview =
 	(

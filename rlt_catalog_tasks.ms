@@ -6,15 +6,15 @@ rollout rlt_catalog_tasks "Catalog"
     button 'btn_check' "Check tasks" width:(CTRL_WIDTH_1/2 - 3) height:CTRL_HEIGHT_1 align:#center offset:[11, V_MARGIN] across:3 enabled:false tooltip:MD_Tooltips.tasks_01
     button 'btn_get' "Get" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[29, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_02_a
     button 'btn_clear' "Clear" width:(CTRL_WIDTH_1/4 - 2) height:CTRL_HEIGHT_1 align:#center offset:[19, V_MARGIN] enabled:false tooltip:MD_Tooltips.tasks_03_a
-    dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:176 align:#center offset:[1, 0] enabled:true
+    dotNetControl 'lv_main' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:210 align:#center offset:[1, 0] enabled:true
     button 'btn_work_state' "Set Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_04_a
     button 'btn_exit_work_state' "Exit Work State" width:CTRL_WIDTH_2 height:CTRL_HEIGHT_1 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_05
     
-    -- Label 'lbl_vars' "Finishing Variations:" width:100 offset:[8, 2] align:#left across:2
-    -- dropdownlist 'lst_vars' "" items:#() width:(CTRL_WIDTH_1 - 114) height:50 offset:[12, V_MARGIN] align:#right selection:1 enabled:true
-    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:110 align:#center offset:[1, 0] enabled:true
-    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:2 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06 visible:false
-    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:2 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07 visible:false
+    -- dropdownlist 'lst_mats' "" items:#() width:CTRL_WIDTH_1 height:50 offset:[0, V_MARGIN] align:#center selection:1 enabled:true
+    -- Доп. список материалов объекта (Скрыты в интерфейсе)
+    dotNetControl 'lv_add' "System.Windows.Forms.ListView" width:(CTRL_WIDTH_1) height:0 align:#center offset:[1, 0] enabled:true visible:false
+    button 'btn_assign_mat_id' "Set Material ID" width:CTRL_WIDTH_2 height:0 align:#center offset:[-5, 0] across:2 enabled:false tooltip:MD_Tooltips.tasks_06 visible:false
+    button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_2 height:0 align:#center offset:[7, 0] enabled:false tooltip:MD_Tooltips.tasks_07 visible:false
     
     on rlt_catalog_tasks open do
     (
@@ -41,7 +41,7 @@ rollout rlt_catalog_tasks "Catalog"
 
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
-        rlt_catalog_tasks.height = 430
+        rlt_catalog_tasks.height = 350
     )
     
     on rlt_catalog_tasks close do
@@ -76,7 +76,7 @@ rollout rlt_catalog_tasks "Catalog"
 			    MD_Data.ActiveCategoryIcon.SetIcon icon_file
             ) catch()
         )
-        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
     )
 
     on lst_sub_catalog selected arg do
@@ -104,7 +104,7 @@ rollout rlt_catalog_tasks "Catalog"
                 MD_Data.ActiveCategoryIcon.SetIcon icon_file
             ) catch()
         )
-        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
         try (
 			if MD_Data.ActiveCategoryIcon.Icon != undefined then
 			MD_UI.ToolsCatalogRoll.btn_mode.text = "Edit Icon"
@@ -460,7 +460,7 @@ rollout rlt_catalog_tasks "Catalog"
             )
         )
         MD_UI.UpdateCatalogInfoRlt()
-        -- try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
+        -- try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
         
         try MD_Data.CreateWorkLayer() catch()
 
@@ -477,7 +477,7 @@ rollout rlt_catalog_tasks "Catalog"
         try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
         try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
 
-        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+        if MD_UI.Dialogs.EditMaterial.Visible then MD_UI.Dialogs.EditMaterial.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 
         if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
         (try select MD_Data.InWorkTask.MainMesh catch())
@@ -498,8 +498,9 @@ rollout rlt_catalog_tasks "Catalog"
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
         )
+        
         -- Обновить состояние окна загрузки текстур, если оно открыто
-        if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+        if MD_UI.Dialogs.EditMaterial.Visible then MD_UI.Dialogs.EditMaterial.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 
         try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
         try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
@@ -579,6 +580,7 @@ rollout rlt_catalog_tasks "Catalog"
         MD_Data.FullUpdate()
         try MD_BBox.Update() catch()
         MD_Data.ShowLayers mode:#scene_only
+        try destroyDialog MD_UI.Dialogs.EditMaterial catch()
     )
 
     on lv_add ColumnClick s e do
@@ -593,7 +595,7 @@ rollout rlt_catalog_tasks "Catalog"
 
     on btn_assign_texts pressed do
     (
-        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
-        CreateDialog MD_UI.Dialogs.LoadTextures modal:false
+        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
+        CreateDialog MD_UI.Dialogs.EditMaterial modal:false
     )
 )

@@ -698,7 +698,27 @@ fn getHashCodeFromObjects objs =
 		)catch()
 		print (obj.min) to:hashStr
 		print (obj.max) to:hashStr
-		print (obj.material) to:hashStr
+		if obj.material != undefined then
+		(
+			print (classOf obj.material) to:hashStr
+			print (obj.material.name) to:hashStr
+			try (obj.material.materialList.count to:hashStr)catch()
+			try(
+				for mat in obj.material.materialList do
+				(
+					print (mat) to:hashStr
+					print (mat.name) to:hashStr
+					for i=1 to 10 do
+					(
+						map_obj = mat.diffuseMap.mapList[i]
+						if classOf map_obj == Bitmaptexture then
+						print mat.diffuseMap.mapList[i].fileName to:hashStr
+						else if classOf map_obj == RGB_Tint then
+						print mat.diffuseMap.mapList[i].map1.fileName to:hashStr				
+					)
+				)
+			)catch()
+		)
 		print (obj.modifiers) to:hashStr
 		if obj.parent != undefined then print obj.parent.name to:hashStr
 	)
@@ -725,4 +745,12 @@ fn SetViewShading val =
 			actionMan.executeAction 0 "554"  -- Views: Viewport Visual Style Consistent Colors
 		)
 	)
+)
+
+fn FixObject obj =
+(
+	ConvertTo obj Editable_Poly
+	resetXform obj
+	collapseStack obj
+	obj.transform = (matrix3 [1,0,0] [0,1,0] [0,0,1] [0,0,0])
 )

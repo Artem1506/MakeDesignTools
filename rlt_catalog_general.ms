@@ -20,7 +20,7 @@ rollout rlt_catalog_general "General"
    
     groupBox 'grp_03' " Material: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 4]
     button 'btn_update_mat' "Update Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, -34] across:2 enabled:false tooltip:MD_Tooltips.tools_cat_07_a
-    button 'btn_set_texture' "Assign Maps" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
+    button 'btn_edit_mat' "Edit Material" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -34] enabled:false tooltip:MD_Tooltips.tools_cat_07_b
     -- button 'btn_mesh_switch' ">> Switch To Additional Mesh" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_08
 
     groupBox 'grp_04' " Working Files: " width:(rlt_catalog_general.width - 8) height:48 align:#center offset:[0, 5]
@@ -81,13 +81,19 @@ rollout rlt_catalog_general "General"
                 MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
 
             )
+            
             MD_Data.InWorkTask.ActiveMatIndex = 1
             MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
             try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
             MD_Data.ActiveTaskAddIndex = 1
             MD_Callbacks.Add()
+
             try select MD_Data.InWorkTask.MainMesh catch()
-            if MD_UI.Dialogs.LoadTextures.Visible then MD_UI.Dialogs.LoadTextures.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+            if MD_UI.Dialogs.EditMaterial.Visible then 
+            (
+                MD_UI.Dialogs.EditMaterial.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+                MD_UI.Dialogs.EditMaterial.UpdateDialog()
+            )
             
             -- if DoesFileExist (pathConfig.appendPath MD_Data.InWorkTask.InWorkDir TASK_MAT_NAME) then 
             -- ( 
@@ -122,6 +128,9 @@ rollout rlt_catalog_general "General"
     on btn_main_mesh pressed do
     (
         MD_Data.SetMesh selection[1]
+        try (
+            FixObject MD_Data.InWorkTask.MainMesh
+        ) catch()
         MD_UI.UpdateCatalogGeneralRlt()
         try MD_BBox.Update() catch()
 
@@ -308,10 +317,10 @@ rollout rlt_catalog_general "General"
 	-- 	MD_Data.edit_icon_mode = arg
 	-- )
 
-    on btn_set_texture pressed do
+    on btn_edit_mat pressed do
     (
-        try (destroyDialog MD_UI.Dialogs.LoadTextures) catch()
-        CreateDialog MD_UI.Dialogs.LoadTextures modal:false
+        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
+        CreateDialog MD_UI.Dialogs.EditMaterial modal:false
     )
 
     on btn_clear pressed do

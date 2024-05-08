@@ -28,7 +28,7 @@
         include "dlg_load_work.ms"
         include "dlg_export.ms"
         include "dlg_request.ms"
-        include "dlg_load_textures.ms"
+        include "dlg_edit_material.ms"
         include "rlt_settings.ms"
         include "rlt_catalog_info.ms"
         include "rlt_catalog_tasks.ms"

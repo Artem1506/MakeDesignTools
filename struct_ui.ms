@@ -36,10 +36,14 @@ struct UI
 	),
 
 	-- Добавляет колонки в листвью
-	fn AddListViewColumns list_view columns widths:#() = (
+	fn AddListViewColumns list_view columns widths:#() aligns:#() = (
 		for i = 1 to columns.count do
-		try(list_view.Columns.add columns[i] widths[i])
-		catch(list_view.Columns.add columns[i])
+		try(
+			list_view.Columns.add columns[i] widths[i] aligns[i]
+		)
+		catch(
+			list_view.Columns.add columns[i]
+		)
 	),
 
 	fn InitCatalogLists = 
@@ -50,7 +54,8 @@ struct UI
 		SetListViewParams CatalogListMain
 		SetListViewParams CatalogListAdd CheckBoxes:false
 
-		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 86, 48, 160)
+		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 68, 86, 48, 160) \
+		aligns:#(DN_Lib.ColumnAlignLeft, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignLeft)
 		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 155)
 
 		setFocus CatalogListMain
@@ -77,8 +82,7 @@ struct UI
 			dn_list_item = dotNetObject "System.Windows.Forms.ListViewItem" task.Article
 			dn_list_item.Checked = false
 			dn_list_item.ForeColor = DN_CLR_DEFAULT
-			dn_list_item.SubItems.add "" -- state (index = 1)
-
+			
 			-- Есть ли группа
 			-- if (MD_Data.ActiveTask != undefined and task.State == STATES[2]) or \
 			-- (MD_Data.ActiveTask != undefined and task.State == STATES[1] and MD_Data.InWorkTask != undefined and task.Group != undefined and task.Group == MD_Data.InWorkTask.Group) then
@@ -98,10 +102,15 @@ struct UI
 			-- else dn_list_item.SubItems.add ""
 
 			-- Добавить состояние
+			dn_list_item.SubItems.add "" -- state (index = 1)
 			if task.State == STATES[2] then
 			(
 				dn_list_item.SubItems.Item[1].Text = STATES[2]
 			)
+
+			-- Добавить кол-во материалов
+			if task.Materials.count == 0 then dn_list_item.SubItems.add "1"
+			else if task.Materials.count > 0 then dn_list_item.SubItems.add ((task.Materials.count) as string)
 
 			-- Добавить название группы
 			if task.Group != undefined then 
@@ -167,8 +176,8 @@ struct UI
 			GeneralCatalogRoll.btn_add_mesh.text = "Set Add Mesh"
 			-- GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
 
-			for ctrl in GeneralCatalogRoll.Controls do ctrl.enabled = false
-			
+			for ctrl in GeneralCatalogRoll.Controls where classOf ctrl != GroupBoxControl do ctrl.enabled = false
+
 			GeneralCatalogRoll.grp_01.enabled = true
 			GeneralCatalogRoll.grp_02.enabled = true
 			GeneralCatalogRoll.grp_03.enabled = true
@@ -202,7 +211,7 @@ struct UI
 						GeneralCatalogRoll.btn_update_mat.enabled = true
 						-- Назначить карты текстур
 						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == (MD_Data.InWorkTask.Article + "-"+ (formattedPrint MD_Data.ActiveTaskAddIndex format:#02d)) then
-						GeneralCatalogRoll.btn_set_texture.enabled = true
+						GeneralCatalogRoll.btn_edit_mat.enabled = true
 					)
 					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.MainMesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
 				)
@@ -233,7 +242,7 @@ struct UI
 							GeneralCatalogRoll.btn_mesh_switch.text = "<< Switch To Main Mesh"
 							GeneralCatalogRoll.btn_add_mesh.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = false
-							GeneralCatalogRoll.btn_set_texture.enabled = false
+							GeneralCatalogRoll.btn_edit_mat.enabled = false
 						)
 						else
 						(
@@ -254,7 +263,7 @@ struct UI
 						(
 							GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
-							GeneralCatalogRoll.btn_set_texture.enabled = true
+							GeneralCatalogRoll.btn_edit_mat.enabled = true
 						)
 						try GeneralCatalogRoll.btn_add_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.AddMesh.Name + "\nДля удаления статуса дополнительного объекта необходимо повторно нажать на кнопку.") catch()
 					)
@@ -280,7 +289,7 @@ struct UI
 						(
 							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
-							GeneralCatalogRoll.btn_set_texture.enabled = true
+							GeneralCatalogRoll.btn_edit_mat.enabled = true
 						)
 					)
 				)

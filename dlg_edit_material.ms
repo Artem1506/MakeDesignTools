@@ -1,62 +1,62 @@
-rollout dlg_load_textures "" width:346 height:512
+rollout dlg_edit_material "Edit Material" width:346 height:470
 (
-    label 'lbl_00' "Material ID: " width:80 height:18 align:#left offset:[2, 12] across:2
-    dropdownlist 'lst_mat_id' "" items:#() width:60 height:10 align:#left offset:[-96, 11] selection:1
-    button 'btn_update' "Update" width:100 height:CTRL_HEIGHT_1 align:#right pos:[(dlg_load_textures.width - 120), 16]
+    label 'lbl_0' "Material: " width:40 height:18 align:#left offset:[2, 12] across:4
+    dropdownlist 'lst_mat' "" items:#() width:160 height:10 align:#left offset:[-28, 9] selection:1
+    label 'lbl_00' "ID: " width:30 height:18 align:#right offset:[18, 12]
+    dropdownlist 'lst_mat_id' "" items:#() width:70 height:10 align:#right offset:[0, 9] selection:1
 
-    spinner 'spn_chnl' "Map Channel: " fieldwidth:42 type:#integer range:[1, 10, 1] height:24 align:#left offset:[2, 2] enabled:false
-    spinner 'spn_tile' "Tiling: " fieldwidth:42 type:#float range:[-10000.0, 10000.0, 1.0] height:24 align:#left offset:[40, -6] enabled:false
+    spinner 'spn_chnl' "Map Channel: " fieldwidth:42 type:#integer range:[1, 10, 1] height:24 align:#left offset:[2, 4] enabled:false
+    -- button 'btn_update' "Update" width:100 height:CTRL_HEIGHT_1 align:#right offset:[0, 4]
+    spinner 'spn_tile' "Tiling: " fieldwidth:42 type:#float range:[-10000.0, 10000.0, 1.0] height:24 align:#left offset:[40, -8] enabled:false
 
-    groupBox 'grp_01' " Basic Maps: " width:(dlg_load_textures.width - 10) height:108 align:#center offset:[0, 0]
+    groupBox 'grp_01' " Basic Maps: " width:(dlg_edit_material.width - 10) height:108 align:#center offset:[0, 0]
         checkbutton 'chbtn_d' "Color" width:56 height:CTRL_HEIGHT_1 align:#left offset:[8, -92] across:4
         checkbutton 'chbtn_o' "O" width:27 height:CTRL_HEIGHT_1 align:#left offset:[-15, -92]
-        button 'btn_d' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-5, -92]
+        button 'btn_d' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-5, -92]
         button 'btn_d_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[19, -92]
         
         checkbutton 'chbtn_s' "S" width:27 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:5
         checkbutton 'chbtn_r' "R" width:28 height:CTRL_HEIGHT_1 align:#left offset:[-28, 0]
         checkbutton 'chbtn_m' "M" width:27 height:CTRL_HEIGHT_1 align:#left offset:[-63, 0]
-        button 'btn_srm' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-29, 0]
+        button 'btn_srm' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-29, 0]
         button 'btn_srm_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[11, 0]
 
         checkbutton 'chbtn_n' "Normal" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
-        button 'btn_n' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
+        button 'btn_n' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_n_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
 
-    groupBox 'grp_02' " Basic Tiled Maps: " width:(dlg_load_textures.width - 10) height:108 align:#center offset:[0, 10]
+    groupBox 'grp_02' " Basic Tiled Maps: " width:(dlg_edit_material.width - 10) height:108 align:#center offset:[0, 10]
         checkbutton 'chbtn_d_t' "Color" width:56 height:CTRL_HEIGHT_1 align:#left offset:[8, -92] across:4
         checkbutton 'chbtn_o_t' "O" width:27 height:CTRL_HEIGHT_1 align:#left offset:[-15, -92]
-        button 'btn_d_t' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-5, -92]
+        button 'btn_d_t' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-5, -92]
         button 'btn_d_t_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[19, -92]
 
         checkbutton 'chbtn_s_t' "S" width:27 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:5
         checkbutton 'chbtn_r_t' "R" width:28 height:CTRL_HEIGHT_1 align:#left offset:[-28, 0]
         checkbutton 'chbtn_m_t' "M" width:27 height:CTRL_HEIGHT_1 align:#left offset:[-63, 0]
-        button 'btn_srm_t' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-29, 0]
+        button 'btn_srm_t' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[-29, 0]
         button 'btn_srm_t_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[11, 0]
 
         checkbutton 'chbtn_n_t' "Normal" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
-        button 'btn_n_t' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
+        button 'btn_n_t' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_n_t_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
 
-    groupBox 'grp_03' " Additional Maps: " width:(dlg_load_textures.width - 10) height:134 align:#center offset:[0, 10]
+    groupBox 'grp_03' " Additional Maps: " width:(dlg_edit_material.width - 10) height:134 align:#center offset:[0, 10]
         checkbutton 'chbtn_e' "Emission" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, -118] across:3
-        button 'btn_e' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, -118]
+        button 'btn_e' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, -118]
         button 'btn_e_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, -118]
 
         checkbutton 'chbtn_mx' "Mixing" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
-        button 'btn_mx' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
+        button 'btn_mx' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_mx_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
 
         checkbutton 'chbtn_sss' "SSS" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
-        button 'btn_sss' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
+        button 'btn_sss' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_sss_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
 
         checkbutton 'chbtn_dp' "Displace" width:84 height:CTRL_HEIGHT_1 align:#left offset:[8, 0] across:3
-        button 'btn_dp' EMPTY_TEXT width:(dlg_load_textures.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
+        button 'btn_dp' EMPTY_TEXT width:(dlg_edit_material.width - 170) height:CTRL_HEIGHT_1 align:#center offset:[36, 0]
         button 'btn_dp_del' "X" width:24 height:CTRL_HEIGHT_1 align:#center offset:[34, 0]
-    
-    -- button 'btn_assign' "Assign Maps" width:(dlg_load_textures.width - 42) height:CTRL_HEIGHT_2 align:#center offset:[0, 16] enabled:false
 
     local controls_arr = #(btn_d, btn_srm, btn_n, btn_d_t, btn_srm_t, btn_n_t, btn_e, btn_mx, btn_sss, btn_dp) -- Массив объектов кнопок
     local texts_suffixes = #("_D", "_SRM", "_N", "_D", "_SRM", "_N", "_E", "_M", "_SSS", "_DP")
@@ -65,12 +65,13 @@ rollout dlg_load_textures "" width:346 height:512
     local active_mat = undefined -- Активный материал (Multi-Sub mat)
     local active_map_index = 0
     local bbox_checked_state = false
+    local mat_list = #()
 
     fn SwitchStates current_ctrl state =
     (
         if state then 
         (
-            for ctrl in dlg_load_textures.Controls where (classOf ctrl == CheckButtonControl and ctrl != current_ctrl) do ctrl.checked = false
+            for ctrl in dlg_edit_material.Controls where (classOf ctrl == CheckButtonControl and ctrl != current_ctrl) do ctrl.checked = false
         )
         spn_chnl.enabled = state
         spn_tile.enabled = false
@@ -124,7 +125,7 @@ rollout dlg_load_textures "" width:346 height:512
         local mat_ids = for i = 1 to mat.MultiMat.materialList.count collect i as string
 
         -- Задать заголовок окна
-        dlg_load_textures.title = ("Assign maps to material " + mat.MultiMat.name)
+        -- dlg_edit_material.title = ("Assign maps to material " + mat.MultiMat.name)
         
         -- btn_assign.enabled = false
 
@@ -135,7 +136,7 @@ rollout dlg_load_textures "" width:346 height:512
         -- Инициализировать текстуры
         InitMaps mat
 
-        SetFocus dlg_load_textures 
+        SetFocus dlg_edit_material 
     )
 
     fn AssignMapToMaterial mat map_slot_index =
@@ -310,24 +311,64 @@ rollout dlg_load_textures "" width:346 height:512
         )
     )
 -------------------------------------------------------------
-	on dlg_load_textures open do
+	on dlg_edit_material open do
     (
-        -- Установит положение диалога
         try(
-            dialog_pos = execute (GetINISetting MDT_CONFIG_FILE dlg_load_textures.name "pos")
-            SetDialogPos dlg_load_textures dialog_pos
-        )catch()
+            -- Установит положение диалога
+            try(
+                dialog_pos = execute (GetINISetting MDT_CONFIG_FILE dlg_edit_material.name "pos")
+                SetDialogPos dlg_edit_material dialog_pos
+            )catch()
+            
+            -- Инициализация списка материалов
+            for m in MD_Data.InWorkTask.Materials do
+            (
+                append mat_list m.MultiMat.name
+            )
+            lst_mat.items = mat_list
+            lst_mat.selection = 1
+            MD_Data.ActiveTask.ActiveMatIndex = 1
 
-        -- Инициализация имеющихся текстур в материале
-        InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+            -- Инициализация имеющихся текстур в материале
+            InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
 
-        -- Активный материал
-        try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
+            -- Активный материал
+            try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
 
-        UpdateDialog()
-        bbox_checked_state = rlt_settings.ckbx_show_bb.checked
-        rlt_settings.ckbx_show_bb.checked = false
-        try MD_BBox.Update() catch()
+            UpdateDialog()
+            bbox_checked_state = rlt_settings.ckbx_show_bb.checked
+            rlt_settings.ckbx_show_bb.checked = false
+            try MD_BBox.Update() catch()
+
+            -- Переключить состояние rlt_catalog_info
+            try (
+                MD_Data.ActiveList = 2
+                MD_UI.UpdateCatalogInfoRlt()
+            )catch()
+        )catch(
+            destroyDialog dlg_edit_material
+            if (queryBox "На объект назначен некорректный материал.\n\nОбновить материал?\n\nПри этом все изменения будут утеряны!\n" title:"Внимание!" icon:#warning) then
+            (
+                MD_Callbacks.Destruct()
+
+                for i = 1 to MD_Data.InWorkTask.Materials.Count do
+                (
+                    MD_Data.ActiveTaskAddIndex = i
+                    MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
+    
+                )
+                
+                MD_Data.InWorkTask.ActiveMatIndex = 1
+                MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
+                try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
+                MD_Data.ActiveTaskAddIndex = 1
+                MD_Callbacks.Add()
+    
+                try select MD_Data.InWorkTask.MainMesh catch()
+                
+                createDialog dlg_edit_material
+            )
+        )
     )
 
     on btn_update pressed do
@@ -339,26 +380,57 @@ rollout dlg_load_textures "" width:346 height:512
         try (active_mat = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat) catch()
 
         UpdateDialog()
-        bbox_checked_state = rlt_settings.ckbx_show_bb.checked
-        rlt_settings.ckbx_show_bb.checked = false
-        try MD_BBox.Update() catch()
+        -- bbox_checked_state = rlt_settings.ckbx_show_bb.checked
+        -- rlt_settings.ckbx_show_bb.checked = false
+        -- try MD_BBox.Update() catch()
     )
 
-    on dlg_load_textures close do
+    on dlg_edit_material close do
     (
         -- Сохранить положение диалога
-        SetINISetting MDT_CONFIG_FILE dlg_load_textures.name "pos" ((GetDialogPos dlg_load_textures) as string)
+        SetINISetting MDT_CONFIG_FILE dlg_edit_material.name "pos" ((GetDialogPos dlg_edit_material) as string)
 
         SetViewShading 0
         rlt_settings.ckbx_show_bb.checked = bbox_checked_state
         try MD_BBox.Update() catch()
+
+        -- Переключить состояние rlt_catalog_info
+        try (
+            MD_Data.ActiveList = 1
+            MD_UI.UpdateCatalogInfoRlt()
+        )catch()
+    )
+
+    on lst_mat selected arg do
+    (
+        MD_Data.ActiveList = 2
+        MD_Data.ActiveTaskIndex = 0
+        MD_Data.InWorkTask.ActiveMatIndex = arg
+        active_mat = MD_Data.InWorkTask.Materials[arg].MultiMat
+
+        if (MD_Data.ActiveTaskAddIndex != arg) then
+        (
+            MD_Data.ActiveList = 2
+            MD_Data.ActiveTaskAddIndex = arg
+            MD_UI.UpdateCatalogTasksRlt()
+            MD_UI.UpdateCatalogInfoRlt()
+            MD_UI.UpdateCatalogGeneralRlt()
+        )
+        
+        -- Обновить состояние окна загрузки текстур, если оно открыто
+        InitExistTextures MD_Data.InWorkTask.Materials[arg]
+
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.InWorkTask.ActiveMatIndex catch()
+        try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.InWorkTask.ActiveMatIndex catch()
+
+        UpdateDialog()
     )
 
     on lst_mat_id selected arg do
     (
         UpdateDialog()
     )
-
+    
 -- Diffise
     on btn_d pressed do (
         local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 1
@@ -573,7 +645,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_d changed state do
     (
         SwitchStates chbtn_d state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 1 state
         if state then active_map_index = 1 else active_map_index = 0 
@@ -582,7 +654,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_o changed state do
     (
         SwitchStates chbtn_o state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 1 state sub_map:#opacity
         if state then active_map_index = 1 else active_map_index = 0
@@ -591,7 +663,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_s changed state do
     (
         SwitchStates chbtn_s state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 2 state sub_map:#specular
         if state then active_map_index = 2 else active_map_index = 0
@@ -600,7 +672,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_r changed state do
     (
         SwitchStates chbtn_r state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 2 state sub_map:#roughness
         if state then active_map_index = 2 else active_map_index = 0
@@ -609,7 +681,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_m changed state do
     (
         SwitchStates chbtn_m state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 2 state sub_map:#metallic
         if state then active_map_index = 2 else active_map_index = 0
@@ -618,7 +690,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_n changed state do
     (
         SwitchStates chbtn_n state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 3 state
         if state then active_map_index = 3 else active_map_index = 0
@@ -630,7 +702,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[4].coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 4 state
         if state then active_map_index = 4 else active_map_index = 0
     )
@@ -641,7 +713,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[4].coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 4 state sub_map:#opacity
         if state then active_map_index = 4 else active_map_index = 0
     )
@@ -652,7 +724,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[5].map1.coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 5 state sub_map:#specular
         if state then active_map_index = 5 else active_map_index = 0
     )
@@ -663,7 +735,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[5].map1.coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 5 state sub_map:#roughness
         if state then active_map_index = 5 else active_map_index = 0
     )
@@ -674,7 +746,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[5].map1.coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
 
         if state then active_map_index = 5 else active_map_index = 0
     )
@@ -685,7 +757,7 @@ rollout dlg_load_textures "" width:346 height:512
         spn_tile.enabled = state
         spn_tile.value = 1.0
         try (spn_tile.value = active_mat.materialList[lst_mat_id.selection].diffuseMap.mapList[6].coords.U_Tiling) catch ()
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 6 state
         if state then active_map_index = 6 else active_map_index = 0
     )
@@ -693,7 +765,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_e changed state do
     (
         SwitchStates chbtn_e state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 7 state
         if state then active_map_index = 7 else active_map_index = 0
@@ -702,7 +774,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_mx changed state do
     (
         SwitchStates chbtn_mx state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 8 state
         if state then active_map_index = 8 else active_map_index = 0
@@ -711,7 +783,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_sss changed state do
     (
         SwitchStates chbtn_sss state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 9 state
         if state then active_map_index = 9 else active_map_index = 0
@@ -720,7 +792,7 @@ rollout dlg_load_textures "" width:346 height:512
     on chbtn_dp changed state do
     (
         SwitchStates chbtn_dp state
-        setFocus dlg_load_textures
+        setFocus dlg_edit_material
         spn_tile.value = 1.0
         ShowMapInViewport active_mat.materialList[lst_mat_id.selection] 10 state
         if state then active_map_index = 10 else active_map_index = 0
