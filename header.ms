@@ -58,7 +58,7 @@ DOCS_FILE = "https://docs.google.com/document/d/14-jr4cs0WKgLgi4kcZE9rmL9bZ2LGde
 STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
 TASK_INNER_DIRS = #("Task", "InWork", "InWork/Saved")
-MAIN_LIST_COLUMNS_1 = #("Article", "State", "Group", "Trans", "User")
+MAIN_LIST_COLUMNS_1 = #("Article", "State", "Mat. Count", "Group", "Trans", "User")
 ADD_LIST_COLUMNS_1 = #("Mat. Index", "Texture Count")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
@@ -112,6 +112,7 @@ DN_CLR_OK = DN_Lib.dnColor 10 130 10 255
 DN_CLR_TRANSP = DN_Lib.dnColor 0 0 0 255
 DN_CLR_BG = DN_Lib.dnColor  30 30 30 255
 DN_FNT_GRP = DN_Lib.Font 3 8.62 3
+DN_CLR_COLUMN_BG = DN_Lib.dnColor 100 100 100 255
 CLR_LINK = color 100 190 255
 CLR_BBOX_MAIN = color 60 150 255
 CLR_BBOX_ADD = color 255 100 50
@@ -144,7 +145,7 @@ dlg_pivot_params
 dlg_load_work
 dlg_export
 dlg_request
-dlg_load_textures
+dlg_edit_material
 
 -- Роллауты
 global rlt_mdt_content_maker

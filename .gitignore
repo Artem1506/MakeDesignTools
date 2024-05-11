@@ -2,4 +2,6 @@ mdt.config
 Release
 Develop/mdt.ms
 Python
+Python/*
 Test
+Release.zip

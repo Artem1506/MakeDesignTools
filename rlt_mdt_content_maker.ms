@@ -24,7 +24,7 @@ rollout rlt_mdt_content_maker ("MDT_ContentMaker v" + version)
         try(destroyDialog dlg_load_work)catch()
         try(destroyDialog dlg_export)catch()
         try(destroyDialog dlg_request)catch()
-        try(destroyDialog dlg_load_textures)catch()
+        try(destroyDialog dlg_edit_material)catch()
 
         MD_Data.FullUpdate()
 

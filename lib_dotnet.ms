@@ -53,13 +53,18 @@ struct DotNetLib
 	TopCenter = (DotNetClass "System.Drawing.ContentAlignment").TopCenter ,
 	TopLeft = (DotNetClass "System.Drawing.ContentAlignment").TopLeft ,
 	TopRight = (DotNetClass "System.Drawing.ContentAlignment").TopRight ,
+-- Colums Align
+	ColumnAlignCenter = (DotNetClass "System.Windows.Forms.HorizontalAlignment").Center,
+	ColumnAlignLeft = (DotNetClass "System.Windows.Forms.HorizontalAlignment").Left,
+	ColumnAlignRight = (DotNetClass "System.Windows.Forms.HorizontalAlignment").Right,
+	ColumnHeaderStyle = (DotNetClass "System.Windows.Forms.DataGridViewCellStyle"),
 -- Orientation
 	Horizontal = (DotNetClass "System.Windows.Forms.Orientation").Horizontal ,
 	Vertical = (DotNetClass "System.Windows.Forms.Orientation").Vertical ,
 -- Mouse Position
 	MousePosition = (DotNetClass "System.Windows.Forms.Control").MousePosition ,
 -- Transparent Color
-	Transp = (DotNetClass "System.Drawing.Color").Transparent,	
+	Transp = (DotNetClass "System.Drawing.Color").Transparent,
 -- Image
 	fn Image bitmap_file = (DotNetClass "System.Drawing.Image").FromFile bitmap_file ,
 -- Cursor

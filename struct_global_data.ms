@@ -57,7 +57,7 @@ struct GlobalData
 	( 
 		try( 
 			subobjectLevel = 0 
-			obj.Material = MD_Data.ActiveTask.Materials[mat_index].MultiMat 
+			obj.Material = MD_Data.InWorkTask.Materials[mat_index].MultiMat 
 			showTextureMap obj.Material false
 			CompleteRedraw()  
 		)catch()  
@@ -520,37 +520,39 @@ struct GlobalData
 	( 
 		try 
 		( 
-			MD_Callbacks.Destruct()  
+			-- MD_Callbacks.Destruct()  
 			this.InWorkTask.State = STATES[2] 
 			this.InWorkTask.ActiveMeshIndex = 1 
 			this.InWorkTask = this.ActiveTask 
 			this.InWorkTaskFile = this.InWorkTask.File 
-			this.CreateWorkLayer()  
+			this.CreateWorkLayer()
+
 			try ( 
 				ReadDataFile MD_LIB_DATA_FILE 
 				data["in_work_task"] = substituteString InWorkTaskFile "\\" "/" 
 				WriteDataFile MD_LIB_DATA_FILE 
 			) 
-			catch ()  
-			MD_BBox.Init()  
-			try MD_BBox.Update()  catch()  
-			MD_UI.UpdateCatalogTasksRlt()  
-			try MD_Callbacks.Add() catch()
+			catch ()
 
-			-- Иконка 
-			local icon_file = pathconfig.appendpath this.InWorkTask.InWorkDir TASK_ICON_NAME 
+			MD_BBox.Init() 
+			-- try MD_BBox.Update() catch()
+			
+			
+
+			-- Иконка -- ВЫЗЫВАЕТ ОШИБКУ!!!!!!
+			-- local icon_file = pathconfig.appendpath this.InWorkTask.InWorkDir TASK_ICON_NAME 
 			 
-			if (DoesFileExist icon_file) then  
-			( 
-				this.ActiveCategoryIcon.SetIcon icon_file 
-			)else( 
-				try ( 
-					this.active_catalog_article = (this.main_categ_ids[this.ActiveCategory][this.ActiveSubCategory])
-					this.active_catalog_dir = pathConfig.AppendPath (pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]) this.active_catalog_article
-					icon_file = pathConfig.appendPath DECALS_DIR (this.active_catalog_article + (ICON_POSTFIX + ".max")) 
-					this.ActiveCategoryIcon.SetIcon icon_file 
-				)catch(this.ActiveCategoryIcon.Icon = undefined) 
-			)	 
+			-- if (DoesFileExist icon_file) then  
+			-- ( 
+			-- 	this.ActiveCategoryIcon.SetIcon icon_file 
+			-- )else( 
+			-- 	try ( 
+			-- 		this.active_catalog_article = (this.main_categ_ids[this.ActiveCategory][this.ActiveSubCategory])
+			-- 		this.active_catalog_dir = pathConfig.AppendPath (pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]) this.active_catalog_article
+			-- 		icon_file = pathConfig.appendPath DECALS_DIR (this.active_catalog_article + (ICON_POSTFIX + ".max")) 
+			-- 		this.ActiveCategoryIcon.SetIcon icon_file 
+			-- 	)catch(this.ActiveCategoryIcon.Icon = undefined) 
+			-- )	 
 		) 
 		catch()  
 	), 
