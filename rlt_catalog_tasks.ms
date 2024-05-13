@@ -41,7 +41,7 @@ rollout rlt_catalog_tasks "Catalog"
 
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
-        rlt_catalog_tasks.height = 350
+        rlt_catalog_tasks.height = 324
     )
     
     on rlt_catalog_tasks close do
@@ -50,7 +50,12 @@ rollout rlt_catalog_tasks "Catalog"
     )
 
     on lst_basic_catalog selected arg do
-    (
+    (   
+        try( lv_main.Items.Item[0].selected = true 
+            MD_Data.ActiveTaskIndex = 1
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+        )catch()
+
         if MD_Data.ActiveCategory != arg then
         (
             MD_Data.ShowLayers mode:#none
@@ -63,24 +68,31 @@ rollout rlt_catalog_tasks "Catalog"
             try lst_sub_catalog.selection = 1 catch()
             MD_Data.ActiveSubCategory = lst_sub_catalog.selection
             MD_Data.ActiveList = 1
-            MD_Data.ActiveTaskAddIndex = 1
+            MD_Data.ActiveTaskMatIndex = 1
             MD_Data.Update()
             -- MD_UI.FillCategoriesLists()
             MD_Data.FullUpdate()
             try MD_BBox.Update() catch()
-            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-            else MD_Data.ShowLayers mode:#scene_only
+            -- if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+            -- else MD_Data.ShowLayers mode:#scene_only
             try (
                 MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
 			    local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
 			    MD_Data.ActiveCategoryIcon.SetIcon icon_file
             ) catch()
         )
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
         try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
     )
 
     on lst_sub_catalog selected arg do
     (
+        try( lv_main.Items.Item[0].selected = true 
+            MD_Data.ActiveTaskIndex = 1
+            MD_Data.ActiveTask = MD_Data.Tasks[1]
+        )catch()
+
         if MD_Data.ActiveSubCategory != arg then
         (
             MD_Data.ShowLayers mode:#none
@@ -90,26 +102,27 @@ rollout rlt_catalog_tasks "Catalog"
             MD_Data.ActiveSubCategory = arg
             -- MD_Data.ActiveTaskIndex = undefined
             MD_Data.ActiveList = 1
-            MD_Data.ActiveTaskAddIndex = 1
+            MD_Data.ActiveTaskMatIndex = 1
             MD_Data.Update()
             MD_Data.FullUpdate()
             try MD_BBox.Update() catch()
             
-            if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-            else MD_Data.ShowLayers mode:#scene_only
-
             try (
                 MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
                 local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
                 MD_Data.ActiveCategoryIcon.SetIcon icon_file
             ) catch()
         )
+
         try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
         try (
 			if MD_Data.ActiveCategoryIcon.Icon != undefined then
 			MD_UI.ToolsCatalogRoll.btn_mode.text = "Edit Icon"
 			else MD_UI.ToolsCatalogRoll.btn_mode.text = "Create Icon"			
 		)catch()
+        
+        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
+        else MD_Data.ShowLayers mode:#scene_only
     )
 
     on lst_sub_catalog rightClick do
@@ -129,6 +142,7 @@ rollout rlt_catalog_tasks "Catalog"
         local msg = ""
         local download_articles = ""
         MD_Data.ShowLayers mode:#none
+        MD_Callbacks.Destruct()
 
         case btn_get.text of
         (
@@ -164,7 +178,6 @@ rollout rlt_catalog_tasks "Catalog"
 
             "Update":(
                 -- Обновить отмеченные задания
-                
                 for i in MD_Data.CheckedTasks do
                 (
                     download_articles += MD_Data.Tasks[i].Article + SEPAR1
@@ -185,21 +198,21 @@ rollout rlt_catalog_tasks "Catalog"
                     msg = MD_Client.ResponseMessage
                     Client_Log.Error msg
                 )
-                
             )
 
-            "Backup":(
+            "Download":(
                 -- Скачать файлы контента в локальную базу
-                
                 for i in MD_Data.CheckedTasks do
                 (
                     download_articles += MD_Data.TempArticlesList[i] + SEPAR1
                 )
                 download_articles = trimRight download_articles SEPAR1
                 lib_path = pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]
+                
+                -- Загрузить файлы контента в локальную базу
+                dl_content_args = "1" + SEPAR + download_articles + SEPAR + lib_path
 
-                args = "1" + SEPAR + download_articles + SEPAR + lib_path
-                MD_Client.Request "download_items_content" args:args title:"Backup Content"
+                MD_Client.Request "download_items_content" args:dl_content_args title:"Download Content"
                 if MD_Client.ResponseStatus == "200" then
                 (
                     msg = "Загружено контента: " + MD_Client.ResponseMessage
@@ -210,7 +223,23 @@ rollout rlt_catalog_tasks "Catalog"
                     msg = MD_Client.ResponseMessage
                     Client_Log.Error msg
                 )
-                MD_Data.CheckedTasks = #()          
+                MD_Data.CheckedTasks = #() 
+
+                -- Загрузить файлы задания в локальную базу
+                MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
+                args = MD_Data.active_catalog_article + SEPAR + lib_path + SEPAR + download_articles
+
+                MD_Client.Request "download_tasks" args:args title:"Updating Tasks"
+                if MD_Client.ResponseStatus == "200" then
+                (
+                    msg = "Обновлено заданий: " + MD_Client.ResponseMessage
+                    Client_Log.Info msg 
+                )
+                else
+                (
+                    msg = MD_Client.ResponseMessage
+                    Client_Log.Error msg
+                )
             )
 
             default:(
@@ -239,15 +268,29 @@ rollout rlt_catalog_tasks "Catalog"
         -- Обновить
         MD_Data.TempArticlesList = #()
         MD_Data.Update()
+        -- MD_Data.UpdateWorkState()
+        -- MD_UI.UpdateCatalogTasksRlt()
         MD_UI.FillMainList()
         MD_UI.FillAddList()
         MD_UI.UpdateCatalogTasksRlt()
-        MD_UI.UpdateCatalogInfoRlt()
         MD_UI.UpdateCatalogGeneralRlt()
-        try MD_BBox.Update() catch()
-        if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-        else MD_Data.ShowLayers mode:#scene_only
+        
+        if MD_Data.ActiveTask.State == STATES[2] then MD_Data.ShowLayers mode:#work_only
+        else
+        (
+            local current_state = MD_Data.ActiveTask.State
+            MD_Data.ExitWorkState()
+            -- MD_Data.ActiveTask.Icon = undefined
+            MD_Data.ActiveTask.State = current_state
+            try MD_BBox.Update() catch()
+            MD_Data.ShowLayers mode:#scene_only
+        )
+
         MD_Data.FullUpdate()
+        -- try MD_BBox.Update() catch()
+        MD_UI.UpdateCatalogInfoRlt()
+        MD_Callbacks.Add()
+        
     )
     
     on btn_clear pressed do 
@@ -310,21 +353,24 @@ rollout rlt_catalog_tasks "Catalog"
 
     on lv_main ItemChecked self args do
     (   
-        -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
-        MD_Data.CheckedTasks = for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
+        try(
+            -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
+            MD_Data.CheckedTasks = for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
 
-        -- Отметить все элементы списка если нажат control
-        if keyboard.controlPressed == true then
-        (
-            for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
-        )
-        -- Снять галочки со всех элементов если нажат alt
-        else if keyboard.altPressed == true then
-        (
-            for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
-        )
-        -- Обоновить интерфейс
-        try MD_UI.UpdateCatalogTasksRlt() catch()
+            -- Отметить все элементы списка если нажат control
+            if keyboard.controlPressed == true then
+            (
+                for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
+            )
+            -- Снять галочки со всех элементов если нажат alt
+            else if keyboard.altPressed == true then
+            (
+                for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
+            )
+
+            -- Обоновить интерфейс
+            try MD_UI.UpdateCatalogTasksRlt() catch()
+        )catch()
     )
 
     on lv_main ColumnClick self arg do 
@@ -376,27 +422,27 @@ rollout rlt_catalog_tasks "Catalog"
     on lv_main Click self arg do
     (
         MD_Data.ActiveList = 1
-        MD_Data.ActiveTaskAddIndex = 1
-        MD_Data.ActiveTask.ActiveMatIndex = 1
+        try MD_Data.ActiveTaskMatIndex = 1 catch()
+        try MD_Data.ActiveTask.ActiveMatIndex = 1 catch()
         subobjectLevel = 0
         MD_Callbacks.Destruct()
+
         -- Если временный список заданий пуст
         if MD_Data.TempArticlesList.count == 0 then
         (
             if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) or self.Items.count == 1 then
             (
-                -- MD_Data.ShowLayers mode:#none
-                MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag
+                try MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag catch()
 
                 -- Проверка сортировки
-				if MD_UI.Sort then MD_Data.ActiveTask = MD_Data.SortTasks[self.SelectedItems.Item[0].Tag]
-				else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
+				-- if MD_UI.Sort then MD_Data.ActiveTask = MD_Data.SortTasks[self.SelectedItems.Item[0].Tag]
+				-- else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
 
-                -- MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
-                -- MD_Data.ActiveTaskAddIndex = 1
+                try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                MD_Data.ActiveTaskMatIndex = 1
 
                 -- Проверка состояния
-                if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask
+                try if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask catch()
 
                 if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                 (
@@ -490,10 +536,10 @@ rollout rlt_catalog_tasks "Catalog"
         MD_Data.ActiveTaskIndex = 0
         MD_Data.ActiveTask.ActiveMatIndex = self.SelectedItems.Item[0].Index + 1
 
-        if (MD_Data.ActiveTaskAddIndex != self.SelectedItems.Item[0].Index + 1) then
+        if (MD_Data.ActiveTaskMatIndex != self.SelectedItems.Item[0].Index + 1) then
         (
             MD_Data.ActiveList = 2
-            MD_Data.ActiveTaskAddIndex = self.SelectedItems.Item[0].Index + 1
+            MD_Data.ActiveTaskMatIndex = self.SelectedItems.Item[0].Index + 1
             MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
@@ -519,53 +565,66 @@ rollout rlt_catalog_tasks "Catalog"
     ( 
         MD_Data.ShowLayers mode:#none
         try ClearTrashLayers() catch()
-        
+        local exec = true
+        MD_Callbacks.Destruct()
         -- Проверка состояния кнопки
         case btn_work_state.text of
         (
             "Set Work State":(
-                MD_Callbacks.Destruct()
-                try ClearTrashLayers() catch()
+                if (MD_Data.ActiveTask.State == STATES[3] and \
+                (not (queryBox "Данное задание имеет состояние выполнения \"Check\".
+После того, как оно будет взято в работу, его состояние изменится на \"InWork\",
+и далее не сможет быть вновь изменено на \"Check\", до тех пор пока не будет обновлено или загружено в удалённую базу.\n
+Всё равно продолжить?" \
+                title:("Внимание! " + (MD_Data.ActiveTask.Article as string)) icon:#warning))) then exec = false
                 
-                MD_Data.CreateWorkState MD_Data.ActiveTask
-                -- MD_Icon.Create()
-
-                -- Если имеются ранее сохранённые рабочие файлы
-                if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.SavedWorks.count != 0 then
+                if exec then
                 (
-                    dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
-                    dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
+                    
+                    try ClearTrashLayers() catch()
+                    
+                    MD_Data.CreateWorkState MD_Data.ActiveTask
+                    -- MD_Icon.Create()
 
-                    -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
-                    if MD_UI.SettingsRoll.ckbx_load_last.checked then
+                    -- Если имеются ранее сохранённые рабочие файлы
+                    if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.SavedWorks.count != 0 then
                     (
-                        if MD_Data.WorkLayerNodes.count != 0 then
+                        dlg_msg = "Загрузить последнее сохранённое рабочее состояние сцены?\n"
+                        dlg_msg += "При этом все объекты на текущем рабоче слое будут удалены!"
+
+                        -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
+                        if MD_UI.SettingsRoll.ckbx_load_last.checked then
                         (
-                            if queryBox dlg_msg title:"Сообщение" then 
+                            if MD_Data.WorkLayerNodes.count != 0 then
                             (
-                                -- Удалить все объекты с рабочего слоя
-                                try MD_Data.ClearWorkLayer() catch()
+                                if queryBox dlg_msg title:"Сообщение" then 
+                                (
+                                    -- Удалить все объекты с рабочего слоя
+                                    try MD_Data.ClearWorkLayer() catch()
+                                )
                             )
+                            -- Загрузить последнюю работу
+                            MD_Data.InWorkTask.LoadWork \
+                            MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                         )
-                        -- Загрузить последнюю работу
-                        MD_Data.InWorkTask.LoadWork \
-                        MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
                     )
+                    MD_Data.ShowLayers mode:#work_only                   
                 )
             )
             "Update Work State":(
                 -- Создать рабочее состояние
-                MD_Callbacks.Destruct()
+
                 MD_Data.UpdateWorkState()
                 MD_UI.UpdateCatalogTasksRlt()
+                MD_Data.ShowLayers mode:#work_only
             )
         )
         MD_Data.FullUpdate()
         MD_UI.UpdateCatalogInfoRlt()
         try MD_BBox.Update() catch()
-        MD_Data.ShowLayers mode:#work_only
-        MD_Callbacks.Add()
+        -- MD_Data.ShowLayers mode:#work_only
         try select MD_Data.InWorkTask.MainMesh catch()
+        MD_Callbacks.Add()
     )
 
     on btn_exit_work_state pressed do

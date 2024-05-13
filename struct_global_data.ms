@@ -20,7 +20,7 @@ struct GlobalData
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
-	ActiveTaskAddIndex = 1, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
+	ActiveTaskMatIndex = 1, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd (Раньше это был список материалов)
 	active_catalog_dir = undefined, --> [str] "D:\MakeDesignLib\Catalog\01-01-001"
 	active_catalog_article = undefined, --> [str] "01-01-001" 
 	ActiveList = 1, --> [int] Активный список 
@@ -47,7 +47,7 @@ struct GlobalData
 		try( 
 			if subobjectLevel == 4 or subobjectLevel == 5 then 
 			( 
-				SetMatID obj ActiveTaskAddIndex 
+				SetMatID obj ActiveTaskMatIndex 
 				CompleteRedraw()  
 			) 
 		)catch()  
@@ -381,7 +381,8 @@ struct GlobalData
 		try MD_Callbacks.Destruct()  catch()  
 
 		for t in MD_Data.Tasks do 
-		( 
+		(
+			
 			t.State = STATES[1] 
 			t.ActiveMeshIndex = 1 
 		) 
@@ -403,10 +404,10 @@ struct GlobalData
 		if ActiveTask != InWorkTask then DeleteWorkLayer()  
 		MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
 		MD_Data.active_catalog_dir = pathConfig.AppendPath (pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]) MD_Data.active_catalog_article
-		try ( 
-			local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
-			MD_Data.ActiveCategoryIcon.SetIcon icon_file 
-		) catch()  
+		try (MD_Data.ActiveCategoryIcon.Destruct()) catch()
+		-- 	local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
+		-- 	MD_Data.ActiveCategoryIcon.SetIcon icon_file 
+		-- ) catch()  
 	), 
 
 	fn CreateWorkState input_task = 
@@ -460,12 +461,16 @@ struct GlobalData
 		try MD_Callbacks.Add() catch() 
 
 		-- Установить иконку (декаль) 
-		local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME 
-
+		-- local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME 
+		-- try ( 
+		-- 	local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
+		-- 	MD_Data.ActiveCategoryIcon.SetIcon icon_file 
+		-- ) catch()
+		local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
 		if (DoesFileExist icon_file) then  
 		( 
 			MD_Data.ActiveCategoryIcon.SetIcon icon_file 
-		) 
+		)
 	), 
 
 	-- fn UpdateWorkState = 
@@ -820,13 +825,13 @@ struct GlobalData
 			MD_Data.LoadWorkHashSum = 0
 			delete WorkLayerNodes
 			CompleteRedraw()
-			gc()
+			-- gc() -- Может вызвать фризы
 		) catch()
 	),
 
 	fn Update = 
 	( 
-		ActiveTaskAddIndex = 1 
+		ActiveTaskMatIndex = 1 
 		TempArticlesList = #() 
 
 		try (GetTasksInActiveCategory()) catch()  

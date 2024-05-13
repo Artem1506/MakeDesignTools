@@ -13,8 +13,8 @@ rollout dlg_export "Validation And Export" width:210  height:230
         dotnetcontrol 'lbl_mat_id_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_uvs' "6 - UVs" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
         dotnetcontrol 'lbl_uvs_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_icon' "7 - Decal" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
-        dotnetcontrol 'lbl_icon_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
+    label 'lbl_icon' "7 - Decal" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06 visible:false
+        dotnetcontrol 'lbl_icon_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2] visible:false
 
     groupBox 'grp_01' " Validation " width:(dlg_export.width - 20) height:174 align:#center offset:[0, -166]
     button 'btn_export' "EXPORT" width:(dlg_export.width - 20) height:CTRL_HEIGHT_2 align:#center offset:[0, 0] enabled:false

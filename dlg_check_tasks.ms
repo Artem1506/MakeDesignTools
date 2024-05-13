@@ -35,9 +35,9 @@ rollout dlg_check_tasks "Check Available Tasks" width:250 height:180
 
         case rbtn_check_vars.state of
         (
-            1:(args = MD_Data.active_catalog_article + SEPAR + "1"; clr = DN_CLR_TEMP)
-            2:(args = MD_Data.active_catalog_article + SEPAR + "2"; clr = DN_CLR_BAD)
-            3:(args = MD_Data.active_catalog_article + SEPAR + "3"; clr = DN_CLR_DONE)
+            1:(args = MD_CURRENT_PROJECT + "/" + MD_Data.active_catalog_article + SEPAR + "1"; clr = DN_CLR_TEMP)
+            2:(args = MD_CURRENT_PROJECT + "/" + MD_Data.active_catalog_article + SEPAR + "2"; clr = DN_CLR_BAD)
+            3:(args = MD_CURRENT_PROJECT + "/" + MD_Data.active_catalog_article + SEPAR + "3"; clr = DN_CLR_DONE)
             -- 4:(args = MD_Data.active_catalog_article + SEPAR + "1"; clr = DN_CLR_TEMP) -- Изменить 1 на 4 !!!!!!!!!!!!!!!!!
         )
         
@@ -51,10 +51,11 @@ rollout dlg_check_tasks "Check Available Tasks" width:250 height:180
             msg = MD_Client.ResponseMessage
             Client_Log.Error msg
         )
-        
 
+        -- Если список пустой
         if MD_Data.TempArticlesList.count == 0 then 
         (
+            messageBox "Нет изменений в базе." title:"Сообщение"
             MD_Data.FullUpdate()
         )
     )

@@ -77,7 +77,7 @@ rollout rlt_catalog_general "General"
 
             for i = 1 to MD_Data.InWorkTask.Materials.Count do
             (
-                MD_Data.ActiveTaskAddIndex = i
+                MD_Data.ActiveTaskMatIndex = i
                 MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
 
             )
@@ -85,7 +85,7 @@ rollout rlt_catalog_general "General"
             MD_Data.InWorkTask.ActiveMatIndex = 1
             MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
             try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
-            MD_Data.ActiveTaskAddIndex = 1
+            MD_Data.ActiveTaskMatIndex = 1
             MD_Callbacks.Add()
 
             try select MD_Data.InWorkTask.MainMesh catch()
@@ -131,6 +131,7 @@ rollout rlt_catalog_general "General"
         try (
             FixObject MD_Data.InWorkTask.MainMesh
         ) catch()
+
         MD_UI.UpdateCatalogGeneralRlt()
         try MD_BBox.Update() catch()
 

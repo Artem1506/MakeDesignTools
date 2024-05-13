@@ -43,6 +43,7 @@ struct Callback
 				obj.Material = undefined
 			)
 		)catch()
+		try select obj catch()
 		MD_UI.UpdateCatalogGeneralRlt()
 	),
 
