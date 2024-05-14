@@ -2,6 +2,6 @@ mdt.config
 Release
 Develop/mdt.ms
 Python.zip
-Python/.venv
+Python/venv
 Test
 Release.zip

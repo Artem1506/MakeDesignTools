@@ -15,4 +15,25 @@ rollout rlt_about "About"
         lbl_organization.text = "Organization: Faberon Design"
         rlt_about.height = 140
     )
+
+    on btn_update pressed do (
+        -- result = UpdateVersion()
+        -- if result then messageBox "Обновление прошло успешно!" title:"Сообщение" icon:#information
+        -- else messagebox "Произошла непредвиденная ошибка!" title:"Ошибка" icon:#critical
+        CheckUpdates()
+
+        if check_result != version then 
+        (
+           if queryBox ("Доступна версия " + check_result + "\n\nЗагрузить обновлене?") title:"Сообщение" icon:#information then
+           (
+                local result = UpdateVersion()
+                if result then messageBox "Обновление прошло успешно!\nТребуется перезагрузка плагина." title:"Сообщение" icon:#information
+                else messagebox "Произошла непредвиденная ошибка!" title:"Ошибка" icon:#critical
+           )
+        )else(
+            messageBox "Обновлений нет." title:"Сообщение" icon:#information
+        )
+        
+    )
 )
+   

@@ -50,7 +50,7 @@ ICON_MDT_FILE = pathConfig.appendPath RESOURCES_DIR "mdt_48.png"
 
 -- Инфо
 author = "Zaitsev Pavel"
-version = "2.0"
+version = "0.1.0"
 -- DOCS_FILE = pathConfig.appendPath MAIN_DIR "mdt_help.pdf"
 DOCS_FILE = "https://docs.google.com/document/d/14-jr4cs0WKgLgi4kcZE9rmL9bZ2LGde-TA1OQyfQ1Cs/edit#heading=h.ahx5rkfl52u"
 
