@@ -54,8 +54,8 @@ struct UI
 		SetListViewParams CatalogListMain
 		SetListViewParams CatalogListAdd CheckBoxes:false
 
-		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 68, 86, 48, 160) \
-		aligns:#(DN_Lib.ColumnAlignLeft, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignLeft)
+		AddListViewColumns CatalogListMain MAIN_LIST_COLUMNS_1 widths:#(110, 60, 58, 86, 48, 160, 160) \
+		aligns:#(DN_Lib.ColumnAlignLeft, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignCenter, DN_Lib.ColumnAlignLeft, DN_Lib.ColumnAlignLeft)
 		AddListViewColumns CatalogListAdd ADD_LIST_COLUMNS_1 widths:#(70, 155)
 
 		setFocus CatalogListMain
@@ -107,10 +107,16 @@ struct UI
 			(
 				dn_list_item.SubItems.Item[1].Text = STATES[2]
 			)
+			else if task.State == STATES[3] then
+			(
+				dn_list_item.SubItems.Item[1].Text = STATES[3]
+			)
 
 			-- Добавить кол-во материалов
-			if task.Materials.count == 0 then dn_list_item.SubItems.add "1"
-			else if task.Materials.count > 0 then dn_list_item.SubItems.add ((task.Materials.count) as string)
+			if task.Materials.count > 1 then dn_list_item.SubItems.add ((task.Materials.count) as string)
+			else dn_list_item.SubItems.add ""
+			-- if task.Materials.count == 0 then dn_list_item.SubItems.add "1"
+			-- else if task.Materials.count > 0 then dn_list_item.SubItems.add ((task.Materials.count) as string)
 
 			-- Добавить название группы
 			if task.Group != undefined then 
@@ -125,8 +131,12 @@ struct UI
 			if task.SizeTrans != undefined then dn_list_item.SubItems.add "True"
 			else dn_list_item.SubItems.add ""
 
-			-- User name
+			-- Manager name
 			if task.UserName != undefined then dn_list_item.SubItems.add task.UserName
+			else dn_list_item.SubItems.add ""
+
+			-- Cont. maker name
+			if task.ContentMakerName != undefined then dn_list_item.SubItems.add task.ContentMakerName
 			else dn_list_item.SubItems.add ""
 			
 			-- Отметить элемент как выделенный
@@ -170,8 +180,8 @@ struct UI
 	
 	fn UpdateCatalogGeneralRlt =
 	(
-		try
-		(
+		-- try
+		-- (
 			GeneralCatalogRoll.btn_main_mesh.text = "Set Main Mesh"
 			GeneralCatalogRoll.btn_add_mesh.text = "Set Add Mesh"
 			-- GeneralCatalogRoll.btn_vis_switch.text = "Show All Layers"
@@ -198,8 +208,8 @@ struct UI
 				GeneralCatalogRoll.btn_set_pivot.enabled = true
 
 				-- Режим редактирования иконки
-				if MD_Data.ActiveCategoryIcon.Icon != undefined then
-				GeneralCatalogRoll.btn_edit_icon.enabled = true
+				-- if MD_Data.ActiveCategoryIcon.Icon != undefined then
+				-- GeneralCatalogRoll.btn_edit_icon.enabled = true
 
 				-- Основной меш
 				if MD_Data.InWorkTask.MainMesh != undefined and not MD_Data.InWorkTask.MainMesh.IsDeleted then
@@ -210,7 +220,7 @@ struct UI
 						-- Обновить материал
 						GeneralCatalogRoll.btn_update_mat.enabled = true
 						-- Назначить карты текстур
-						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == (MD_Data.InWorkTask.Article + "-"+ (formattedPrint MD_Data.ActiveTaskAddIndex format:#02d)) then
+						if MD_Data.InWorkTask.MainMesh.Material != undefined and MD_Data.InWorkTask.MainMesh.Material.Name == (MD_Data.InWorkTask.Article + "-"+ (formattedPrint MD_Data.ActiveTaskMatIndex format:#02d)) then
 						GeneralCatalogRoll.btn_edit_mat.enabled = true
 					)
 					try GeneralCatalogRoll.btn_main_mesh.tooltip = ("Текущий объект: " + MD_Data.InWorkTask.MainMesh.Name + "\nДля удаления статуса главного объекта необходимо повторно нажать на кнопку.") catch()
@@ -261,7 +271,7 @@ struct UI
 						GeneralCatalogRoll.btn_add_mesh.text = "  Add Mesh •"
 						if MD_Data.InWorkTask.ActiveMeshIndex == 2 and selection.count == 1 and selection[1] == MD_Data.InWorkTask.AddMesh then 
 						(
-							GeneralCatalogRoll.btn_assign_mat.enabled = true
+							-- GeneralCatalogRoll.btn_assign_mat.enabled = true
 							GeneralCatalogRoll.btn_update_mat.enabled = true
 							GeneralCatalogRoll.btn_edit_mat.enabled = true
 						)
@@ -305,15 +315,12 @@ struct UI
 				-- Добавить к рабочему слою
 				if objs.count != MD_Data.WorkLayerNodes.count and objs.count != 0 then 
 				(
-					local obj_outside = false
+					try(
+						local obj_outside = false
 
-					for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-					if obj_outside then
-					local obj_outside = false
-
-					for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
-					if obj_outside then
-					GeneralCatalogRoll.btn_attach_to_task.enabled = true
+						for obj in selection where obj.layer != MD_Data.WorkLayer do (obj_outside = true; exit)
+						if obj_outside then GeneralCatalogRoll.btn_attach_to_task.enabled = true
+					)catch()
 				)
 
 				-- Загрузить работу
@@ -329,7 +336,7 @@ struct UI
 
 			free MD_Data.WorkLayerNodes
 			free objs
-		)catch()
+		-- )catch(print "ass")
 	),
 
 	fn UpdateCatalogToolsRlt = 
@@ -373,11 +380,14 @@ struct UI
 
 	fn UpdateCatalogInfoRlt =
 	(
+		
+		
 		case MD_Data.ActiveList of
 		(
 			1:(
 				InfoCatalogRoll.title = "Info"
-
+				for i=1 to InfoCatalogRoll.mats.count do (InfoCatalogRoll.mats[i].enabled = false; InfoCatalogRoll.mats[i].checked = false)
+				
 				if MD_Data.ActiveTask != undefined then
 				(
 					try (
@@ -429,20 +439,26 @@ struct UI
 
 					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Website 1 28) catch()
 					try InfoCatalogRoll.title = MD_Data.ActiveTask.Article catch()
-					try InfoCatalogRoll.height = 280 catch()				
+					-- try InfoCatalogRoll.height = 280 catch()
+					
+					-- Кнопки материалов
+					if MD_Data.ActiveTask.Materials.count > 1 then
+					(
+						for i=1 to MD_Data.ActiveTask.Materials.count do InfoCatalogRoll.mats[i].enabled = true
+					)
 				)
 			)
 			2:(
 				InfoCatalogRoll.hpl_site.text = ""
-				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap != undefined then
+				if MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].RefBitmap != undefined then
 				(
-					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].RefBitmap
-					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite) catch()
-					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].WebSite 1 28) catch()
+					InfoCatalogPreview.bitmap = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].RefBitmap
+					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].WebSite) catch()
+					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].WebSite 1 28) catch()
 				)
-				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [Material-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskAddIndex].MatIndex + "]"
+				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].MatIndex
 				InfoCatalogRoll.lbl_size_txt.visible = false
-				InfoCatalogRoll.height = 280
+				-- InfoCatalogRoll.height = 280
 			)
 		)
 	),
@@ -516,7 +532,7 @@ struct UI
 				TasksCatalogRoll.btn_work_state.enabled = true
 				TasksCatalogRoll.btn_exit_work_state.enabled = true
 			)
-			for ctrl in InfoCatalogRoll.Controls do ctrl.enabled = true
+			-- for ctrl in InfoCatalogRoll.Controls do ctrl.enabled = true
 			
 			try (CatalogListMain.Items.Item[MD_Data.ActiveTaskIndex - 1].Selected = True) catch()
 		)
@@ -541,7 +557,7 @@ struct UI
 					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_b
 				)
 				3:(
-					TasksCatalogRoll.btn_get.text = "Backup"
+					TasksCatalogRoll.btn_get.text = "Download"
 					if SettingsRoll.ckbx_tooltips.Checked == true then
 					TasksCatalogRoll.btn_get.tooltip = MD_Tooltips.tasks_02_c
 				)

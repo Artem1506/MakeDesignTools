@@ -295,7 +295,7 @@ rollout dlg_configure "Configure User Data" width:400 height:210
                 try MD_UI.lst_sub_catalog.selection = 1 catch()
                 MD_Data.CheckedTasks = #()
                 MD_Data.ActiveList = 1
-                MD_Data.ActiveTaskAddIndex = 1
+                MD_Data.ActiveTaskMatIndex = 1
                 MD_Data.FullUpdate()
                 MD_UI.FillCategoriesLists()
                 try MD_BBox.Update() catch()

@@ -36,7 +36,9 @@ struct HTTPClient
 		for dir in categ_lib_dirs do 
 		(
 		   local categ = pathConfig.stripPathToLeaf (trimRight dir "\\/")
-		   append exist_articles categ
+		   local task_file = pathConfig.AppendPath dir TASK_INNER_DIRS[1]
+		   task_file = pathConfig.AppendPath task_file TASK_FILE_NAME
+		   if doesFileExist task_file then append exist_articles categ
 		)
 	
 		-- Перебор списка из ответа от http-client

@@ -14,6 +14,8 @@ struct Task
 	Group = undefined,
 	UserId = undefined,
 	UserName = undefined,
+	ContentMakerId = undefined,
+	ContentMakerName = undefined,
     RefFile = undefined,
 	Size = undefined,
 	SizeTrans = undefined,
@@ -165,6 +167,8 @@ struct Task
 					(
 						local mat_lib_file = (filterString saved_file ".")[1] + ".mat"
 						local mat_lib = loadTempMaterialLibrary mat_lib_file
+						MD_Data.InWorkTask.MatLib = mat_lib
+						MD_Data.InWorkTask.MatLibFile = mat_lib_file
 
 						-- MD_Data.InWorkTask.Materials = undefined
 						try(
@@ -295,7 +299,9 @@ struct Task
 				local file_path = (pathconfig.appendpath save_dir (file_name + ".max"))
 				local mat_lib_file = (pathconfig.appendpath save_dir (file_name + ".mat"))
 				save_nodes MD_Data.WorkLayerNodes file_path
-
+				MD_Data.InWorkTask.MatLib = mat_lib
+				MD_Data.InWorkTask.MatLibFile = mat_lib_file
+				
 				-- Сохранить материалы в библиотеку
 				for m in this.Materials do append mat_lib m.MultiMat
 				saveTempMaterialLibrary mat_lib mat_lib_file
@@ -431,6 +437,8 @@ struct Task
 				
 				UserId = data["userId"]
                 UserName = data["userName"]
+				ContentMakerId = data["asset_cm_id"]
+				ContentMakerName = data["asset_cm_name"]
                 Size = #(
 					ConvertCentimeterToSysUnits data["size"][1],
 					ConvertCentimeterToSysUnits data["size"][2],

@@ -85,7 +85,7 @@
         MD_Data.Init()
         MD_Data.CheckedTasks = #()
         MD_Data.ActiveList = 1
-        MD_Data.ActiveTaskAddIndex = 1
+        MD_Data.ActiveTaskMatIndex = 1
         -- MD_Data.Update()
         MD_UI.FillCategoriesLists()
 

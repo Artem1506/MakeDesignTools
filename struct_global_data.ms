@@ -20,7 +20,7 @@ struct GlobalData
 	ActiveSubCategory = undefined, --> [int] Активная подкатегория
 	ActiveTask = undefined, --> [Task] Выбранное на текущий момент задание в списке MD_UI.CatalogListMain
 	ActiveTaskIndex = undefined, --> [int] Порядковый номер активного задания в списке MD_UI.CatalogListMain
-	ActiveTaskAddIndex = 1, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd
+	ActiveTaskMatIndex = 1, --> [int] Порядковый номер в списке MD_UI.CatalogListAdd (Раньше это был список материалов)
 	active_catalog_dir = undefined, --> [str] "D:\MakeDesignLib\Catalog\01-01-001"
 	active_catalog_article = undefined, --> [str] "01-01-001" 
 	ActiveList = 1, --> [int] Активный список 
@@ -47,7 +47,7 @@ struct GlobalData
 		try( 
 			if subobjectLevel == 4 or subobjectLevel == 5 then 
 			( 
-				SetMatID obj ActiveTaskAddIndex 
+				SetMatID obj ActiveTaskMatIndex 
 				CompleteRedraw()  
 			) 
 		)catch()  
@@ -381,7 +381,8 @@ struct GlobalData
 		try MD_Callbacks.Destruct()  catch()  
 
 		for t in MD_Data.Tasks do 
-		( 
+		(
+			
 			t.State = STATES[1] 
 			t.ActiveMeshIndex = 1 
 		) 
@@ -403,10 +404,10 @@ struct GlobalData
 		if ActiveTask != InWorkTask then DeleteWorkLayer()  
 		MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory])
 		MD_Data.active_catalog_dir = pathConfig.AppendPath (pathConfig.AppendPath MD_LIB_DIR MD_CATEGS[2][1]) MD_Data.active_catalog_article
-		try ( 
-			local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
-			MD_Data.ActiveCategoryIcon.SetIcon icon_file 
-		) catch()  
+		try (MD_Data.ActiveCategoryIcon.Destruct()) catch()
+		-- 	local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
+		-- 	MD_Data.ActiveCategoryIcon.SetIcon icon_file 
+		-- ) catch()  
 	), 
 
 	fn CreateWorkState input_task = 
@@ -460,12 +461,16 @@ struct GlobalData
 		try MD_Callbacks.Add() catch() 
 
 		-- Установить иконку (декаль) 
-		local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME 
-
+		-- local icon_file = pathconfig.appendpath MD_Data.InWorkTask.InWorkDir TASK_ICON_NAME 
+		-- try ( 
+		-- 	local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
+		-- 	MD_Data.ActiveCategoryIcon.SetIcon icon_file 
+		-- ) catch()
+		local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
 		if (DoesFileExist icon_file) then  
 		( 
 			MD_Data.ActiveCategoryIcon.SetIcon icon_file 
-		) 
+		)
 	), 
 
 	-- fn UpdateWorkState = 
@@ -698,6 +703,48 @@ struct GlobalData
 		) 
 	), 
 
+	fn ExportTextures target_dir =
+	(
+		if doesDirectoryExist target_dir then
+		(
+			for i = 1 to this.InWorkTask.Materials.count do
+			(
+				local multi_mat = this.InWorkTask.Materials[i].MultiMat
+				
+				for k = 1 to multi_mat.materialList.count do
+				(
+					local sub_mat = multi_mat.materialList[k]
+					
+					for n = 1 to sub_mat.diffusemap.mapList.count do
+					(
+						local map_file = "" -- Полный путь к файлу текстуры
+						local mask_file = "" -- Полный путь к файлу маски
+						local map_name = "" -- Имя карты
+						local mask_name = "" -- Имя маски
+
+						try (map_file = pathConfig.convertPathToAbsolute sub_mat.diffusemap.mapList[n].fileName) catch()
+						try (map_file = pathConfig.convertPathToAbsolute sub_mat.diffusemap.mapList[n].map1.fileName) catch() 
+						try (mask_file = pathConfig.convertPathToAbsolute sub_mat.diffusemap.mask[n].fileName) catch()
+
+						if map_file != (pathConfig.getCurrentProjectFolder()) or mask_file != (pathConfig.getCurrentProjectFolder()) then
+						(
+							try (map_name = sub_mat.diffusemap.mapList[n].Name) catch()
+							try (map_name = sub_mat.diffusemap.mapList[n].map1.Name) catch()
+							try (mask_name = sub_mat.diffusemap.mask[n].Name) catch()
+							
+							local target_map_file = pathConfig.appendPath target_dir (map_name + ".tga")
+							copyFile map_file target_map_file
+
+							local target_mask_file = pathConfig.appendPath target_dir (mask_name + ".tga")
+							try (copyFile mask_file target_mask_file) catch()
+							
+						)	
+					)
+				)
+			)
+		)
+	),
+
 	fn ExportTask = 
 	(
 		local valid_result = validation()  
@@ -714,8 +761,9 @@ struct GlobalData
 			local main_dir = pathConfig.removePathLeaf (getFilenamePath ActiveTask.File) 
 			local save_fbx_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".fbx") 
 			local save_max_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".max") 
+			local save_decal_path = pathConfig.appendPath main_dir (ActiveTask.Article + ".max") 
 
-			for obj in objs do  
+			for obj in objs do
 			( 
 				if MD_UI.SettingsRoll.ckbx_auto_pivot.checked then  
 				( 
@@ -725,7 +773,7 @@ struct GlobalData
 				)  
 			) 
 
-			with redraw off  
+			with redraw off
 			( 
 				-- if InWorkTask.Group != undefined then 
 				-- ( 
@@ -734,12 +782,14 @@ struct GlobalData
 				-- ) 
 
 				try( 
-					SaveSelectedObjects objs save_max_path 
+					SaveSelectedObjects objs save_max_path
+					MD_Log.Info "Файл .max успешно сохранён."
 				)catch(MD_Log.Error "Не удалось сохранить текущее состояние сцены!") 
 
 				try( 
-					ExportToFBX objs save_fbx_path 
-				)catch(MD_Log.Error "Не удалось экспортировать задание!") 
+					ExportToFBX objs save_fbx_path
+					MD_Log.Info "Модель успешно экспортирована."
+				)catch(MD_Log.Error "Не удалось экспортировать модель в файл FBX!") 
 
 				-- if InWorkTask.Group != undefined then 
 				-- ( 
@@ -772,7 +822,14 @@ struct GlobalData
 			data["to_import"] = dict 
 			WriteDataFile MD_LIB_DATA_FILE 
 
-			-- MD_Callbacks.Add() 
+			-- Экспорт текстур
+			try (this.ExportTextures main_dir; MD_Log.Info "Текстуры успешно экспортированы.") catch(MD_Log.Error "Не удалось экспортировать текстуры.")
+			try(
+				clearSelection()
+				SaveSelectedObjects #() save_max_path
+				MD_Log.Info "Файл .max успешно сохранён."
+			)catch(MD_Log.Error "Не удалось сохранить текущее состояние сцены!") 
+			MD_Callbacks.Add()
 			CompleteRedraw()  
 		) 
 	), 
@@ -820,13 +877,13 @@ struct GlobalData
 			MD_Data.LoadWorkHashSum = 0
 			delete WorkLayerNodes
 			CompleteRedraw()
-			gc()
+			-- gc() -- Может вызвать фризы
 		) catch()
 	),
 
 	fn Update = 
 	( 
-		ActiveTaskAddIndex = 1 
+		ActiveTaskMatIndex = 1 
 		TempArticlesList = #() 
 
 		try (GetTasksInActiveCategory()) catch()  

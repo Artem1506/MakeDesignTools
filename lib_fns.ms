@@ -752,5 +752,5 @@ fn FixObject obj =
 	ConvertTo obj Editable_Poly
 	resetXform obj
 	collapseStack obj
-	obj.transform = (matrix3 [1,0,0] [0,1,0] [0,0,1] [0,0,0])
+	-- obj.transform = (matrix3 [1,0,0] [0,1,0] [0,0,1] [0,0,0])
 )

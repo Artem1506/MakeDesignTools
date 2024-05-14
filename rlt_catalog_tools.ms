@@ -8,15 +8,15 @@ rollout rlt_catalog_tools "Tools"
     button 'btn_right' "►" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-37, -2]
 	button 'btn_down' "▼" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -2] 
 
-	groupBox 'grp_02' " Icon: " width:(rlt_catalog_tools.width - 8) height:146 align:#center offset:[0, 4]
-	checkbutton 'btn_create_icon' "Create Icon Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132] enabled:false
+	groupBox 'grp_02' " Decal: " width:(rlt_catalog_tools.width - 8) height:146 align:#center offset:[0, 4]
+	checkbutton 'btn_create_icon' "Decal Creation Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132] enabled:false
 	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false
     dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false
 	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
 	button 'btn_fit' "Fit" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -3] enabled:false
 	spinner 'spn_d' "Depth:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[4, -1] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
 	button 'btn_render' "Render" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false
-	button 'btn_save' "Save As Default Icon" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
+	button 'btn_save' "Save as Default Decal for Category" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
 
 	local icon_controls = #(btn_create_sel_set, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
 	local icon_layer = undefined
@@ -288,13 +288,45 @@ rollout rlt_catalog_tools "Tools"
         -- rlt_catalog_tools.height = 300
     )
 
-    on btn_up pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw()))
+    on btn_up pressed do (
+		case MD_Data.edit_icon_mode of 
+		(
+			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[3] catch())
+			false:(
+				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw())
+			)
+		)
+	)
 	
-	on btn_down pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #down catch(); CompleteRedraw()))
+	on btn_down pressed do (
+		case MD_Data.edit_icon_mode of 
+		(
+			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[4] catch())
+			false:(
+				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #down catch(); CompleteRedraw())
+			)
+		)
+	)
 	
-    on btn_left pressed do (undo on for o in selection do (try AlignBoundings o MD_BBox.bb #left catch(); CompleteRedraw()))
+    on btn_left pressed do (
+		case MD_Data.edit_icon_mode of 
+		(
+			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[1] catch())
+			false:(
+				undo on for o in selection do (try AlignBoundings o MD_BBox.bb #left catch(); CompleteRedraw())
+			)
+		)
+	)
 
-	on btn_right pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #right catch(); CompleteRedraw()))
+	on btn_right pressed do (
+		case MD_Data.edit_icon_mode of 
+		(
+			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[2] catch())
+			false:(
+				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #right catch(); CompleteRedraw())
+			)
+		)
+	)
 		
 	on btn_up rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #vcenter catch(); CompleteRedraw()))
 	
@@ -304,7 +336,15 @@ rollout rlt_catalog_tools "Tools"
 	
 	on btn_right rightclick do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #hcenter catch(); CompleteRedraw()))
 		
-	on btn_center pressed do (undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #center catch(); CompleteRedraw()))
+	on btn_center pressed do (
+		case MD_Data.edit_icon_mode of 
+		(
+			true:(try FixObject MD_Data.ActiveCategoryIcon.Icon catch())
+			false:(
+				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #center catch(); CompleteRedraw())
+			)
+		)
+	)
 
 	on btn_create_icon changed arg do
 	(
@@ -363,7 +403,7 @@ rollout rlt_catalog_tools "Tools"
 
 	on btn_save pressed do (
 		-- Сохранить дефолтную иконку для текущей категории
-		local file_path = (pathconfig.appendpath DECALS_DIR (MD_Data.active_catalog_article + "_icon.max"))
+		local file_path = (pathconfig.appendpath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")))
 		gc()
 		save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
 	)

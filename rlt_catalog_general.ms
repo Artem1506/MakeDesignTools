@@ -31,6 +31,35 @@ rollout rlt_catalog_general "General"
 
     -- button 'btn_assign_texts' "Assign Textures" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false tooltip:MD_Tooltips.tools_cat_04
 
+    fn SwitchMeshes =
+    (
+        clearSelection()
+        if MD_Data.InWorkTask != undefined then
+        (
+            MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+
+            case MD_Data.InWorkTask.ActiveMeshIndex of
+            (
+                1:(
+                    MD_Data.InWorkTask.ActiveMeshIndex = 2
+                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
+                    try MD_Data.InWorkTask.AddMesh.IsHidden = false catch()
+                    try select MD_Data.InWorkTask.AddMesh catch()
+                )
+                2:(
+                    MD_Data.InWorkTask.ActiveMeshIndex = 1
+                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
+                    try MD_Data.InWorkTask.AddMesh.IsHidden = true catch()
+                    try select MD_Data.InWorkTask.MainMesh catch()
+                )
+            )
+
+            MD_UI.UpdateCatalogGeneralRlt()
+            try MD_BBox.Update() catch()
+            MD_UI.UpdateCatalogInfoRlt()
+        )
+    )
+
     on rlt_catalog_general open do
     (
         try (GetINISettings rlt_catalog_general MDT_CONFIG_FILE rlt_catalog_general.name onlyRollState:true) catch()
@@ -77,7 +106,7 @@ rollout rlt_catalog_general "General"
 
             for i = 1 to MD_Data.InWorkTask.Materials.Count do
             (
-                MD_Data.ActiveTaskAddIndex = i
+                MD_Data.ActiveTaskMatIndex = i
                 MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
 
             )
@@ -85,7 +114,7 @@ rollout rlt_catalog_general "General"
             MD_Data.InWorkTask.ActiveMatIndex = 1
             MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
             try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
-            MD_Data.ActiveTaskAddIndex = 1
+            MD_Data.ActiveTaskMatIndex = 1
             MD_Callbacks.Add()
 
             try select MD_Data.InWorkTask.MainMesh catch()
@@ -131,6 +160,7 @@ rollout rlt_catalog_general "General"
         try (
             FixObject MD_Data.InWorkTask.MainMesh
         ) catch()
+
         MD_UI.UpdateCatalogGeneralRlt()
         try MD_BBox.Update() catch()
 
@@ -176,31 +206,7 @@ rollout rlt_catalog_general "General"
 
     on btn_mesh_switch pressed do
     (
-        clearSelection()
-        if MD_Data.InWorkTask != undefined then
-        (
-            MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
-
-            case MD_Data.InWorkTask.ActiveMeshIndex of
-            (
-                1:(
-                    MD_Data.InWorkTask.ActiveMeshIndex = 2
-                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = true) catch()
-                    try MD_Data.InWorkTask.AddMesh.IsHidden = false catch()
-                    try select MD_Data.InWorkTask.AddMesh catch()
-                )
-                2:(
-                    MD_Data.InWorkTask.ActiveMeshIndex = 1
-                    try (for n in MD_Data.WorkLayerNodes do n.IsHidden = false) catch()
-                    try MD_Data.InWorkTask.AddMesh.IsHidden = true catch()
-                    try select MD_Data.InWorkTask.MainMesh catch()
-                )
-            )
-
-            MD_UI.UpdateCatalogGeneralRlt()
-            try MD_BBox.Update() catch()
-            MD_UI.UpdateCatalogInfoRlt()
-        )
+        SwitchMeshes()
     )
 
     on btn_set_pivot pressed do
@@ -232,8 +238,12 @@ rollout rlt_catalog_general "General"
         MD_Data.InWorkTask.LoadWork \
         MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:false
         MD_Data.FullUpdate()
-        MD_UI.UpdateCatalogGeneralRlt()
-        try MD_Callbacks.Add() catch() 
+        -- MD_UI.UpdateCatalogGeneralRlt()
+        
+        MD_Data.InWorkTask.ActiveMeshIndex = 2
+        SwitchMeshes()
+        
+        try MD_Callbacks.Add() catch()
     )
 
     on btn_work_list pressed do

@@ -92,7 +92,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
             for i = 1 to controls_arr.count do
             (
                 local text_name = ""
-                -- mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex]
+                -- mat = MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskMatIndex]
 
                 if i != 4 and i != 5 and i != 6 then
                 text_name = "T_" + mat.MultiMat.name + "_" + (s as string) + texts_suffixes[i]
@@ -112,7 +112,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
                 source_text_files[s][i] = map_file_name
 
                 -- local task_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.InWorkTask.File)
-                -- local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskAddIndex].Article + TEXTURES_SIFFIXES[i]
+                -- local text_name = "T_" + MD_Data.InWorkTask.Materials[MD_Data.ActiveTaskMatIndex].Article + TEXTURES_SIFFIXES[i]
                 -- local lib_tex_file = (pathConfig.appendPath task_dir text_name)
             )
         )
@@ -139,7 +139,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
         SetFocus dlg_edit_material 
     )
 
-    fn AssignMapToMaterial mat map_slot_index =
+    fn AssignMapToMaterial mat map_slot_index map_name =
     (
         /*
         Назначает карты текстур в слои композитной текстуры материала
@@ -173,6 +173,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
             if map_slot_index == 2 or map_slot_index == 5 then
             (
                 mat.diffusemap.mapList[map_slot_index].map1.fileName = map_file
+                mat.diffusemap.mapList[map_slot_index].map1.Name = map_name
             )
 
             -- Условие для карты Mixing
@@ -181,8 +182,14 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
                 mat.diffuseMap.mask[4].fileName = map_file
                 mat.diffuseMap.mask[5].fileName = map_file
                 mat.diffuseMap.mask[6].fileName = map_file
+                mat.diffuseMap.mask[4].Name = map_name
+                mat.diffuseMap.mask[5].Name = map_name
+                mat.diffuseMap.mask[6].Name = map_name
             )
-            else mat.diffuseMap.mapList[map_slot_index].fileName = map_file
+            else (
+                mat.diffuseMap.mapList[map_slot_index].fileName = map_file
+                mat.diffuseMap.mapList[map_slot_index].Name = map_name
+            )
 
             result = map_file
         )
@@ -353,7 +360,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
 
                 for i = 1 to MD_Data.InWorkTask.Materials.Count do
                 (
-                    MD_Data.ActiveTaskAddIndex = i
+                    MD_Data.ActiveTaskMatIndex = i
                     MD_Data.UpdateMaterial MD_Data.InWorkTask.MainMesh i
     
                 )
@@ -361,7 +368,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
                 MD_Data.InWorkTask.ActiveMatIndex = 1
                 MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh 1
                 try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh 1 catch()
-                MD_Data.ActiveTaskAddIndex = 1
+                MD_Data.ActiveTaskMatIndex = 1
                 MD_Callbacks.Add()
     
                 try select MD_Data.InWorkTask.MainMesh catch()
@@ -408,10 +415,10 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
         MD_Data.InWorkTask.ActiveMatIndex = arg
         active_mat = MD_Data.InWorkTask.Materials[arg].MultiMat
 
-        if (MD_Data.ActiveTaskAddIndex != arg) then
+        if (MD_Data.ActiveTaskMatIndex != arg) then
         (
             MD_Data.ActiveList = 2
-            MD_Data.ActiveTaskAddIndex = arg
+            MD_Data.ActiveTaskMatIndex = arg
             MD_UI.UpdateCatalogTasksRlt()
             MD_UI.UpdateCatalogInfoRlt()
             MD_UI.UpdateCatalogGeneralRlt()
@@ -433,7 +440,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     
 -- Diffise
     on btn_d pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 1
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 1 text_names[lst_mat_id.selection][1]
 
         if map_file != undefined then 
         (
@@ -454,7 +461,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- SRM
     on btn_srm pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 2
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 2 text_names[lst_mat_id.selection][2]
 
         if map_file != undefined then 
         (
@@ -475,7 +482,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Normal
     on btn_n pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 3
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 3 text_names[lst_mat_id.selection][3]
 
         if map_file != undefined then 
         (
@@ -496,7 +503,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Diffise (Tile)
     on btn_d_t pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 4
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 4 text_names[lst_mat_id.selection][4]
 
         if map_file != undefined then 
         (
@@ -517,7 +524,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- SRM (Tile)
     on btn_srm_t pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 5
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 5 text_names[lst_mat_id.selection][5]
 
         if map_file != undefined then 
         (
@@ -538,7 +545,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Normal (Tile)
     on btn_n_t pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 6
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 6 text_names[lst_mat_id.selection][6]
 
         if map_file != undefined then 
         (
@@ -559,7 +566,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Emission
     on btn_e pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 7
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 7 text_names[lst_mat_id.selection][7]
 
         if map_file != undefined then 
         (
@@ -580,7 +587,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Mixing
     on btn_mx pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 8
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 8 text_names[lst_mat_id.selection][8]
 
         if map_file != undefined then 
         (
@@ -601,7 +608,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- SSS
     on btn_sss pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 9
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 9 text_names[lst_mat_id.selection][9]
 
         if map_file != undefined then 
         (
@@ -622,7 +629,7 @@ rollout dlg_edit_material "Edit Material" width:346 height:470
     )
 -- Displace
     on btn_dp pressed do (
-        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 10
+        local map_file = AssignMapToMaterial active_mat.materialList[lst_mat_id.selection] 10 text_names[lst_mat_id.selection][10]
 
         if map_file != undefined then 
         (

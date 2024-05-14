@@ -1,1 +1,0 @@
-При использовании команды HiddenDOSCommand "TaskKill /IM md_requests.exe /f" появляется ошибка

@@ -41,8 +41,8 @@ COMMON_DATA_FILE_NAME = "lib_data.json"
 TASK_FILE_NAME = "task_data.json"
 SAVED_FILE_NAME = "Saving"
 TASK_MAT_NAME = "Material.mat"
-TASK_ICON_NAME = "Icon.max"
-ICON_TEMPLATE_FILE = pathConfig.appendPath RESOURCES_DIR "_icon_template_.max"
+TASK_ICON_NAME = "Decal.max"
+ICON_TEMPLATE_FILE = pathConfig.appendPath RESOURCES_DIR "_decal_template_.max"
 
 -- Файлы иконок
 ICON_NO_PRVIEW_FILE = pathConfig.appendPath RESOURCES_DIR "mdt_no_preview.png"
@@ -58,21 +58,21 @@ DOCS_FILE = "https://docs.google.com/document/d/14-jr4cs0WKgLgi4kcZE9rmL9bZ2LGde
 STATES = #("None", "In_Work", "Check", "Done")
 MD_CATEGS = #(#("Каталог объектов", "Проекты"), #("Catalog", "Projects"))
 TASK_INNER_DIRS = #("Task", "InWork", "InWork/Saved")
-MAIN_LIST_COLUMNS_1 = #("Article", "State", "Mat. Count", "Group", "Trans", "User")
+MAIN_LIST_COLUMNS_1 = #("Article", "State", "Materials", "Group", "Trans", "Manager", "Content Maker")
 ADD_LIST_COLUMNS_1 = #("Mat. Index", "Texture Count")
 MAIN_LIST_COLUMNS_2 = #("Task ID")
 ADD_LIST_COLUMNS_2 = #("Furniture Solutions")
 SAVED_WORKS_LIST_COLUMNS = #("File Name", "Save Date")
-TASK_PARAMS_LIST = #("New Valid Tasks", "Incorrect Tasks", "Completed Tasks")
+TASK_PARAMS_LIST = #("Valid Tasks", "Invalid Tasks", "Completed Tasks")
 PIVOT_POS_X = #("Back", "Center", "Front")
 PIVOT_POS_Y = #("Left", "Center", "Right")
 PIVOT_POS_Z = #("Bottom", "Center", "Top")
-TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_SRM.tga", "_E.tga", "_SSS.tga", "_ICON.tga", "_DP.tga")
-HELPER_OBJECTS = #("_bbox_", "_arrow_", "_pivot_", "_icon_")
+TEXTURES_SIFFIXES = #("_D.tga", "_M.tga", "_N.tga", "_SRM.tga", "_E.tga", "_SSS.tga", "_DECAL.tga", "_DP.tga")
+HELPER_OBJECTS = #("_bbox_", "_arrow_", "_pivot_", "_decal_")
 SELECTION_SET_NAMES = #("Left_side", "Right_side", "Front_side", "Back_side")
 PACK_TEXTS_TYPES = #("SRM", "AORM")
 CLR_PALETTE_1 = #(
-    color 87 53 255,
+    color 90 120 255,
     color 255 53 53,
     color 150 255 53,
     color 52 200 255,
@@ -120,9 +120,9 @@ CLR_BBOX_PIVOT = color 14 255 2
 DEFAULT_LAYER = LayerManager.getLayer 0
 DN_MAX_UI_CLR = undefined
 mdt_temp_layer = "_mdt_temp_"
-icon_temp_layer = "_icon_template_"
+icon_temp_layer = "_decal_template_"
 TRANS_POSTFIX = "_trans"
-ICON_POSTFIX = "_icon"
+ICON_POSTFIX = "_decal"
 
 -- Версия макса при экспорте в fbx
 MAX_VERSION = 2018

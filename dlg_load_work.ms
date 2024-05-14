@@ -48,6 +48,8 @@ rollout dlg_load_work "Saved Works"
          local load_result = MD_Data.InWorkTask.LoadWork \
          MD_Data.InWorkTask.SavedWorks[lv_files.SelectedItems.Item[0].Index + 1] quiet_mode:false
          MD_Data.FullUpdate()
+         MD_Data.InWorkTask.ActiveMeshIndex = 2
+         MD_UI.GeneralCatalogRoll.SwitchMeshes()
          MD_UI.UpdateCatalogGeneralRlt()
          try MD_Callbacks.Add() catch()
          if load_result then destroyDialog dlg_load_work
