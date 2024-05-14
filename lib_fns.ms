@@ -110,6 +110,74 @@ fn WriteDataFile data_file =
 	catch ()
 )
 
+fn UpdateVersion_old =
+(
+	::mdt_mse = (GetDir #userScripts) + "\\HotScripts\\MakeDesignTools\\mdt.mse"
+	::md_client_exe = (GetDir #userScripts) + "\\HotScripts\\MakeDesignTools\\md_client\\md_client.exe"
+
+	local result
+	local py_code = ""
+
+    py_code += "import urllib.request" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
+    py_code += "urllib.request.urlretrieve(\"https://raw.githubusercontent.com/PaulWorkker/MakeDesignTools/master/Release/mdt.mse\", rt.mdt_mse)" + "\n"
+    py_code += "urllib.request.urlretrieve(\"https://raw.githubusercontent.com/PaulWorkker/MakeDesignTools/master/Release/md_client/md_client.exe\", rt.md_client_exe)" + "\n"
+
+    try (python.Execute py_code; result = true)
+	catch (result = false)
+
+	result
+)
+
+fn CheckUpdates =
+(
+	::check_result = ""
+
+	local py_code = ""
+
+    py_code += "import urllib.request" + "\n"
+    py_code += "import json" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
+    py_code += "urlData = 'https://raw.githubusercontent.com/PaulWorkker/MakeDesignTools/master/release_info.json'" + "\n"
+    py_code += "webURL = urllib.request.urlopen(urlData)" + "\n"
+    py_code += "dt = webURL.read()" + "\n"
+    py_code += "encoding = webURL.info().get_content_charset('utf-8')" + "\n"
+    py_code += "try:" + "\n"
+    py_code += "\t" + "js_data = json.loads(dt.decode(encoding))" + "\n"
+    py_code += "\t" + "rt.check_result = js_data['version']" + "\n"
+    py_code += "except:" + "\n"
+    py_code += "\t" + "pass"
+
+    try (python.Execute py_code)
+	catch ()
+
+	check_result
+)
+
+fn UpdateVersion =
+(
+	::extr_dir = (GetDir #userScripts) + "\\HotScripts\\MakeDesignTools"
+	::zip_file = (GetDir #userScripts) + "\\HotScripts\\MakeDesignTools\\Release.zip"
+
+	local result
+	local py_code = ""
+
+    py_code += "import urllib.request" + "\n"
+    py_code += "import zipfile" + "\n"
+    py_code += "import os" + "\n"
+	py_code += "rt = pymxs.runtime" + "\n"
+    py_code += "urllib.request.urlretrieve(\"https://raw.githubusercontent.com/PaulWorkker/MakeDesignTools/master/Release.zip\", rt.zip_file)" + "\n"
+	py_code += "if os.path.exists(rt.zip_file):" + "\n"
+	py_code += "\t" + "with zipfile.ZipFile(rt.zip_file, 'r') as zf:" + "\n"
+	py_code += "\t\t" + "zf.extractall(rt.extr_dir)" + "\n"
+	py_code += "\t" + "os.remove(rt.zip_file)" + "\n"
+
+    try (python.Execute py_code; result = true)
+	catch (result = false)
+
+	result
+)
+
 fn hex_to_rgb hex_value =
 (
 	local hex = trimLeft (hex_value as string) "#"
