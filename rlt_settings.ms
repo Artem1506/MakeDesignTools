@@ -7,13 +7,13 @@ rollout rlt_settings "Settings"
     colorpicker 'clr_bb_main' fieldWidth:36 color:CLR_BBOX_MAIN height:16 align:#center offset:[62, 0] modal:false tooltip:MD_Tooltips.settings_01_b
     colorpicker 'clr_bb_add' fieldWidth:36 color:CLR_BBOX_ADD height:16 align:#center offset:[48, 0] modal:false tooltip:MD_Tooltips.settings_01_c
     button 'btn_clr_reset' "R" width:17 height:16 align:#right offset:[10, 0] tooltip:MD_Tooltips.settings_01_d
-    checkbox 'ckbx_show_icon' "Show Icon" width:120 offset:[0, V_MARGIN] align:#left checked:false tooltip:MD_Tooltips.settings_06
+    checkbox 'ckbx_show_icon' "Show Decal" width:120 offset:[0, V_MARGIN] align:#left checked:false tooltip:MD_Tooltips.settings_06
+    checkbox 'ckbx_tooltips' "Show Tooltips" width:150 offset:[0, 0] align:#left checked:false
     checkbox 'ckbx_auto_pivot' "Auto Pivot" width:150 offset:[0, 0] align:#left checked:true tooltip:MD_Tooltips.settings_02
     checkbox 'ckbx_auto_prev' "Auto Preview" width:150 offset:[0, 0] align:#rigth checked:true tooltip:MD_Tooltips.settings_03
     spinner 'spn_save_count' "Max Saving Count: " width:90 offset:[2, 1] range:[0, 100, 10] type:#integer fieldwidth:50 align:#left tooltip:MD_Tooltips.settings_04
     checkbox 'ckbx_load_last' "Auto Load Last Saving" width:150 offset:[0, 0] align:#left checked:false tooltip:MD_Tooltips.settings_05
-    checkbox 'ckbx_tooltips' "Tooltips" width:150 offset:[0, 0] align:#left checked:false
-
+    
     on rlt_settings open do
     (
         rlt_settings.height = 200

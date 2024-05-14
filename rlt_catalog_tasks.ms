@@ -584,7 +584,7 @@ rollout rlt_catalog_tasks "Catalog"
                     try ClearTrashLayers() catch()
                     
                     MD_Data.CreateWorkState MD_Data.ActiveTask
-                    -- MD_Icon.Create()
+                    
 
                     -- Если имеются ранее сохранённые рабочие файлы
                     if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask.SavedWorks.count != 0 then

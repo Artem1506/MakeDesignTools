@@ -36,10 +36,10 @@ struct TaskIcon
 
 		if (bbox.max.x - bbox.min.x) != 0.0 and (bbox.max.y - bbox.min.y) != 0.0 then
 		(
-			MoveVertsInNamedSet this.icon "Left_side" [0.0, -offset_w, 0.0]
-			MoveVertsInNamedSet this.icon "Right_side" [0.0, offset_w, 0.0]
-			MoveVertsInNamedSet this.icon "Back_side" [-offset_d, 0.0, 0.0]
-			MoveVertsInNamedSet this.icon "Front_side" [offset_d, 0.0, 0.0]			
+			MoveVertsInNamedSet this.icon SELECTION_SET_NAMES[1] [0.0, offset_w, 0.0]
+			MoveVertsInNamedSet this.icon SELECTION_SET_NAMES[2] [0.0, -offset_w, 0.0]
+			MoveVertsInNamedSet this.icon SELECTION_SET_NAMES[3] [offset_d, 0.0, 0.0]
+			MoveVertsInNamedSet this.icon SELECTION_SET_NAMES[4] [-offset_d, 0.0, 0.0]			
 		)
 
 		CompleteRedraw()		
@@ -50,6 +50,14 @@ struct TaskIcon
 		if classOf this.icon == Editable_Poly and subobjectLevel == 1 then
 		(
 			this.icon.Verts[set_name] = polyop.getVertSelection this.icon
+			case set_name of
+			(
+				(SELECTION_SET_NAMES[1]):(MD_Log.Info "Назначены вершины для левого края.")
+				(SELECTION_SET_NAMES[2]):(MD_Log.Info "Назначены вершины для правого края.")
+				(SELECTION_SET_NAMES[3]):(MD_Log.Info "Назначены вершины для переднего края.")
+				(SELECTION_SET_NAMES[4]):(MD_Log.Info "Назначены вершины для заднего края.")
+			)
+			
 		)
 	),
 
@@ -170,7 +178,8 @@ struct TaskIcon
 				cur_view_tm = viewport.GetTM()
 				cur_view_type = viewport.getType()
 				max vpt iso user
-				viewport.SetTM (matrix3 [0,-1,0] [1,0,0] [0,0,1] [0.0, 0.0, ConvertCentimeterToSysUnits -100.0])
+				-- viewport.SetTM (matrix3 [0,-1,0] [1,0,0] [0,0,1] [0.0, 0.0, ConvertCentimeterToSysUnits -100.0])
+				viewport.SetTM (matrix3 [0,1,0] [-1,0,0] [0,0,1] [0.0, 0.0, ConvertCentimeterToSysUnits -100.0])
 
 				for i = 0 to LayerManager.count - 1 do
 				(

@@ -456,7 +456,7 @@ struct UI
 					try (InfoCatalogRoll.hpl_site.address = MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].WebSite) catch()
 					try (InfoCatalogRoll.hpl_site.text = substring MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].WebSite 1 28) catch()
 				)
-				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "  [Material-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].MatIndex + "]"
+				InfoCatalogRoll.title = MD_Data.ActiveTask.Article + "-" + MD_Data.ActiveTask.Materials[MD_Data.ActiveTaskMatIndex].MatIndex
 				InfoCatalogRoll.lbl_size_txt.visible = false
 				-- InfoCatalogRoll.height = 280
 			)
