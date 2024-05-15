@@ -8,18 +8,21 @@ rollout rlt_catalog_tools "Tools"
     button 'btn_right' "►" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-37, -2]
 	button 'btn_down' "▼" width:CTRL_MANIP_SIZE height:CTRL_MANIP_SIZE align:#center offset:[-1, -2] 
 
-	groupBox 'grp_02' " Decal: " width:(rlt_catalog_tools.width - 8) height:146 align:#center offset:[0, 4]
-	checkbutton 'btn_create_icon' "Decal Creation Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132] enabled:false
-	button 'btn_reset' "Reset" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
-	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false
-    dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false
-	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
-	button 'btn_fit' "Fit" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, -3] enabled:false
-	spinner 'spn_d' "Depth:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[4, -1] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
-	button 'btn_render' "Render" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false
-	button 'btn_save' "Save as Default Decal for Category" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
+	groupBox 'grp_02' " Decal: " width:(rlt_catalog_tools.width - 8) height:108 align:#center offset:[0, 4]
+	checkbutton 'btn_create_icon' "Decal Creation Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -93] enabled:false
+	button 'btn_reset' "Reset" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] enabled:false across:2
+	checkbutton 'btn_show' "Hide Work Layer" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] checked:true enabled:false
+	button 'btn_render' "Render" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_2 align:#center offset:[1, V_MARGIN] enabled:false
+	button 'btn_fit' "Fit" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false visible:false
 
-	local icon_controls = #(btn_create_sel_set, btn_reset, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
+	-- Не используются!
+	button 'btn_save' "Save as Default Decal for Category" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_2 align:#center offset:[-2, V_MARGIN] enabled:false  visible:false
+	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false visible:false
+    dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false visible:false
+	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false visible:false
+	spinner 'spn_d' "Depth:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[4, -1] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false visible:false
+
+	local icon_controls = #(btn_create_sel_set, btn_reset, btn_show, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
 	local icon_layer = undefined
 	local layer_nodes = #()
 
@@ -162,6 +165,18 @@ rollout rlt_catalog_tools "Tools"
 		return sel_max
 	)
 	
+	fn AlignSplineKnots spl bound_box dir = 
+	(
+		case dir of
+		(
+			#left:(MoveSlineSelectedKnots spl [0, bound_box.max.y - spl.max.y, 0])
+			#right:(MoveSlineSelectedKnots spl [0, bound_box.min.y - spl.min.y, 0])
+			#up:(MoveSlineSelectedKnots spl [bound_box.max.x - spl.max.x, 0, 0])
+			#down:(MoveSlineSelectedKnots spl [bound_box.min.x - spl.min.x, 0, 0])
+		)
+		completeRedraw()
+	)
+
 	fn AlignBoundings obj bound_box dir =
 	(
 		local vcs = getViewCoordSys()
@@ -286,13 +301,14 @@ rollout rlt_catalog_tools "Tools"
     on rlt_catalog_tools open do
     (
 		try (GetINISettings rlt_catalog_tools MDT_CONFIG_FILE rlt_catalog_tools.name onlyRollState:true) catch()
-        -- rlt_catalog_tools.height = 300
+        rlt_catalog_tools.height = 240
     )
 
     on btn_up pressed do (
 		case MD_Data.edit_icon_mode of 
 		(
-			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[3] catch())
+			-- true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[3] catch())
+			true:(AlignSplineKnots MD_Data.ActiveCategoryIcon.Icon MD_BBox.bb #up)
 			false:(
 				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #up catch(); CompleteRedraw())
 			)
@@ -302,7 +318,8 @@ rollout rlt_catalog_tools "Tools"
 	on btn_down pressed do (
 		case MD_Data.edit_icon_mode of 
 		(
-			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[4] catch())
+			-- true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[4] catch())
+			true:(AlignSplineKnots MD_Data.ActiveCategoryIcon.Icon MD_BBox.bb #down)
 			false:(
 				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #down catch(); CompleteRedraw())
 			)
@@ -312,7 +329,8 @@ rollout rlt_catalog_tools "Tools"
     on btn_left pressed do (
 		case MD_Data.edit_icon_mode of 
 		(
-			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[1] catch())
+			-- true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[1] catch())
+			true:(AlignSplineKnots MD_Data.ActiveCategoryIcon.Icon MD_BBox.bb #left) 
 			false:(
 				undo on for o in selection do (try AlignBoundings o MD_BBox.bb #left catch(); CompleteRedraw())
 			)
@@ -322,7 +340,8 @@ rollout rlt_catalog_tools "Tools"
 	on btn_right pressed do (
 		case MD_Data.edit_icon_mode of 
 		(
-			true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[2] catch())
+			-- true:(try MD_Data.ActiveCategoryIcon.SetNamedSelSet SELECTION_SET_NAMES[2] catch())
+			true:(AlignSplineKnots MD_Data.ActiveCategoryIcon.Icon MD_BBox.bb #right)
 			false:(
 				undo on for obj in selection do (try AlignBoundings obj MD_BBox.bb #right catch(); CompleteRedraw())
 			)
@@ -349,14 +368,47 @@ rollout rlt_catalog_tools "Tools"
 
 	on btn_create_icon changed arg do
 	(
-		if MD_Data.InWorkTask != undefined then
+		if MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
 		(
+			try destroyDialog MD_UI.Dialogs.EditMaterial catch()
+			try destroyDialog MD_UI.Dialogs.Export catch()
+			btn_show.checked = true
+			btn_show.text = "Hide Work Layer"
+
 			case arg of
 			(
 				true:(
 					MD_Data.ActiveCategoryIcon.SetEditIconMode arg
 					for ctrl in icon_controls do ctrl.enabled = true
-					MD_Data.ActiveCategoryIcon.New()
+					
+					MD_Data.ShowLayers mode:#work_only
+					MD_BBox.Layer.lock = false
+					MD_Data.WorkLayer.lock = true
+					MD_Data.InWorkTask.ActiveMeshIndex = 2
+					MD_UI.GeneralCatalogRoll.SwitchMeshes()
+					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+					for obj in MD_Data.WorkLayerNodes do (
+						obj.xray = true
+						obj.showFrozenInGray = true
+					)
+					
+					-- MD_Data.InWorkTask.MainMesh.xray = true
+
+					-- if MD_Data.InWorkTask.Icon == undefined then
+					-- (
+						-- Установить иконку (декаль)
+						local main_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File) 
+						local task_decal_file = pathConfig.appendPath main_dir (MD_Data.ActiveTask.Article + (ICON_POSTFIX + ".max"))
+
+						if (DoesFileExist task_decal_file) then
+						MD_Data.ActiveCategoryIcon.SetIcon task_decal_file
+						else MD_Data.ActiveCategoryIcon.New()
+
+						MD_Data.ActiveCategoryIcon.Icon.IsHidden = false
+						completeRedraw()
+
+						MD_Data.InWorkTask.Icon = MD_Data.ActiveCategoryIcon.Icon
+					-- )
 				)
 				false:(
 					try MD_Data.ActiveCategoryIcon.Destruct() catch()
@@ -367,17 +419,43 @@ rollout rlt_catalog_tools "Tools"
 					try MD_Data.ActiveCategoryIcon.SetEditIconMode arg catch()
 					spn_w.value = ConvertCentimeterToSysUnits 100.0
 					spn_d.value = ConvertCentimeterToSysUnits 100.0
+					MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name
+					for obj in MD_Data.WorkLayerNodes do 
+					(
+						obj.xray = false
+						obj.showFrozenInGray = false
+						obj.isFrozen = false
+					)
+					MD_Data.ShowLayers mode:#work_only
+					MD_Data.WorkLayer.lock = false
+					-- MD_Data.InWorkTask.MainMesh.xray = false
 				)
 			)
+
+			MD_Data.edit_icon_mode = arg
+			EnableSceneRedraw()
 			completeRedraw()
-			MD_Data.edit_icon_mode = arg			
 		)else btn_create_icon.checked = false
 	)
 
 	on btn_reset pressed do 
 	(
 		try MD_Data.ActiveCategoryIcon.Destruct() catch()
-		MD_Data.ActiveCategoryIcon.New()
+
+		-- if MD_Data.InWorkTask.Icon == undefined then
+		-- (
+			-- Установить иконку (декаль)
+			local main_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File) 
+			local task_decal_file = pathConfig.appendPath main_dir (MD_Data.ActiveTask.Article + (ICON_POSTFIX + ".max"))
+
+			if (DoesFileExist task_decal_file) then
+			MD_Data.ActiveCategoryIcon.SetIcon task_decal_file
+			else MD_Data.ActiveCategoryIcon.New()
+			MD_Data.ActiveCategoryIcon.Icon.IsHidden = false
+			completeRedraw()
+
+			MD_Data.InWorkTask.Icon = MD_Data.ActiveCategoryIcon.Icon
+		-- )
 	)
 
 	on btn_create_sel_set pressed do 
@@ -408,7 +486,33 @@ rollout rlt_catalog_tools "Tools"
 	)
 
 	on btn_render pressed do (
-		try MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon catch()
+		-- try MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon catch()
+		-- Рендер иконки
+		if MD_Data.ActiveCategoryIcon.Icon != undefined then
+		(
+			local frame_size = MAX_TEX_SIZE / 16
+			local max_size = amax #(MD_Data.InWorkTask.Size[1], MD_Data.InWorkTask.Size[2])
+			local icon_out_file = "T_" + MD_Data.InWorkTask.Article + TEXTURES_SIFFIXES[7]
+
+			if max_size >= (ConvertCentimeterToSysUnits 200.0) then frame_size = MAX_TEX_SIZE / 2
+			else if max_size >= (ConvertCentimeterToSysUnits 100.0) then frame_size = MAX_TEX_SIZE / 4
+			else if max_size >= (ConvertCentimeterToSysUnits 50.0) then frame_size = MAX_TEX_SIZE / 8
+
+			MD_Data.WorkLayer.on = false
+
+			icon_out_file = pathconfig.appendpath (pathconfig.removePathLeaf MD_Data.InWorkTask.InWorkDir) icon_out_file
+			try (
+				MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon frame_size:frame_size out_file:icon_out_file
+			)catch()
+
+			local main_dir = pathConfig.removePathLeaf (getFilenamePath MD_Data.ActiveTask.File) 
+			local task_decal_file = pathConfig.appendPath main_dir (MD_Data.ActiveTask.Article + (ICON_POSTFIX + ".max"))
+			SaveSelectedObjects #(MD_Data.ActiveCategoryIcon.Icon) task_decal_file
+
+			MD_Data.WorkLayer.on = true
+			EnableSceneRedraw()
+			completeRedraw()
+		)
 	)
 
 	on btn_save pressed do (
@@ -416,5 +520,16 @@ rollout rlt_catalog_tools "Tools"
 		local file_path = (pathconfig.appendpath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")))
 		gc()
 		save_nodes MD_Data.ActiveCategoryIcon.Icon file_path
+	)
+
+	on btn_show changed arg do
+	(
+		MD_Data.WorkLayer.on = arg
+		completeRedraw()
+		case arg of 
+		(
+			true:(btn_show.text = "Hide Work Layer")
+			false:(btn_show.text = "Show Work Layer")
+		)
 	)
 )

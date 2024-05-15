@@ -224,8 +224,10 @@
             -- Загрузить последнюю работу
             try (MD_Data.InWorkTask.LoadWork \
             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
+            try (MD_Data.InWorkTask.ActiveMeshIndex = 2
+            MD_UI.GeneralCatalogRoll.SwitchMeshes()) catch()
         )
-        MD_Data.Update()
+        -- MD_Data.Update()
         MD_Data.FullUpdate()
         -- MD_UI.UpdateCatalogTasksRlt()
         MD_Callbacks.Add()

@@ -822,3 +822,24 @@ fn FixObject obj =
 	collapseStack obj
 	-- obj.transform = (matrix3 [1,0,0] [0,1,0] [0,0,1] [0,0,0])
 )
+
+fn MoveSlineSelectedKnots spline_shape offset_val = 
+(
+    -- offset_val = vector3
+    undo on
+    (
+        for i = 1 to (numSplines spline_shape) do
+        (
+            local sub_spl_knots = getKnotSelection spline_shape i
+			for k in sub_spl_knots do
+			(
+				setKnotPoint spline_shape i k ((getKnotPoint spline_shape i k) + offset_val) 
+			)
+        )
+        updateShape spline_shape
+    )
+    -- numSplines $
+    -- numSegments $ i
+    -- getKnotSelection $ i -- выбранные узлы
+    -- getKnotPoint $ i verts
+)

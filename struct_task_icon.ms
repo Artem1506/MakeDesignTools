@@ -120,7 +120,8 @@ struct TaskIcon
 
 		-- Create the camera
 		main_camera = Freecamera orthoProjection:true targetDistance:targ_dist fov:fov
-		main_camera.transform = matrix3 [0, 1, 0] [-1, 0, 0] [0, 0, 1] [0, 0, targ_dist]
+		-- main_camera.transform = matrix3 [0, 1, 0] [-1, 0, 0] [0, 0, 1] [0, 0, targ_dist]
+		main_camera.transform = matrix3 [0,-1,0] [1,0,0] [0,0,1] [0, 0, targ_dist]
 
 		-- Switch to the camera view
 		max vpt camera
@@ -129,7 +130,7 @@ struct TaskIcon
 		(
 			-- Start rendering
 			vfb = render outputfile:out_file vfb:true
-			close vfb
+			-- close vfb
 		)else(
 			render vfb:true
 		)
@@ -193,13 +194,13 @@ struct TaskIcon
 				MD_BBox.Layer.current = true
 				MD_BBox.bb.isHidden = false
 				MD_BBox.arrow.isHidden = false
-				MD_BBox.bb.length = ConvertCentimeterToSysUnits 100.0
-				MD_BBox.bb.width = ConvertCentimeterToSysUnits 100.0
+				-- MD_BBox.bb.length = ConvertCentimeterToSysUnits 100.0
+				-- MD_BBox.bb.width = ConvertCentimeterToSysUnits 100.0
 				MD_BBox.bb.height = 0.0
-				arrow_offset = ConvertCentimeterToSysUnits 10.0
-				arrow_rad = ConvertCentimeterToSysUnits 20.0
-				MD_BBox.arrow.radius = arrow_rad
-				MD_BBox.arrow.pos.x = (MD_BBox.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
+				-- arrow_offset = ConvertCentimeterToSysUnits 10.0
+				-- arrow_rad = ConvertCentimeterToSysUnits 20.0
+				-- MD_BBox.arrow.radius = arrow_rad
+				-- MD_BBox.arrow.pos.x = (MD_BBox.bb.width/2.0 + arrow_rad/2.0 + arrow_offset)
 				MD_BBox.bb.wireColor = CLR_BBOX_PIVOT
 				MD_BBox.arrow.wireColor = CLR_BBOX_PIVOT
 				completeRedraw()
@@ -208,6 +209,7 @@ struct TaskIcon
 				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = false
 				for ctrl in MD_UI.GeneralCatalogRoll.Controls do ctrl.enabled = false
 				for ctrl in MD_UI.AboutRoll.Controls do ctrl.enabled = false
+				MD_UI.TasksCatalogRoll.lv_main.enabled = true
 			)
 			false:(
 				viewport.SetType cur_view_type

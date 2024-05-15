@@ -13,8 +13,8 @@ rollout dlg_export "Validation And Export" width:210  height:230
         dotnetcontrol 'lbl_mat_id_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
     label 'lbl_uvs' "6 - UVs" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06
         dotnetcontrol 'lbl_uvs_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2]
-    label 'lbl_icon' "7 - Decal" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06 visible:false
-        dotnetcontrol 'lbl_icon_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2] visible:false
+    label 'lbl_icon' "7 - Decal" width:160 align:#left offset:[8, 2] across:2 tooltip:MD_Tooltips.val_exp_06 visible:true
+        dotnetcontrol 'lbl_icon_txt' "System.Windows.Forms.Label" text:"X" width:24 align:#right offset:[-4, 2] visible:true
 
     groupBox 'grp_01' " Validation " width:(dlg_export.width - 20) height:174 align:#center offset:[0, -166]
     button 'btn_export' "EXPORT" width:(dlg_export.width - 20) height:CTRL_HEIGHT_2 align:#center offset:[0, 0] enabled:false
@@ -72,21 +72,21 @@ rollout dlg_export "Validation And Export" width:210  height:230
             MD_Data.ActiveTask = cur_active_task
         )
 
-        -- Рендер иконки
-        if MD_Data.ActiveCategoryIcon.Icon != undefined then
-        (
-            local frame_size = MAX_TEX_SIZE / 16
-            local max_size = amax #(MD_Data.InWorkTask.Size[1], MD_Data.InWorkTask.Size[2])
-            local icon_out_file = "T_" + MD_Data.InWorkTask.Article + TEXTURES_SIFFIXES[7]
+        -- -- Рендер иконки
+        -- if MD_Data.ActiveCategoryIcon.Icon != undefined then
+        -- (
+        --     local frame_size = MAX_TEX_SIZE / 16
+        --     local max_size = amax #(MD_Data.InWorkTask.Size[1], MD_Data.InWorkTask.Size[2])
+        --     local icon_out_file = "T_" + MD_Data.InWorkTask.Article + TEXTURES_SIFFIXES[7]
 
-            if max_size >= (ConvertCentimeterToSysUnits 200.0) then frame_size = MAX_TEX_SIZE / 2
-            else if max_size >= (ConvertCentimeterToSysUnits 100.0) then frame_size = MAX_TEX_SIZE / 4
-            else if max_size >= (ConvertCentimeterToSysUnits 50.0) then frame_size = MAX_TEX_SIZE / 8
+        --     if max_size >= (ConvertCentimeterToSysUnits 200.0) then frame_size = MAX_TEX_SIZE / 2
+        --     else if max_size >= (ConvertCentimeterToSysUnits 100.0) then frame_size = MAX_TEX_SIZE / 4
+        --     else if max_size >= (ConvertCentimeterToSysUnits 50.0) then frame_size = MAX_TEX_SIZE / 8
 
-            icon_out_file = pathconfig.appendpath (pathconfig.removePathLeaf MD_Data.InWorkTask.InWorkDir) icon_out_file
-            try (
-                MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon frame_size:frame_size out_file:icon_out_file
-            )catch()            
-        )
+        --     icon_out_file = pathconfig.appendpath (pathconfig.removePathLeaf MD_Data.InWorkTask.InWorkDir) icon_out_file
+        --     try (
+        --         MD_Data.ActiveCategoryIcon.IconRender MD_Data.ActiveCategoryIcon.Icon frame_size:frame_size out_file:icon_out_file
+        --     )catch()            
+        -- )
     )
 )

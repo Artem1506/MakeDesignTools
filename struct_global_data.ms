@@ -145,7 +145,7 @@ struct GlobalData
 		local mat_ids = uv_count = #() 
 		local val = true 
 		local msg = "" 
-		local valids = #("X", "X", "X", "X", "X", "X") -- Для валидации декали нужно добавить ещё один "X"
+		local valids = #("X", "X", "X", "X", "X", "X", "X") -- Для валидации декали нужно добавить ещё один "X"
 		local objs = #(InWorkTask.MainMesh, InWorkTask.AddMesh) 
 
 		-- Check count 
@@ -180,43 +180,45 @@ struct GlobalData
 
 				-- Check submaterials count
 				local sub_mats_count, sub_mats_count, main_mesh_uvs
-				try sub_mats_count = this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.count catch()
+				try sub_mats_count = this.ActiveTask.Materials[this.ActiveTask.ActiveMatIndex].MultiMat.count catch()
 				try main_mesh_uvs = (GetMaterialIDList this.ActiveTask.MainMesh).count catch()
 				try local add_mesh_uvs = (GetMaterialIDList this.ActiveTask.AddMesh).count catch()
 
 				-- Material
-				if this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat != undefined and \
-				(classof this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat == Multimaterial) then 
+				if (this.InWorkTask.Materials[this.InWorkTask.ActiveMatIndex].MultiMat != undefined and \
+					this.InWorkTask.Materials[this.InWorkTask.ActiveMatIndex].MultiMat.name == this.InWorkTask.MainMesh.Material.name) then 
 				(
 					valids[4] = "OK" 
 					-- try(sub_mats_count = this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.count)catch()  
 					-- if (InWorkTask.Group == undefined and this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) or \ 
 					-- (InWorkTask.Group == this.ActiveTask.Group and this.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat.name == this.ActiveTask.Article and sub_mats_count == this.ActiveTask.Materials.count) then 
-					if (this.ActiveTask.AddMesh == undefined and main_mesh_uvs == sub_mats_count) or \
-					(this.ActiveTask.AddMesh != undefined and main_mesh_uvs == sub_mats_count and add_mesh_uvs == sub_mats_count) then
+					if (this.InWorkTask.AddMesh == undefined and main_mesh_uvs == sub_mats_count) or \
+					(this.InWorkTask.AddMesh != undefined and main_mesh_uvs == sub_mats_count and add_mesh_uvs == sub_mats_count) then
 					(
 						-- Material ID
 						valids[5] = "OK"
 					)else (msg = "На объект назначен некорректный материал.\nКоличество material ID объекта не соответствует количеству материалов.") 
 				)else (msg = "На объект не назначен материал.")
 
-				 
 				-- Check uv channels count 
 				uv_count = GetNumUVChannels obj 
-				if uv_count >= 1 then 
+				if uv_count >= 1 and uv_count <= 2 then 
 				( 
 					valids[6] = "OK"  
-				)else(msg = "Объект должен содержать хотя бы один UV канал.") 
-
-				-- Check decal 	 
-				if this.ActiveCategoryIcon.Icon != undefined then 
-				( 
-					valids[7] = "OK"  
-				)else(msg = "Для данной категории необходима декаль.") 
+				)else(msg = "Объект должен содержать хотя бы один UV канал, но не более двух.") 
 
 			)else (msg = "Класс объекта должен быть Geometry.") 
+
+			-- Check decal 
+			if this.ActiveTask.Icon != undefined then 
+			( 
+				valids[7] = "OK"  
+			)else(msg = "Для данной категории необходима декаль.")
+			
+			-- ### Заглушка для валидации декали !!!!!!!!!!!!!!!!!!!!!!!!!! 
+			-- В рабочей версии нужно удалить следующую строчку 
+			valids[7] = "OK"
 		) 
-		 
 		for v in valids where v == "X" do (val = false; exit) 
 		 
 		try( 
@@ -480,6 +482,7 @@ struct GlobalData
 		( 
 			MD_Data.ActiveCategoryIcon.SetIcon categ_decal_file 
 		)
+		input_task.Icon = MD_Data.ActiveCategoryIcon.Icon
 	), 
 
 	-- fn UpdateWorkState = 

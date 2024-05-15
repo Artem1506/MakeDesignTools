@@ -353,181 +353,192 @@ rollout rlt_catalog_tasks "Catalog"
 
     on lv_main ItemChecked self args do
     (   
-        try(
-            -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
-            MD_Data.CheckedTasks = for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
+        if not MD_Data.edit_icon_mode then
+        (
+            try(
+                -- Занести отмеченные элемента списка в массив MD_Data.CheckedTasks
+                MD_Data.CheckedTasks = for i = 0 to (self.CheckedItems.Count - 1) collect (self.CheckedItems.Item[i].Index + 1)
 
-            -- Отметить все элементы списка если нажат control
-            if keyboard.controlPressed == true then
-            (
-                for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
-            )
-            -- Снять галочки со всех элементов если нажат alt
-            else if keyboard.altPressed == true then
-            (
-                for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
-            )
+                -- Отметить все элементы списка если нажат control
+                if keyboard.controlPressed == true then
+                (
+                    for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = true
+                )
+                -- Снять галочки со всех элементов если нажат alt
+                else if keyboard.altPressed == true then
+                (
+                    for i = 0 to self.Items.count-1 do self.Items.Item[i].Checked = false
+                )
 
-            -- Обоновить интерфейс
-            try MD_UI.UpdateCatalogTasksRlt() catch()
-        )catch()
+                -- Обоновить интерфейс
+                try MD_UI.UpdateCatalogTasksRlt() catch()
+            )catch()            
+        )
     )
 
     on lv_main ColumnClick self arg do 
     (
-        case arg.column of
+        if not MD_Data.edit_icon_mode then
         (
-            0:(
-                for i = 0 to self.Items.count-1 do 
-                (
-                    if self.Items.Item[i].Checked == true then self.Items.Item[i].Checked = false
-                    else self.Items.Item[i].Checked = true
+            case arg.column of
+            (
+                0:(
+                    for i = 0 to self.Items.count-1 do 
+                    (
+                        if self.Items.Item[i].Checked == true then self.Items.Item[i].Checked = false
+                        else self.Items.Item[i].Checked = true
+                    )
+                    MD_UI.UpdateCatalogGeneralRlt()
                 )
-                MD_UI.UpdateCatalogGeneralRlt()
-            )
-            -- 4:(
-            --     local sel_user = undefined
-            --     try sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text catch()
-            --     MD_Data.SortTasks = #()
-            --     free MD_Data.SortTasks
+                -- 4:(
+                --     local sel_user = undefined
+                --     try sel_user = self.SelectedItems.Item[0].SubItems.Item[4].text catch()
+                --     MD_Data.SortTasks = #()
+                --     free MD_Data.SortTasks
 
-            --     if NOT MD_UI.Sort and sel_user != undefined then 
-            --     (
-            --         for i = 0 to self.Items.Count - 1 do
-            --         (
+                --     if NOT MD_UI.Sort and sel_user != undefined then 
+                --     (
+                --         for i = 0 to self.Items.Count - 1 do
+                --         (
 
-            --             if self.Items.Item[i].SubItems.Item[4].text == sel_user then
-            --             (
-            --                 -- append main_items self.Items.Item[i]
-            --                 append MD_Data.SortTasks MD_Data.Tasks[self.Items.Item[i].Tag]
-            --             )
-            --         )
+                --             if self.Items.Item[i].SubItems.Item[4].text == sel_user then
+                --             (
+                --                 -- append main_items self.Items.Item[i]
+                --                 append MD_Data.SortTasks MD_Data.Tasks[self.Items.Item[i].Tag]
+                --             )
+                --         )
 
-            --         MD_UI.Sort = true                    
-            --     )
-            --     else MD_UI.Sort = false
+                --         MD_UI.Sort = true                    
+                --     )
+                --     else MD_UI.Sort = false
 
-            --     MD_UI.FillMainList()
-            --     MD_UI.FillAddList()
-            --     try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
-            --     MD_UI.UpdateCatalogTasksRlt()
-            --     MD_UI.UpdateCatalogInfoRlt()
-            --     MD_UI.UpdateCatalogGeneralRlt()
+                --     MD_UI.FillMainList()
+                --     MD_UI.FillAddList()
+                --     try MD_Data.ActiveTask = MD_Data.Tasks[MD_Data.ActiveTaskIndex] catch()
+                --     MD_UI.UpdateCatalogTasksRlt()
+                --     MD_UI.UpdateCatalogInfoRlt()
+                --     MD_UI.UpdateCatalogGeneralRlt()
 
-            --     try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
-            -- )
+                --     try self.Items.Item[self.Items.Item[i].Tag - 1].selected = true catch()
+                -- )
+            )            
         )
     )
 
     on lv_main Click self arg do
     (
-        MD_Data.ActiveList = 1
-        try MD_Data.ActiveTaskMatIndex = 1 catch()
-        try MD_Data.ActiveTask.ActiveMatIndex = 1 catch()
-        subobjectLevel = 0
-        MD_Callbacks.Destruct()
-
-        -- Если временный список заданий пуст
-        if MD_Data.TempArticlesList.count == 0 then
+        if not MD_Data.edit_icon_mode then
         (
-            if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) or self.Items.count == 1 then
+            MD_Data.ActiveList = 1
+            try MD_Data.ActiveTaskMatIndex = 1 catch()
+            try MD_Data.ActiveTask.ActiveMatIndex = 1 catch()
+            subobjectLevel = 0
+            MD_Callbacks.Destruct()
+    
+            -- Если временный список заданий пуст
+            if MD_Data.TempArticlesList.count == 0 then
             (
-                try MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag catch()
-
-                -- Проверка сортировки
-				-- if MD_UI.Sort then MD_Data.ActiveTask = MD_Data.SortTasks[self.SelectedItems.Item[0].Tag]
-				-- else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
-
-                try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                MD_Data.ActiveTaskMatIndex = 1
-
-                -- Проверка состояния
-                try if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask catch()
-
-                if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
+                if (self.SelectedItems.count != 0 and (MD_Data.ActiveTaskIndex != self.SelectedItems.Item[0].Tag)) or self.Items.count == 1 then
                 (
-                    MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
-                    MD_Data.InWorkTask.ActiveMeshIndex = 1
-                    
-                    for obj in MD_Data.WorkLayerNodes do
+                    try MD_Data.ActiveTaskIndex = self.SelectedItems.Item[0].Tag catch()
+    
+                    -- Проверка сортировки
+                    -- if MD_UI.Sort then MD_Data.ActiveTask = MD_Data.SortTasks[self.SelectedItems.Item[0].Tag]
+                    -- else MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag]
+    
+                    try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                    MD_Data.ActiveTaskMatIndex = 1
+    
+                    -- Проверка состояния
+                    try if MD_Data.ActiveTask.state == STATES[2] then MD_Data.InWorkTask = MD_Data.ActiveTask catch()
+    
+                    if MD_Data.InWorkTask != undefined and MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
                     (
-                        if obj.name == MD_Data.InWorkTask.Article then
+                        MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article
+                        MD_Data.InWorkTask.ActiveMeshIndex = 1
+                        
+                        for obj in MD_Data.WorkLayerNodes do
                         (
-                            MD_Data.InWorkTask.MainMesh = obj
+                            if obj.name == MD_Data.InWorkTask.Article then
+                            (
+                                MD_Data.InWorkTask.MainMesh = obj
+                            )
+                            if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
+                            (
+                                MD_Data.InWorkTask.AddMesh = obj
+                                MD_Data.InWorkTask.AddMesh.isHidden = true
+                            )    
                         )
-                        if obj.name == (MD_Data.InWorkTask.Article + TRANS_POSTFIX) then
-                        (
-                            MD_Data.InWorkTask.AddMesh = obj
-                            MD_Data.InWorkTask.AddMesh.isHidden = true
-                        )    
-                    )
-
-                    -- if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
-                    -- ( 
-                    --     try MD_Data.InWorkTask.MainMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
-                    --     try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
-
-                    --     completeRedraw()
-                    -- )
-                    try MD_BBox.Update() catch()
-                    MD_Data.ShowLayers mode:#work_only
-                    -- Добавить функции обратного вызова
-                    try MD_Callbacks.Add() catch()
-                )
-                else 
-                (
-                    if MD_Data.InWorkTask != undefined and \
-                    MD_Data.InWorkTask != undefined and \
-                    MD_Data.InWorkTask.Article != undefined and \
-                    MD_Data.ActiveTask.Group != undefined and \
-                    MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
-                    (
+    
+                        -- if MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+                        -- ( 
+                        --     try MD_Data.InWorkTask.MainMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
+                        --     try MD_Data.InWorkTask.AddMesh.Material = MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex].MultiMat catch()
+    
+                        --     completeRedraw()
+                        -- )
                         try MD_BBox.Update() catch()
                         MD_Data.ShowLayers mode:#work_only
-                        -- try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
-                        -- try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
                         -- Добавить функции обратного вызова
                         try MD_Callbacks.Add() catch()
-                        completeRedraw()
                     )
                     else 
                     (
-                        try MD_BBox.Update() catch()
-                        try(destroyDialog MD_UI.Dialogs.Export)catch()
-                        MD_Data.ShowLayers mode:#scene_only
+                        if MD_Data.InWorkTask != undefined and \
+                        MD_Data.InWorkTask != undefined and \
+                        MD_Data.InWorkTask.Article != undefined and \
+                        MD_Data.ActiveTask.Group != undefined and \
+                        MD_Data.ActiveTask.Article == MD_Data.InWorkTask.Article then
+                        (
+                            try MD_BBox.Update() catch()
+                            MD_Data.ShowLayers mode:#work_only
+                            -- try MD_Data.InWorkTask.MainMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
+                            -- try MD_Data.InWorkTask.AddMesh.Material = MD_Data.ActiveTask.Materials[MD_Data.ActiveTask.ActiveMatIndex].MultiMat catch()
+                            -- Добавить функции обратного вызова
+                            try MD_Callbacks.Add() catch()
+                            completeRedraw()
+                        )
+                        else 
+                        (
+                            try MD_BBox.Update() catch()
+                            try(destroyDialog MD_UI.Dialogs.Export)catch()
+                            MD_Data.ShowLayers mode:#scene_only
+                        )
                     )
+    
+                    MD_UI.FillAddList()
+                    try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
+                    MD_UI.UpdateCatalogTasksRlt()
+                    -- MD_UI.UpdateCatalogInfoRlt()
+                    MD_UI.UpdateCatalogGeneralRlt()
                 )
-
-                MD_UI.FillAddList()
-                try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch()
-                MD_UI.UpdateCatalogTasksRlt()
-                -- MD_UI.UpdateCatalogInfoRlt()
-                MD_UI.UpdateCatalogGeneralRlt()
             )
-        )
-        MD_UI.UpdateCatalogInfoRlt()
-        -- try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
-        
-        try MD_Data.CreateWorkLayer() catch()
-
-        try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
-
-        if MD_UI.SettingsRoll.ckbx_load_last.checked and MD_Data.WorkLayerNodes.count == 0 then
-        (
+            MD_UI.UpdateCatalogInfoRlt()
+            -- try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
+            
+            try MD_Data.CreateWorkLayer() catch()
+    
+            try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.InWorkTask.Article catch()
+    
+            if MD_UI.SettingsRoll.ckbx_load_last.checked and MD_Data.WorkLayerNodes.count == 0 then
+            (
+                if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
+                -- Загрузить последнюю работу
+                try (MD_Data.InWorkTask.LoadWork \
+                MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
+            )
+    
+            try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
+            try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
+    
+            if MD_UI.Dialogs.EditMaterial.Visible then MD_UI.Dialogs.EditMaterial.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
+    
             if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
-            -- Загрузить последнюю работу
-            try (MD_Data.InWorkTask.LoadWork \
-            MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
+            (try select MD_Data.InWorkTask.MainMesh catch())
+            else clearselection()
         )
-
-        try MD_Data.AssignMaterial MD_Data.InWorkTask.MainMesh MD_Data.ActiveTask.ActiveMatIndex catch()
-        try MD_Data.AssignMaterial MD_Data.InWorkTask.AddMesh MD_Data.ActiveTask.ActiveMatIndex catch()
-
-        if MD_UI.Dialogs.EditMaterial.Visible then MD_UI.Dialogs.EditMaterial.InitExistTextures MD_Data.InWorkTask.Materials[MD_Data.InWorkTask.ActiveMatIndex]
-
-        if MD_Data.ActiveTask != undefined and MD_Data.InWorkTask != undefined and MD_Data.InWorkTask == MD_Data.ActiveTask then
-        (try select MD_Data.InWorkTask.MainMesh catch())
-        else clearselection()
+        else
+        (try MD_Data.ActiveTask = MD_Data.Tasks[self.SelectedItems.Item[0].Tag] catch())
     )
 
     on lv_add Click self arg do
@@ -606,6 +617,8 @@ rollout rlt_catalog_tasks "Catalog"
                             -- Загрузить последнюю работу
                             MD_Data.InWorkTask.LoadWork \
                             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true
+                            MD_Data.InWorkTask.ActiveMeshIndex = 2
+                            MD_UI.GeneralCatalogRoll.SwitchMeshes()
                         )
                     )
                     MD_Data.ShowLayers mode:#work_only                   
@@ -631,7 +644,7 @@ rollout rlt_catalog_tasks "Catalog"
     (
         -- Взять массив объектов на рабочем слое
         try MD_Data.WorkLayerNodes = GetAllLayerNodes MD_Data.WorkLayer.Name catch()
-
+        try destroyDialog MD_UI.Dialogs.Export catch()
         MD_Data.ClearWorkLayer()
 
         -- Выход из рабочего состояния
