@@ -353,13 +353,13 @@ rollout rlt_catalog_tools "Tools"
 			true:(
 				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
 				for ctrl in icon_controls do ctrl.enabled = true
-				MD_Data.ActiveCategoryIcon.New()
+				-- MD_Data.ActiveCategoryIcon.New()
 			)
 			false:(
 				try MD_Data.ActiveCategoryIcon.Destruct() catch()
 				try MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory]) catch()
-				local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
-				try MD_Data.ActiveCategoryIcon.Create icon_file catch()
+				-- local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+				-- try MD_Data.ActiveCategoryIcon.Create icon_file catch()
 				for ctrl in icon_controls do ctrl.enabled = false
 				try MD_Data.ActiveCategoryIcon.SetEditIconMode arg catch()
 				spn_w.value = ConvertCentimeterToSysUnits 100.0
