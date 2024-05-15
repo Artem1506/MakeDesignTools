@@ -144,7 +144,25 @@
             )
 		)
         -- Создать рабочий слой, если есть задание в работе
-        try if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then MD_Data.CreateWorkLayer() catch()
+        try (
+            if MD_Data.InWorkTask != undefined and MD_Data.WorkLayer == undefined then 
+            (
+                MD_Data.CreateWorkLayer()
+
+                -- Отображение слоёв с учётом наличия группы
+                try (
+                    if MD_Data.InWorkTask != undefined then
+                    (
+                        MD_Data.CreateWorkLayer()
+                        if MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
+                        (
+                            MD_Data.ShowLayers mode:#work_only
+                        )
+                    )
+                )catch()
+            )
+        )catch()
+
         -- MD_Data.FullUpdate() !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         MD_UI.Init()
@@ -157,19 +175,6 @@
         -- Попытаться выбрать первый элемент в списке
         if MD_Data.ActiveTaskIndex == undefined then try MD_UI.CatalogListMain.Items.Item[0].selected = true catch()
 
-        
-        -- Отображение слоёв с учётом наличия группы
-        try (
-            if MD_Data.InWorkTask != undefined then
-            (
-                MD_Data.CreateWorkLayer()
-                if MD_Data.InWorkTask.Group != undefined and MD_Data.InWorkTask.Group == MD_Data.ActiveTask.Group then
-                (
-                    MD_Data.ShowLayers mode:#work_only
-                )
-            )
-        )catch()
-        
         -- Попытаться загрузить последнюю сохранённую работу, если рабочий слой пустой
         if MD_UI.SettingsRoll.ckbx_load_last.checked then
         (
@@ -220,7 +225,7 @@
             try (MD_Data.InWorkTask.LoadWork \
             MD_Data.InWorkTask.SavedWorks[MD_Data.InWorkTask.SavedWorks.count] quiet_mode:true) catch()
         )
-        
+        MD_Data.Update()
         MD_Data.FullUpdate()
         -- MD_UI.UpdateCatalogTasksRlt()
         MD_Callbacks.Add()

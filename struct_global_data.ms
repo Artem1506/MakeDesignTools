@@ -466,10 +466,19 @@ struct GlobalData
 		-- 	local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max")) 
 		-- 	MD_Data.ActiveCategoryIcon.SetIcon icon_file 
 		-- ) catch()
-		local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
-		if (DoesFileExist icon_file) then  
+
+		-- Установить иконку (декаль)
+		local categ_decal_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+		local main_dir = pathConfig.removePathLeaf (getFilenamePath ActiveTask.File) 
+		local task_decal_file = pathConfig.appendPath main_dir (ActiveTask.Article + (ICON_POSTFIX + ".max"))
+
+		if (DoesFileExist task_decal_file) then  
 		( 
-			MD_Data.ActiveCategoryIcon.SetIcon icon_file 
+			MD_Data.ActiveCategoryIcon.SetIcon task_decal_file 
+		)
+		else if (DoesFileExist categ_decal_file) then  
+		( 
+			MD_Data.ActiveCategoryIcon.SetIcon categ_decal_file 
 		)
 	), 
 

@@ -192,6 +192,7 @@ struct TaskIcon
 				MD_BBox.Layer.ishidden = false
 				MD_BBox.Layer.current = true
 				MD_BBox.bb.isHidden = false
+				MD_BBox.arrow.isHidden = false
 				MD_BBox.bb.length = ConvertCentimeterToSysUnits 100.0
 				MD_BBox.bb.width = ConvertCentimeterToSysUnits 100.0
 				MD_BBox.bb.height = 0.0
@@ -206,6 +207,7 @@ struct TaskIcon
 				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = false
 				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = false
 				for ctrl in MD_UI.GeneralCatalogRoll.Controls do ctrl.enabled = false
+				for ctrl in MD_UI.AboutRoll.Controls do ctrl.enabled = false
 			)
 			false:(
 				viewport.SetType cur_view_type
@@ -221,6 +223,7 @@ struct TaskIcon
 
 				for ctrl in MD_UI.SettingsRoll.Controls do ctrl.enabled = true
 				for ctrl in MD_UI.TasksCatalogRoll.Controls do ctrl.enabled = true
+				for ctrl in MD_UI.AboutRoll.Controls do ctrl.enabled = true
 				MD_UI.UpdateCatalogTasksRlt()
 				MD_UI.UpdateCatalogGeneralRlt()
 
