@@ -83,7 +83,7 @@ rollout rlt_catalog_tasks "Catalog"
         )
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
         else MD_Data.ShowLayers mode:#scene_only
-        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch()
+        try (destroyDialog MD_UI.Dialogs.EditMaterial) catch() ; print MD_Data.active_catalog_article
     )
 
     on lst_sub_catalog selected arg do
@@ -122,7 +122,7 @@ rollout rlt_catalog_tasks "Catalog"
 		)catch()
         
         if MD_Data.ActiveTask == MD_Data.InWorkTask then MD_Data.ShowLayers mode:#work_only
-        else MD_Data.ShowLayers mode:#scene_only
+        else MD_Data.ShowLayers mode:#scene_only 
     )
 
     on lst_sub_catalog rightClick do

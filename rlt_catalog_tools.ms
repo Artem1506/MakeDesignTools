@@ -10,6 +10,7 @@ rollout rlt_catalog_tools "Tools"
 
 	groupBox 'grp_02' " Decal: " width:(rlt_catalog_tools.width - 8) height:146 align:#center offset:[0, 4]
 	checkbutton 'btn_create_icon' "Decal Creation Mode" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, -132] enabled:false
+	button 'btn_reset' "Reset" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
 	button 'btn_create_sel_set' "Create Select Set" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[-2, V_MARGIN] across:2 enabled:false
     dropdownlist 'lst_sel_sets' "" items:SELECTION_SET_NAMES width:CTRL_WIDTH_02 height:50 offset:[4, V_MARGIN] align:#center selection:1 enabled:false
 	spinner 'spn_w' "Width:" width:CTRL_WIDTH_02 fieldWidth:56 offset:[5, 3] range:[ConvertCentimeterToSysUnits 10.0, ConvertCentimeterToSysUnits 500.0, ConvertCentimeterToSysUnits 100.0] type:#WorldUnits fieldwidth:50 align:#left across:2 enabled:false
@@ -18,7 +19,7 @@ rollout rlt_catalog_tools "Tools"
 	button 'btn_render' "Render" width:CTRL_WIDTH_02 height:CTRL_HEIGHT_1 align:#center offset:[4, V_MARGIN] enabled:false
 	button 'btn_save' "Save as Default Decal for Category" width:CTRL_WIDTH_0 height:CTRL_HEIGHT_1 align:#center offset:[1, V_MARGIN] enabled:false
 
-	local icon_controls = #(btn_create_sel_set, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
+	local icon_controls = #(btn_create_sel_set, btn_reset, lst_sel_sets, spn_w, btn_fit, spn_d, btn_render, btn_save)
 	local icon_layer = undefined
 	local layer_nodes = #()
 
@@ -348,26 +349,35 @@ rollout rlt_catalog_tools "Tools"
 
 	on btn_create_icon changed arg do
 	(
-		case arg of
+		if MD_Data.InWorkTask != undefined then
 		(
-			true:(
-				MD_Data.ActiveCategoryIcon.SetEditIconMode arg
-				for ctrl in icon_controls do ctrl.enabled = true
-				-- MD_Data.ActiveCategoryIcon.New()
+			case arg of
+			(
+				true:(
+					MD_Data.ActiveCategoryIcon.SetEditIconMode arg
+					for ctrl in icon_controls do ctrl.enabled = true
+					MD_Data.ActiveCategoryIcon.New()
+				)
+				false:(
+					try MD_Data.ActiveCategoryIcon.Destruct() catch()
+					try MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory]) catch()
+					-- local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
+					-- try MD_Data.ActiveCategoryIcon.Create icon_file catch()
+					for ctrl in icon_controls do ctrl.enabled = false
+					try MD_Data.ActiveCategoryIcon.SetEditIconMode arg catch()
+					spn_w.value = ConvertCentimeterToSysUnits 100.0
+					spn_d.value = ConvertCentimeterToSysUnits 100.0
+				)
 			)
-			false:(
-				try MD_Data.ActiveCategoryIcon.Destruct() catch()
-				try MD_Data.active_catalog_article = (MD_Data.main_categ_ids[MD_Data.ActiveCategory][MD_Data.ActiveSubCategory]) catch()
-				-- local icon_file = pathConfig.appendPath DECALS_DIR (MD_Data.active_catalog_article + (ICON_POSTFIX + ".max"))
-				-- try MD_Data.ActiveCategoryIcon.Create icon_file catch()
-				for ctrl in icon_controls do ctrl.enabled = false
-				try MD_Data.ActiveCategoryIcon.SetEditIconMode arg catch()
-				spn_w.value = ConvertCentimeterToSysUnits 100.0
-				spn_d.value = ConvertCentimeterToSysUnits 100.0
-			)
-		)
-		completeRedraw()
-		MD_Data.edit_icon_mode = arg
+			completeRedraw()
+			MD_Data.edit_icon_mode = arg			
+		)else btn_create_icon.checked = false
+	)
+
+	on btn_reset pressed do 
+	(
+		try MD_Data.ActiveCategoryIcon.Destruct() catch()
+		MD_Data.ActiveCategoryIcon.New()
 	)
 
 	on btn_create_sel_set pressed do 

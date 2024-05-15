@@ -11,7 +11,7 @@ struct TaskIcon
 		setTransformLockFlags this.icon #all
 		max modify mode
 		modPanel.setCurrentObject this.icon.BaseObject node:this.icon
-		enableShowEndRes true
+		showEndResult = true
 	),
 
 	fn Create icon_file =
